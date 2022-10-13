@@ -1,6 +1,7 @@
 import copy
 import pickle
 from os.path import exists
+from os import mkdir
 
 import mne
 import numpy as np
@@ -146,94 +147,8 @@ class AuxFuncs:
             )
             return conds_df, mne_epochs
 
-
-# def init(import_path) -> ImportedData:
-#     with open(import_path, "rb") as file:
-#         [allEvents_df, allEpochs_perCond, cfg] = pickle.load(file)
-
-#     return ImportedData(cfg, allEpochs_perCond, allEvents_df)
-
-
-# def get_subject_info(data: ImportedData, example_subject="32"):
-#     subject_setfile_wake_n = (
-#         f'{data.cfg["set_files_dir"]}\\s_{example_subject}_wake_night_referenced.set'
-#     )
-#     output_file_path = (
-#         f"{data.cfg['outputs_dir_path'] }/epochs_Wn_s{example_subject}_file"
-#     )
-
-#     if exists(output_file_path):
-#         with open(output_file_path, "rb") as config_dictionary_file:
-#             epochs_Wn_example_sub = pickle.load(config_dictionary_file)
-#             # print(epochs_Wn_example_sub)
-#     else:
-#         epochs_Wn_example_sub = mne.io.read_epochs_eeglab(
-#             subject_setfile_wake_n,
-#             events=None,
-#             event_id=None,
-#             eog=(),
-#             verbose=None,
-#             uint16_codec=None,
-#         )
-#         with open(output_file_path, "wb") as epochs_Wn_s_example_file:
-#             pickle.dump(epochs_Wn_example_sub, epochs_Wn_s_example_file)
-
-#     montage = mne.channels.make_standard_montage("GSN-HydroCel-128")
-#     epochs_Wn_example_sub_piked = epochs_Wn_example_sub.pick_channels(
-#         data.cfg["ch_names"]
-#     )
-#     epochs_Wn_example_sub_monatged = epochs_Wn_example_sub_piked.set_montage(montage)
-#     epochs_info = epochs_Wn_example_sub_monatged.info
-#     return epochs_info, epochs_Wn_example_sub_monatged
-
-
-# def getEpochsPerCond(data: ImportedData, y_ax, outputType="dict") -> tuple[pd.DataFrame, dict]:
-#     df_minTrials = data.events_df[
-#         (data.events_df.SamplesCount > 0)  # type: ignore
-#     ]  # discard cond with 0 enough samples
-#     keys = (str(key) for key in df_minTrials.Cond_id)
-#     epochs_allSamples = {str_key: data.epochs[str_key] for str_key in keys}
-#     if outputType == "array":
-#         epochs_allSamples_arr = np.zeros((len(data.cfg["electrodes"]), len(y_ax), 0))
-#         for epoch_key in epochs_allSamples:
-#             epochs_allSamples_arr = np.concatenate(
-#                 (epochs_allSamples_arr, epochs_allSamples[epoch_key]), axis=2
-#             )
-#         return df_minTrials, epochs_allSamples_arr
-#     return df_minTrials, epochs_allSamples
-
-
-# # output: [#conds, #elect, #times]
-# def getEvokedPerCondAndElectd(
-#     data: ImportedData,
-#     constraints,
-#     y_ax,
-#     outputType="array",
-#     tmin=-0.1,
-#     baseline=(None, 0),
-#     info=None,  # add info if outputType=mne
-# ):
-#     curr_df = copy.deepcopy(data.events_df)
-#     # apply constraints
-#     for key in constraints:
-#         curr_df = curr_df[curr_df[key] == constraints[key]]
-
-#     conds_df, epochsPerCond = getEpochsPerCond(
-#         ImportedData(data.cfg, data.epochs, curr_df), y_ax
-#     )
-#     evoked_perCond_andElectd = np.zeros(
-#         (len(epochsPerCond), np.size(data.cfg["electrodes"]), np.size(y_ax))
-#     )
-
-#     for cond_i, cond in enumerate(epochsPerCond):
-#         evoked_perCond_andElectd[cond_i] = np.squeeze(
-#             np.nanmean(epochsPerCond[cond], axis=2)
-#         )
-
-#     if outputType == "array":
-#         return conds_df, evoked_perCond_andElectd
-#     if outputType == "mne":
-#         mne_epochs = mne.EpochsArray(
-#             evoked_perCond_andElectd, info, tmin=tmin, baseline=baseline
-#         )
-#         return conds_df, mne_epochs
+    def create_output_dir(self, dir_name):
+        fig_output_dir_path = f"{self.config['outputs_dir_path']}/{dir_name}"
+        if not exists(fig_output_dir_path):
+            mkdir(fig_output_dir_path)
+        return fig_output_dir_path
