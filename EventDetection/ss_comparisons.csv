@@ -1,3 +1,0 @@
-id,eventType,minmax_ver,Positive,TruePos,FalsePos,hitRate,falseDiscoveryRate
-38_2,multiElectd,"[4, 10, 1]",448,89,6,0.19866071428571427,0.06315789473684211
-38_2,singleElectd,"[4, 10, 1]",448,254,24,0.5669642857142857,0.08633093525179857

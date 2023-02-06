@@ -21,7 +21,7 @@ function batch_useAndrillonNirSWDetection(input_dir,output_dir)
         scoring = struct('windowSize',30,'scoring',SleepScoring_vector);
 
         % run thire code
-        %[allWaves, slowWaves] = SWsDetectionAlgorithm_fieldtrip(double(data),hdr, SleepScoring_vector);
+        [allWaves, slowWaves] = SWsDetectionAlgorithm_fieldtrip(double(data),hdr, SleepScoring_vector);
 
         % save
         allWaves = allWaves{1};
