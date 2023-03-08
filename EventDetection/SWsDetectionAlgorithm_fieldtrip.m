@@ -1,5 +1,7 @@
 %%% From Andrillon, Nir at al.
 %%% Editted by Sharon Yakim 
+% https://github.com/andrillon/LSCPtools/blob/master/sleeptools/SWsDetectionAlgorithm_fieldtrip.m
+
 function [allWaves, slowWaves] = SWsDetectionAlgorithm_fieldtrip(data, hdr, SleepScoring_vector, paramDetection)
 % (EEG_filename, original_fs, desiredPercentOfSlowWaves, stagingFile, SAW_threshold, onlyThisStage)
 % v2 version adapted for SPM12
