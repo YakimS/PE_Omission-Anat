@@ -8,83 +8,24 @@ eeglab
 
 %% args set
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-ft_percond_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\TimeAnalysis\condsFolder\all_ft_per_cond\ftPreproImport_cont-no';
-image_output_dir= 'C:\Users\User\OneDrive\Desktop\here';%'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm';
-preproc_stage = 'referenced';
-sleep_files_name_suffix = strcat('_sleep_',preproc_stage);
-wake_files_name_suffix = strcat('_wake_night_',preproc_stage);
-choosenSuffix = wake_files_name_suffix;
-condition_strings = {'OF','OR'};
+ft_cond_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\data_in_ft_cond_fomat';
+image_output_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm';%'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm';
+wake_files_name_suffix = 'wake_night_referenced';
+conds_string = {'OF','OR','O','T'};
+baseline_timerange = 52;
 
-%% Pre process 
-% get the sub struct arrays for each condition
-all_conds = cell(1, size(condition_strings,2));
-for condition_ind = 1:size(condition_strings,2)
-    subs_cond = cell(1, size(subs,2));
-    for sub_ind=1:size(subs,2)
-        ft_file_input_name =   strcat('s_',subs(sub_ind), choosenSuffix,'_',condition_strings{condition_ind},'.mat');
-        ft_sub_full_filepath = strcat(ft_percond_dir,'/',ft_file_input_name);
-        sub_data = load(ft_sub_full_filepath{1});
-
-        subs_cond{sub_ind} = sub_data.ft_data;
-    end
-    all_conds{condition_ind} = subs_cond;
+importer = ft_importer;
+if ~exist("allConds_ftRaw","var")    allConds_ftRaw= importer.get_rawFt_conds(ft_cond_dir,conds_string,wake_files_name_suffix,subs);  end
+if ~exist("allConds_timlocked","var")    allConds_timlocked=importer.get_allConds_timelocked(allConds_ftRaw,ft_cond_dir,conds_string,subs); end
+if ~exist("allConds_timlocked_bl","var")   allConds_timlocked_bl=importer.get_allConds_timelocked_baseline([allConds_timlocked],ft_cond_dir,conds_string,subs,baseline_timerange);end
+if ~exist("allConds_grandAvg","var")    allConds_grandAvg = importer.get_allConds_grandAvg(allConds_timlocked,ft_cond_dir,conds_string);end
+if ~exist("neighbours","var")    neighbours = importer.get_neighbours(allConds_timlocked{1}{1}.label);end
+%% baseline vs activity
+for condition_ind = 1:size(conds_string,2)
+    output_filename = sprintf("%s/preVsPoststim_bl-%d_%s",image_output_dir,baseline_timerange,conds_string{condition_ind});
+    metadata = cluster_dependentT(allConds_timlocked_bl{condition_ind},  allConds_timlocked{condition_ind},[-0.1,0.45],subs,neighbours,output_filename);
 end
-
-% gey all_conds, timelocked
-cfg = [];
-all_conds_timlocked = cell(1, size(condition_strings,2));
-for condition_ind = 1:size(condition_strings,2)
-    subs_cond = cell(1, size(subs,2));
-    for sub_ind=1:size(subs,2)
-        all_conds_timlocked{condition_ind}{sub_ind} = ft_timelockanalysis(cfg, all_conds{condition_ind}{sub_ind});
-%         fields = {'var','dof'}; % Just tested if nessesary for baseline
-%         comparison. It is unnessetsy for condition conmparison
-%         all_conds_timlocked{condition_ind}{sub_ind} = rmfield(all_conds_timlocked{condition_ind}{sub_ind},fields);
-    end
-end
-
-% get neighbours
-cfg = [];
-cfg.method = 'triangulation' ; 
-cfg.feedback    = 'yes'; [~,ftpath] = ft_version;
-elec       = ft_read_sens('GSN-HydroCel-128.sfp'); 
-cfg.elec=elec;
-neighbours = ft_prepare_neighbours(cfg);
-
-% align "neighbours" struct with current existing labels (Cz is not in neighbours therefore excluded)
-ind_existing_elect =[];
-events_type_arr = all_conds_timlocked{1}{1}.label;
-for elecd_ind = 1:size(neighbours,2)
-    curr_event_i = find(ismember(events_type_arr,neighbours(elecd_ind).label));
-    if ~isempty(curr_event_i)
-        ind_existing_elect = [ind_existing_elect, elecd_ind];
-    end
-end
-new_neighbours = neighbours(ind_existing_elect);
-
-%% pre-stimulus-mean vs post-stimulus
-% create baseline-per-electrode structs
-allConds_baseline = all_conds_timlocked;
-cfg = [];
-for condition_ind = 1:size(condition_strings,2)
-    subs_cond = cell(1, size(subs,2));
-    for sub_ind=1:size(subs,2)
-        curr_subCond_struct = all_conds_timlocked{condition_ind}{sub_ind};
-        time0_ind = find(curr_subCond_struct.time == 0, 1);
-
-        baseline = curr_subCond_struct.avg(:,1:time0_ind);
-        baseline_mean = mean(baseline,2);
-        new_baseline_avg = ones(size(curr_subCond_struct.avg)) .* baseline_mean;
-        allConds_baseline{condition_ind}{sub_ind}.avg = new_baseline_avg; 
-    end
-end
-
-for condition_ind = 1:size(condition_strings,2)
-    output_filename = sprintf("%s/preVsPoststim_%s",image_output_dir,condition_strings{condition_ind});
-    metadata = cluster_dependentT(allConds_baseline{condition_ind},  all_conds_timlocked{condition_ind},[-0.1,0.45],subs,new_neighbours,output_filename);
-end
-save(sprintf("%s/preVsPoststim_metadata.mat",image_output_dir), "metadata")
+save(sprintf("%s/preVsPoststim-bl-%d_metadata.mat",image_output_dir,baseline_timerange), "metadata")
 
 %% Cond1 VS Cond2
 
@@ -94,13 +35,13 @@ for contrast_ind=1:size(contrasrs,2)
     cond1 = contrasrs{contrast_ind}(1);
     cond2 = contrasrs{contrast_ind}(2);
     
-    output_filename = sprintf("%s/%sVs%s_avg",image_output_dir,condition_strings{cond1},condition_strings{cond2});
+    output_filename = sprintf("%s/%sVs%s_avg",image_output_dir,conds_string{cond1},conds_string{cond2});
     try
-        metadata = cluster_dependentT(all_conds_timlocked{cond1}, all_conds_timlocked{cond2},[-0.1,0.45],subs,new_neighbours,output_filename);
-        save(sprintf("%s/SpatioTempSubAvg_metadata.mat",image_output_dir), "metadata")
+        metadata = cluster_dependentT(allConds_timlocked{cond1}, allConds_timlocked{cond2},[-0.1,0.45],subs,neighbours,output_filename);
+        %save(sprintf("%s/SpatioTempSubAvg_metadata.mat",image_output_dir), "metadata")
     catch ME
         if strcmp(ME.message,"no clusters present with a p-value lower than the specified alpha, nothing to plot")
-            sprintf("contrast: [%s, %s]: %s",condition_strings{cond1},condition_strings{cond2},ME.message)
+            sprintf("contrast: [%s, %s]: %s",conds_string{cond1},conds_string{cond2},ME.message)
         else
             ME.message
         end
@@ -113,13 +54,13 @@ for contrast_ind=1:size(contrasrs,2)
     for sub_ind=1:size(subs,2)
        cond1 = contrasrs{contrast_ind}(1);
        cond2 = contrasrs{contrast_ind}(2);
-       timelock_cond1  = all_conds{cond1}{sub_ind};
-       timelock_cond2 = all_conds{cond2}{sub_ind};
-       stat_file_string = sprintf("%s/%sVs%s_sub-%s",image_output_dir,condition_strings{cond1},condition_strings{cond2}, subs{sub_ind});
-       metadata = cluster_independetT(timelock_cond1,timelock_cond2,new_neighbours,[-0.1,0.45],stat_file_string);
+       timelock_cond1  = allConds_ftRaw{cond1}{sub_ind};
+       timelock_cond2 = allConds_ftRaw{cond2}{sub_ind};
+       stat_file_string = sprintf("%s/%sVs%s_sub-%s",image_output_dir,conds_string{cond1},conds_string{cond2}, subs{sub_ind});
+       metadata = cluster_independetT(timelock_cond1,timelock_cond2,neighbours,[-0.1,0.45],stat_file_string);
     end
 end
-save(sprintf("%s/SpatioTempPerSub_metadata.mat",image_output_dir), "metadata")
+%save(sprintf("%s/SpatioTempPerSub_metadata.mat",image_output_dir), "metadata")
 
 %%%%%% one sub %%%%%%% 
 % sub_ind = 19;

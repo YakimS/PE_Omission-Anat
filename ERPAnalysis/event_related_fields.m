@@ -9,100 +9,43 @@ eeglab
 
 %% args set
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-ft_percond_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\TimeAnalysis\condsFolder\all_ft_per_cond\ftPreproImport_cont-no';
-image_output_dir= 'C:\Users\User\OneDrive\Desktop\here';%'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm';
-preproc_stage = 'referenced';
-sleep_files_name_suffix = strcat('_sleep_',preproc_stage);
-wake_files_name_suffix = strcat('_wake_night_',preproc_stage);
-choosenSuffix = wake_files_name_suffix;
-condition_strings = {'OF','OR'};
+ft_cond_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\data_in_ft_cond_fomat';
+image_output_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\ERPs';
+wake_files_name_suffix = 'wake_night_referenced';
+conds_string = {'OF','OR','O','T'};
+baseline_timerange = 52;
 
-%% Pre process 
-% get the sub struct arrays for each condition
-all_conds = cell(1, size(condition_strings,2));
-for condition_ind = 1:size(condition_strings,2)
-    subs_cond = cell(1, size(subs,2));
-    for sub_ind=1:size(subs,2)
-        ft_file_input_name =   strcat('s_',subs(sub_ind), choosenSuffix,'_',condition_strings{condition_ind},'.mat');
-        ft_sub_full_filepath = strcat(ft_percond_dir,'/',ft_file_input_name);
-        sub_data = load(ft_sub_full_filepath{1});
+importer = ft_importer;
+if ~exist("allConds_ftRaw","var")    allConds_ftRaw= importer.get_rawFt_conds(ft_cond_dir,conds_string,wake_files_name_suffix,subs);  end
+if ~exist("allConds_timlocked","var")    allConds_timlocked=importer.get_allConds_timelocked(allConds_ftRaw,ft_cond_dir,conds_string,subs); end
+if ~exist("allConds_timlocked_bl","var")   allConds_timlocked_bl=importer.get_allConds_timelocked_baseline([allConds_timlocked],ft_cond_dir,conds_string,subs,baseline_timerange);end
+if ~exist("allConds_grandAvg","var")    allConds_grandAvg = importer.get_allConds_grandAvg(allConds_timlocked,ft_cond_dir,conds_string);end
+if ~exist("neighbours","var")    neighbours = importer.get_neighbours(allConds_timlocked{1}{1}.label);end
+clear importer
 
-        subs_cond{sub_ind} = sub_data.ft_data;
-    end
-    all_conds{condition_ind} = subs_cond;
-end
-
-% gey all_conds, timelocked
-cfg = [];
-all_conds_timlocked = cell(1, size(condition_strings,2));
-for condition_ind = 1:size(condition_strings,2)
-    subs_cond = cell(1, size(subs,2));
-    for sub_ind=1:size(subs,2)
-        all_conds_timlocked{condition_ind}{sub_ind} = ft_timelockanalysis(cfg, all_conds{condition_ind}{sub_ind});
-%         fields = {'var','dof'}; % Just tested if nessesary for baseline
-%         comparison. It is unnessetsy for condition conmparison
-%         all_conds_timlocked{condition_ind}{sub_ind} = rmfield(all_conds_timlocked{condition_ind}{sub_ind},fields);
-    end
-end
-
-% get neighbours
-cfg = [];
-cfg.method = 'triangulation' ; 
-cfg.feedback    = 'yes'; [~,ftpath] = ft_version;
-elec       = ft_read_sens('GSN-HydroCel-128.sfp'); 
-cfg.elec=elec;
-neighbours = ft_prepare_neighbours(cfg);
-
-% align "neighbours" struct with current existing labels (Cz is not in neighbours therefore excluded)
-ind_existing_elect =[];
-events_type_arr = all_conds_timlocked{1}{1}.label;
-for elecd_ind = 1:size(neighbours,2)
-    curr_event_i = find(ismember(events_type_arr,neighbours(elecd_ind).label));
-    if ~isempty(curr_event_i)
-        ind_existing_elect = [ind_existing_elect, elecd_ind];
-    end
-end
-new_neighbours = neighbours(ind_existing_elect);
-
-% create baseline-per-electrode structs
-allConds_baseline = all_conds_timlocked;
-cfg = [];
-for condition_ind = 1:size(condition_strings,2)
-    subs_cond = cell(1, size(subs,2));
-    for sub_ind=1:size(subs,2)
-        curr_subCond_struct = all_conds_timlocked{condition_ind}{sub_ind};
-        time0_ind = find(curr_subCond_struct.time == 0, 1);
-
-        baseline = curr_subCond_struct.avg(:,1:time0_ind);
-        baseline_mean = mean(baseline,2);
-        new_baseline_avg = ones(size(curr_subCond_struct.avg)) .* baseline_mean;
-        allConds_baseline{condition_ind}{sub_ind}.avg = new_baseline_avg; 
-    end
-end
-
-%%
-
-% calculate grand average for each condition
-cfg = [];
-cfg.channel   = 'all';
-cfg.latency   = 'all';
-cfg.parameter = 'avg';
-grandavg_cond1  = ft_timelockgrandaverage(cfg, all_conds_timlocked{1}{:});
-grandavg_cond2   = ft_timelockgrandaverage(cfg, all_conds_timlocked{2}{:});
-% "{:}" means to use data from all elements of the variable
-%%
+%% Plot ERP per electrodes
 cfg = [];
 cfg.showlabels  = 'yes';
 cfg.layout    = 'GSN-HydroCel-128.mat';
-figure; ft_multiplotER(cfg, grandavg_cond1, grandavg_cond2)
+cfg.interactive  = 'no';
+
+figure; ft_multiplotER(cfg, allConds_grandAvg{1}, allConds_grandAvg{2}, allConds_grandAvg{4})
+%blue - 1, red -2, green -3, purple - 4
+text(0.5,0.35,'1','color','b') ;
+text(0.5,0.3,'2','color','r');
+text(0.5,0.25,'3','color','g');
+text(0.5,0.2,'4','color','black');
 
 % cfg = [];
 % cfg.channel = 'MLT12';
 % figure; ft_singleplotER(cfg, grandavgFIC, grandavgFC)
 
-%%
-electrod_num = 1;
-
+%% Plot erp all conditions per subject - for area
+central_electrodes = [6,25,61,80];
+frontal_electrodes = [8,9,13,14]; % E10, E11, E18, E16
+parital_electrodes = [48,49,52,58,59]; % E61, E62, E67, E77, E78
+temporalL_electrodes = [31,32,35] ;%E39, E40, E45
+electrod_num = temporalL_electrodes;
 % Scaling of the vertical axis for the plots below
 figure;
 for isub = 1:size(subs,2)
@@ -111,20 +54,21 @@ for isub = 1:size(subs,2)
     %rectangle('Position',[time(1) 0 (time(2)-time(1)) ymax],'FaceColor',[0.7 0.7 0.7]);
     hold on;
     % plot the lines in front of the rectangle
-    plot(all_conds_timlocked{1}{isub}.time,all_conds_timlocked{1}{isub}.avg(electrod_num,:), 'b');
-    plot(all_conds_timlocked{2}{isub}.time,all_conds_timlocked{2}{isub}.avg(electrod_num,:), 'r');
-    title(strcat('subject ',num2str(isub)))
+    plot(allConds_timlocked{1}{isub}.time,allConds_timlocked{1}{isub}.avg(electrod_num,:), 'b');
+    plot(allConds_timlocked{2}{isub}.time,allConds_timlocked{2}{isub}.avg(electrod_num,:), 'r');
+    %plot(allConds_timlocked{3}{isub}.time,allConds_timlocked{3}{isub}.avg(electrod_num,:), 'black');
+    plot(allConds_timlocked{4}{isub}.time,allConds_timlocked{4}{isub}.avg(electrod_num,:), 'g');
+    title(strcat('subject ',subs{isub}))
 %     ylim([0 1.9e-13])
-%     xlim([-1 2])
+     xlim([-0.1 0.45])
 end
 subplot(5,6,size(subs,2)+1);
-text(0.5,0.5,'FIC','color','b') ;text(0.5,0.3,'FC','color','r')
 axis off
 
 %% Look for a significan electrods between codition in specific timewindow
 
 cfg.channel     = {'all', '-Cz'};
-cfg.neighbours  = new_neighbours; % defined as above
+cfg.neighbours  = neighbours; % defined as above
 cfg.latency     = [0.1 0.2];
 cfg.avgovertime = 'yes';
 cfg.parameter   = 'avg';
@@ -141,7 +85,7 @@ cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
 cfg.ivar                = 1; % the 1st row in cfg.design contains the independent variable
 cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
 
-stat = ft_timelockstatistics(cfg, all_conds_timlocked{1}{:}, all_conds_timlocked{2}{:});
+stat = ft_timelockstatistics(cfg, allConds_timlocked{1}{:}, allConds_timlocked{2}{:});
 
 % make a plot
 cfg = [];
@@ -150,7 +94,7 @@ cfg.layout    = 'GSN-HydroCel-128.mat';
 cfg.highlight = 'on';
 cfg.highlightchannel = find(stat.mask);
 cfg.comment   = 'no';
-figure; ft_topoplotER(cfg, grandavg_cond1)
+figure; ft_topoplotER(cfg, allConds_grandAvg{1})
 title('Nonparametric: significant with cluster-based multiple comparison correction')
 
 %% Look for differnce clusters of electrods in all time points
@@ -158,7 +102,7 @@ alphaval = 0.05;
 
 cfg = [];
 cfg.channel     = {'all', '-Cz'};
-cfg.neighbours  = new_neighbours; % defined as above
+cfg.neighbours  = neighbours; % defined as above
 cfg.latency     = [-0.1 0.45];
 cfg.avgovertime = 'no';
 cfg.parameter   = 'avg';
@@ -176,7 +120,7 @@ cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
 cfg.ivar                = 1; % the 1st row in cfg.design contains the independent variable
 cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
 
-stat = ft_timelockstatistics(cfg,  all_conds_timlocked{1}{:}, all_conds_timlocked{2}{:});
+stat = ft_timelockstatistics(cfg,  allConds_timlocked{1}{:}, allConds_timlocked{2}{:});
 
 % make a plot
 cfg = [];
