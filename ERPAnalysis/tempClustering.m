@@ -5,15 +5,13 @@ restoredefaultpath
 addpath C:\Users\User\Cloud-Drive\BigFiles\libs\fieldtrip-20230223
 ft_defaults
 addpath C:\Users\User\Cloud-Drive\AnatArzi\eeglab2023.0
-eeglab
 
 %% args set
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-ft_cond_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\data_in_ft_cond_fomat';
-image_output_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\ERPs';
-wake_files_name_suffix = 'wake_night_referenced';
-conds_string = {'OF','OR','O','T'};
-baseline_timerange = 52;
+wake_files_name_suffix = 'wake_morning_referenced'; %wake_morning_referenced, wake_night_referenced
+ft_cond_dir= sprintf('C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\data_in_ft_cond_fomat\\%s',wake_files_name_suffix);
+conds_string = {'OEf4','OR','O','T'};
+baseline_timerange = 100;
 
 importer = ft_importer;
 if ~exist("allConds_ftRaw","var")    allConds_ftRaw= importer.get_rawFt_conds(ft_cond_dir,conds_string,wake_files_name_suffix,subs);  end
@@ -45,7 +43,7 @@ central_electrodes = [6,25,61,80];
 frontal_electrodes = [8,9,13,14]; % E10, E11, E18, E16
 parital_electrodes = [48,49,52,58,59]; % E61, E62, E67, E77, E78
 temporalL_electrodes = [31,32,35] ;%E39, E40, E45
-electrod_num = temporalL_electrodes;
+electrod_num = central_electrodes;
 % Scaling of the vertical axis for the plots below
 figure;
 for isub = 1:size(subs,2)
@@ -69,7 +67,7 @@ axis off
 
 cfg.channel     = {'all', '-Cz'};
 cfg.neighbours  = neighbours; % defined as above
-cfg.latency     = [0.1 0.2];
+cfg.latency     = [0.05 0.2];
 cfg.avgovertime = 'yes';
 cfg.parameter   = 'avg';
 cfg.method      = 'montecarlo';

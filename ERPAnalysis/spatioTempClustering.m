@@ -7,12 +7,13 @@ addpath C:\Users\User\Cloud-Drive\AnatArzi\eeglab2023.0
 eeglab
 
 %% args set
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-ft_cond_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\data_in_ft_cond_fomat';
-image_output_dir= 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm';%'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm';
-wake_files_name_suffix = 'wake_night_referenced';
-conds_string = {'OF','OR','O','T'};
-baseline_timerange = 52;
+subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+
+wake_files_name_suffix = 'wake_morning_referenced';
+ft_cond_dir= sprintf('C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\data_in_ft_cond_fomat\\%s',wake_files_name_suffix);
+
+conds_string = {'OF','OR','O'}; % {'OEf2','OEf3','OEf4','OEf5'};
+baseline_timerange = 100;
 
 importer = ft_importer;
 if ~exist("allConds_ftRaw","var")    allConds_ftRaw= importer.get_rawFt_conds(ft_cond_dir,conds_string,wake_files_name_suffix,subs);  end
@@ -21,21 +22,23 @@ if ~exist("allConds_timlocked_bl","var")   allConds_timlocked_bl=importer.get_al
 if ~exist("allConds_grandAvg","var")    allConds_grandAvg = importer.get_allConds_grandAvg(allConds_timlocked,ft_cond_dir,conds_string);end
 if ~exist("neighbours","var")    neighbours = importer.get_neighbours(allConds_timlocked{1}{1}.label);end
 %% baseline vs activity
+output_dir = sprintf("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\spatiotemp_clusterPerm\\%s\\preStim_Vs_postStim",wake_files_name_suffix);
+
 for condition_ind = 1:size(conds_string,2)
-    output_filename = sprintf("%s/preVsPoststim_bl-%d_%s",image_output_dir,baseline_timerange,conds_string{condition_ind});
+    output_filename = sprintf("%s/preVsPoststim_bl-%d_%s",output_dir,baseline_timerange,conds_string{condition_ind});
     metadata = cluster_dependentT(allConds_timlocked_bl{condition_ind},  allConds_timlocked{condition_ind},[-0.1,0.45],subs,neighbours,output_filename);
 end
-save(sprintf("%s/preVsPoststim-bl-%d_metadata.mat",image_output_dir,baseline_timerange), "metadata")
+save(sprintf("%s/preVsPoststim-bl-%d_metadata.mat",output_dir,baseline_timerange), "metadata")
 
-%% Cond1 VS Cond2
+%% Cond1 VS Cond2 - subjects mean
+output_dir = sprintf("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\spatiotemp_clusterPerm\\%s\\cond1_Vs_cond2",wake_files_name_suffix);
 
-%%% subjects mean %%%%
 contrasrs = {[1,2]};
 for contrast_ind=1:size(contrasrs,2)
     cond1 = contrasrs{contrast_ind}(1);
     cond2 = contrasrs{contrast_ind}(2);
     
-    output_filename = sprintf("%s/%sVs%s_avg",image_output_dir,conds_string{cond1},conds_string{cond2});
+    output_filename = sprintf("%s/%sVs%s_avg",output_dir,conds_string{cond1},conds_string{cond2});
     try
         metadata = cluster_dependentT(allConds_timlocked{cond1}, allConds_timlocked{cond2},[-0.1,0.45],subs,neighbours,output_filename);
         %save(sprintf("%s/SpatioTempSubAvg_metadata.mat",image_output_dir), "metadata")
@@ -48,7 +51,9 @@ for contrast_ind=1:size(contrasrs,2)
     end
 end
 
-%%%%%%% Per subject %%%%%%%%%
+%% Cond1 VS Cond2 - per subject
+output_dir = sprintf("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\spatiotemp_clusterPerm\\%s\\cond1_Vs_cond2",wake_files_name_suffix);
+
 contrasrs = {[1,2]};
 for contrast_ind=1:size(contrasrs,2)
     for sub_ind=1:size(subs,2)
@@ -56,8 +61,16 @@ for contrast_ind=1:size(contrasrs,2)
        cond2 = contrasrs{contrast_ind}(2);
        timelock_cond1  = allConds_ftRaw{cond1}{sub_ind};
        timelock_cond2 = allConds_ftRaw{cond2}{sub_ind};
-       stat_file_string = sprintf("%s/%sVs%s_sub-%s",image_output_dir,conds_string{cond1},conds_string{cond2}, subs{sub_ind});
-       metadata = cluster_independetT(timelock_cond1,timelock_cond2,neighbours,[-0.1,0.45],stat_file_string);
+       stat_file_string = sprintf("%s/%sVs%s_sub-%s",output_dir,conds_string{cond1},conds_string{cond2}, subs{sub_ind});
+       try
+            metadata = cluster_independetT(timelock_cond1,timelock_cond2,neighbours,[-0.1,0.45],stat_file_string);
+       catch ME
+            if strcmp(ME.message,"no clusters present with a p-value lower than the specified alpha, nothing to plot")
+                sprintf("contrast: [%s, %s]: %s",conds_string{cond1},conds_string{cond2},ME.message)
+            else
+                ME.message
+            end
+        end
     end
 end
 %save(sprintf("%s/SpatioTempPerSub_metadata.mat",image_output_dir), "metadata")
