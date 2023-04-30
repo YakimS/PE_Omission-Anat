@@ -1,50 +1,49 @@
 % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
-
 restoredefaultpath
 addpath C:\Users\User\Cloud-Drive\BigFiles\libs\fieldtrip-20230223
 ft_defaults
 addpath C:\Users\User\Cloud-Drive\AnatArzi\eeglab2023.0
-eeglab
 
 %% args set
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-
-wake_files_name_suffix = 'wake_morning_referenced';
-ft_cond_dir= sprintf('C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\data_in_ft_cond_fomat\\%s',wake_files_name_suffix);
-
-conds_string = {'OF','OR','O'}; % {'OEf2','OEf3','OEf4','OEf5'};
+subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+wake_files_name_suffix = 'wake_all_referenced'; %wake_morning_referenced, wake_night_referenced, wake_all_referenced
+ft_cond_dir= sprintf('C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\data_in_ft_cond_fomat');
 baseline_timerange = 100;
 
-importer = ft_importer;
-if ~exist("allConds_ftRaw","var")    allConds_ftRaw= importer.get_rawFt_conds(ft_cond_dir,conds_string,wake_files_name_suffix,subs);  end
-if ~exist("allConds_timlocked","var")    allConds_timlocked=importer.get_allConds_timelocked(allConds_ftRaw,ft_cond_dir,conds_string,subs); end
-if ~exist("allConds_timlocked_bl","var")   allConds_timlocked_bl=importer.get_allConds_timelocked_baseline([allConds_timlocked],ft_cond_dir,conds_string,subs,baseline_timerange);end
-if ~exist("allConds_grandAvg","var")    allConds_grandAvg = importer.get_allConds_grandAvg(allConds_timlocked,ft_cond_dir,conds_string);end
-if ~exist("neighbours","var")    neighbours = importer.get_neighbours(allConds_timlocked{1}{1}.label);end
+imp = ft_importer_allsubjclass(subs,ft_cond_dir,baseline_timerange,wake_files_name_suffix);
+[imp,neig] = imp.get_neighbours(imp);
+[imp,timelock_OR] = imp.get_cond_timelocked(imp,'OR');
+electrodes = timelock_OR{1}.label;
 %% baseline vs activity
 output_dir = sprintf("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\spatiotemp_clusterPerm\\%s\\preStim_Vs_postStim",wake_files_name_suffix);
+conds_names = {'OR','OF','OEf4','O'};
 
-for condition_ind = 1:size(conds_string,2)
-    output_filename = sprintf("%s/preVsPoststim_bl-%d_%s",output_dir,baseline_timerange,conds_string{condition_ind});
-    metadata = cluster_dependentT(allConds_timlocked_bl{condition_ind},  allConds_timlocked{condition_ind},[-0.1,0.45],subs,neighbours,output_filename);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for cond_i = 1:size(conds_names,2)
+    output_filename = sprintf("%s/preVsPoststim_bl-%d_%s",output_dir,baseline_timerange,conds_names{cond_i});
+    [imp,timelock_cond] = imp.get_cond_timelocked(imp,conds_names{cond_i});
+    [imp,timelockBl_cond] = imp.get_cond_timelockedBl(imp,conds_names{cond_i});
+    metadata = cluster_dependentT(timelockBl_cond, timelock_cond,[-0.1,0.45],subs,neig,output_filename);
 end
 save(sprintf("%s/preVsPoststim-bl-%d_metadata.mat",output_dir,baseline_timerange), "metadata")
 
 %% Cond1 VS Cond2 - subjects mean
 output_dir = sprintf("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\spatiotemp_clusterPerm\\%s\\cond1_Vs_cond2",wake_files_name_suffix);
-
-contrasrs = {[1,2]};
+contrasrs = {{'OF','OR'},{'OEf4','OR'}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for contrast_ind=1:size(contrasrs,2)
-    cond1 = contrasrs{contrast_ind}(1);
-    cond2 = contrasrs{contrast_ind}(2);
-    
-    output_filename = sprintf("%s/%sVs%s_avg",output_dir,conds_string{cond1},conds_string{cond2});
+    cond1 = contrasrs{contrast_ind}{1};
+    cond2 = contrasrs{contrast_ind}{2};    
+    output_filename = sprintf("%s/%sVs%s_avg",output_dir,cond1,cond2);
     try
-        metadata = cluster_dependentT(allConds_timlocked{cond1}, allConds_timlocked{cond2},[-0.1,0.45],subs,neighbours,output_filename);
+        [imp,rawft_cond1] = imp.get_cond_timelocked(imp,cond1);
+        [imp,rawft_cond2] = imp.get_cond_timelocked(imp,cond2);
+        
+        metadata = cluster_dependentT(rawft_cond1, rawft_cond2,[-0.1,0.45],subs,neig,output_filename);
         %save(sprintf("%s/SpatioTempSubAvg_metadata.mat",image_output_dir), "metadata")
     catch ME
         if strcmp(ME.message,"no clusters present with a p-value lower than the specified alpha, nothing to plot")
-            sprintf("contrast: [%s, %s]: %s",conds_string{cond1},conds_string{cond2},ME.message)
+            sprintf("contrast: [%s, %s]: %s",cond1,cond2,ME.message)
         else
             ME.message
         end
@@ -53,20 +52,20 @@ end
 
 %% Cond1 VS Cond2 - per subject
 output_dir = sprintf("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\ft_erpAnalysis\\spatiotemp_clusterPerm\\%s\\cond1_Vs_cond2",wake_files_name_suffix);
-
-contrasrs = {[1,2]};
+contrasrs = {{'OF','OR'},{'OEf4','OR'}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for contrast_ind=1:size(contrasrs,2)
+    cond1 = contrasrs{contrast_ind}{1};
+    cond2 = contrasrs{contrast_ind}{2};
+    [imp,rawft_cond1] = imp.get_rawFt_cond(imp,cond1);
+    [imp,rawft_cond2] = imp.get_rawFt_cond(imp,cond2);
     for sub_ind=1:size(subs,2)
-       cond1 = contrasrs{contrast_ind}(1);
-       cond2 = contrasrs{contrast_ind}(2);
-       timelock_cond1  = allConds_ftRaw{cond1}{sub_ind};
-       timelock_cond2 = allConds_ftRaw{cond2}{sub_ind};
-       stat_file_string = sprintf("%s/%sVs%s_sub-%s",output_dir,conds_string{cond1},conds_string{cond2}, subs{sub_ind});
+       stat_file_string = sprintf("%s/%sVs%s_sub-%s",output_dir,cond1,cond2, subs{sub_ind});
        try
-            metadata = cluster_independetT(timelock_cond1,timelock_cond2,neighbours,[-0.1,0.45],stat_file_string);
+            metadata = cluster_independetT(rawft_cond1{sub_ind},rawft_cond2{sub_ind},neig,[-0.1,0.45],stat_file_string);
        catch ME
             if strcmp(ME.message,"no clusters present with a p-value lower than the specified alpha, nothing to plot")
-                sprintf("contrast: [%s, %s]: %s",conds_string{cond1},conds_string{cond2},ME.message)
+                sprintf("contrast: [%s, %s]: %s",cond1,cond2,ME.message)
             else
                 ME.message
             end
@@ -100,13 +99,12 @@ function metadata = cluster_independetT(cond1_struct, cond2_struct,neighbours,la
     
     cfg.clusteralpha     = 0.2;  
     cfg.clusterstatistic = 'maxsum';   
-    cfg.minnbchan        = 2;     
+    cfg.minnbchan        = 1;     
     cfg.tail             = 0;         
     cfg.clustertail      = 0;
     cfg.alpha            = 0.25;
     cfg.numrandomization = 1000;
     cfg.neighbours    = neighbours; 
-    cfg.channel     = {'all', '-Cz'};
     cfg.latency     = latency;
     n_fc  = size(timelockFC.trial, 2);
     n_fic = size(timelockFIC.trial, 2);
@@ -134,10 +132,9 @@ end
 function metadata = cluster_dependentT(cond1_struct, cond2_struct,latency,subs,neighbours,png_filename)
     metadata = {};
     cfg = [];
-    cfg.channel     = {'all', '-Cz'};
     cfg.latency     = latency;
     Nsub = size(subs,2);
-    cfg.numrandomization = 1000;
+    cfg.numrandomization = 10000;
     
     cfg.neighbours  = neighbours; % defined as above
     cfg.avgovertime = 'no';
@@ -146,7 +143,7 @@ function metadata = cluster_dependentT(cond1_struct, cond2_struct,latency,subs,n
     cfg.statistic   = 'ft_statfun_depsamplesT';
     cfg.correctm    = 'cluster';
     cfg.correcttail = 'prob';
-    cfg.minnbchan        = 2;      % minimal number of neighbouring channels
+    cfg.minnbchan        = 1;      % minimal number of neighbouring channels
     
     cfg.design(1,1:2*Nsub)  = [ones(1,Nsub) 2*ones(1,Nsub)];
     cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
@@ -171,7 +168,6 @@ function cfg = cluster_plot(stat,toi,png_filename)
     cfg = [];
     %cfg.highlightsymbolseries = ['*','.','.','.','.']; %%  (default ['*', 'x', '+', 'o', '.'] for p < [0.01 0.05 0.1 0.2 0.3]
     cfg.highlightsizeseries     = [5,4,4,4,4];  %1x5 vector, highlight marker size series   (default [6 6 6 6 6] for p < [0.01 0.05 0.1 0.2 0.3])
-    cfg.layout    = 'GSN-HydroCel-128.mat';
     cfg.zlim = [-5 5];
     cfg.alpha = 0.2; % This is the max alpha to be plotted. (0.3 is the hights value possible)
     cfg.saveaspng = png_filename;
