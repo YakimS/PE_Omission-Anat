@@ -1,4 +1,4 @@
-classdef ft_importer
+classdef ft_importer < handle
     properties (SetAccess = private)
       subs
       dir
@@ -28,20 +28,21 @@ classdef ft_importer
         end
 
         % get/set
-        function s = get_subs(ft_importer)
-            s = ft_importer.subs;
+
+        function s = get_subs(o)
+            s = o.subs;
         end
-        function s = get_dir(ft_importer)
-            s = ft_importer.dir;
+        function s = get_dir(o)
+            s = o.dir;
         end
-        function s = get_baseline_length(ft_importer)
-            s = ft_importer.baseline_length;
+        function s = get_baseline_length(o)
+            s = o.baseline_length;
         end
-        function s = get_choosenSuffix(ft_importer)
-            s = ft_importer.choosenSuffix;
+        function s = get_choosenSuffix(o)
+            s = o.choosenSuffix;
         end
 
-        function [o, neighbours] = get_neighbours(o)
+        function neighbours = get_neighbours(o)
             if isempty(o.neighbours)
                 cfg = [];
                 cfg.method = 'triangulation' ; 
@@ -53,7 +54,8 @@ classdef ft_importer
             neighbours = o.neighbours;
         end
 
-        function [o,cond_ftRaw] = get_rawFt_cond(o,cond)
+
+        function cond_ftRaw = get_rawFt_cond(o,cond)
             if ~isfield(o.ftRaw,cond)
                 ft_subs_cond = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
@@ -85,7 +87,7 @@ classdef ft_importer
             cond_ftRaw = o.ftRaw.(cond);
         end
         
-        function [o,cond_timlocked] = get_cond_timelocked(o,cond)
+        function cond_timlocked = get_cond_timelocked(o,cond)
             if ~isfield(o.timlocked,cond)
                 allsubs_cond_timlocked = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
@@ -95,7 +97,7 @@ classdef ft_importer
                         allsubs_cond_timlocked{sub_i} = loaded.timelocked_subcond;
                     catch ME
                         cfg = [];
-                        [o,conds_ftraw] = o.get_rawFt_cond(o,cond);
+                        conds_ftraw = o.get_rawFt_cond(o,cond);
                         allsubs_cond_timlocked{sub_i} = ft_timelockanalysis(cfg, conds_ftraw{sub_i});
         
                         %save
@@ -108,7 +110,7 @@ classdef ft_importer
             cond_timlocked = o.timlocked.(cond);
         end
         
-        function [o,cond_timlockedBl] = get_cond_timelockedBl(o,cond)
+        function cond_timlockedBl = get_cond_timelockedBl(o,cond)
             if ~isfield(o.timlocked_bl,cond)
                 allsubs_cond_timlockedBl = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
@@ -117,7 +119,7 @@ classdef ft_importer
                         loaded = load(file_path);
                         allsubs_cond_timlockedBl{sub_i} = loaded.baseline_subcond;
                     catch ME
-                        [o, timlocked] = o.get_cond_timelocked(o,cond);
+                        timlocked = o.get_cond_timelocked(o,cond);
                         time0_ind = find(timlocked{sub_i}.time == 0, 1);
                         time_baseline_ind = find(timlocked{sub_i}.time == -o.baseline_length*0.001, 1);
                 
@@ -137,7 +139,7 @@ classdef ft_importer
             cond_timlockedBl = o.timlocked_bl.(cond);
         end
 
-        function [o,cond_rawBl] = get_cond_rawBl(o,cond)
+        function cond_rawBl = get_cond_rawBl(o,cond)
             if ~isfield(o.raw_bl,cond)
                 allsubs_cond_rawBl = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
@@ -146,7 +148,7 @@ classdef ft_importer
                         loaded = load(file_path);
                         allsubs_cond_rawBl{sub_i} = loaded.baseline_subcond;
                     catch ME
-                        [o, rawFt] = o.get_rawFt_cond(o,cond);
+                        rawFt = o.get_rawFt_cond(o,cond);
                         curr_sub_raw_ft = rawFt{sub_i};
                         time0_ind = find(curr_sub_raw_ft.time{1} == 0, 1);
                         time_baseline_ind = find(curr_sub_raw_ft.time{1} == -o.baseline_length*0.001, 1);
@@ -168,7 +170,7 @@ classdef ft_importer
             cond_rawBl = o.raw_bl.(cond);
         end
 
-        function [o,cond_grandAvg] = get_cond_grandAvg(o,cond)
+        function cond_grandAvg = get_cond_grandAvg(o,cond)
             if ~isfield(o.grandAvg,cond)
                 cfg = [];
                 file_path = sprintf("%s//%s//timelock_grandAvg_cond-%s.mat",o.dir,o.choosenSuffix,cond);
@@ -176,7 +178,7 @@ classdef ft_importer
                     loaded = load(file_path);
                     cond_grandAvg = loaded.timelockGrandavg_cond;
                 catch ME
-                    [o, timlocked] = o.get_cond_timelocked(o,cond);
+                    timlocked = o.get_cond_timelocked(o,cond);
                     cond_grandAvg  = ft_timelockgrandaverage(cfg, timlocked{:});
         
                     %save

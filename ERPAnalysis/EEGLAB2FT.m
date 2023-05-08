@@ -125,7 +125,7 @@ set_per_cond_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\TimeAna
 
 subs = {'08','09','10','12','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
 preproc_stage = 'referenced';
-conditions_string = {"ORFirst5", "ORf6", "ORFirst5","OEf6"};
+conditions_string = {"ORFirst5", "ORf6", "OFFirst5","OEf6","OEf5"};
 
 sleep_files_name_suffix = strcat('sleep_',preproc_stage);
 wake_night_files_name_suffix = strcat('wake_night_',preproc_stage);
@@ -180,7 +180,7 @@ end
 set_per_cond_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\TimeAnalysis\referenced_per_cond';
 ft_percond_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\data_in_ft_cond_fomat';
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-conditions_string = {"OFFirst5", "ORf6", "ORFirst5","OEf6"}; %{'OEf6', 'OFFirst5','OEf2','OEf3','OEf4','OEf5','OF','OR','A','O','T','ORl6','ORl7'};
+conditions_string = {"OFFirst5", "ORf6", "ORFirst5",'OEf5',"OEf6"}; %{'OEf6', 'OFFirst5','OEf2','OEf3','OEf4','OEf5','OF','OR','A','O','T','ORl6','ORl7'};
 
 preproc_stage = 'referenced';
 sleep_files_name_suffix = strcat('sleep_',preproc_stage);
