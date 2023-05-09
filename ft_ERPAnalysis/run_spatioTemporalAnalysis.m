@@ -1,12 +1,4 @@
 function run_spatioTemporalAnalysis(args_path)
-    % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
-    restoredefaultpath
-    addpath C:\Users\User\Cloud-Drive\BigFiles\libs\fieldtrip-20230223
-    ft_defaults
-    addpath C:\Users\User\Cloud-Drive\BigFiles\eeglab2023.0
-    addpath 'C:\Users\User\Cloud-Drive\BigFiles\libs'
-    addpath 'C:\Users\User\OneDrive\Documents\githubProjects\PE_Omission-Anat\ERPAnalysis'
-
     %% args set
     args = load(args_path);
     args = args.args;
@@ -17,6 +9,15 @@ function run_spatioTemporalAnalysis(args_path)
     contrasts = args.contrasts;
     pre_vs_post_conds_names = args.pre_vs_post_conds_names;
     output_main_dir = args.output_main_dir;
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
+    restoredefaultpath
+    addpath(sprintf('%s\\fieldtrip-20230223', args.libs_dir))
+    ft_defaults
+    addpath(sprintf('%s\\eeglab2023.0', args.libs_dir))
+    addpath(args.libs_dir)
+    addpath(args.code_dir)
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     cond_rand_name ='OR';
