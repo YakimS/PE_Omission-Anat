@@ -1,0 +1,97 @@
+---
+title: "R Notebook"
+output: html_notebook
+#tutorial: https://bodowinter.com/tutorial/bw_LME_tutorial2.pdf
+#youtube: https://www.youtube.com/watch?v=u1ePV1ntMNs&t=297s&ab_channel=LiquidBrainBioinformatics
+---
+
+```{r}
+library(lmerTest)
+library(Matrix)
+library(bayestestR)
+
+o_sepRF <- read.csv("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\mix_modeling\\mm_8_sub-ses-manyTimeWin_traits_posnegClust.csv")
+output_dir <- "C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\mix_modeling"
+# head(omissionResponse)
+# tail(omissionResponse)
+# str(omissionResponse)
+# colnames(omissionResponse)
+# summary(omissionResponse)
+# which(is.na(omissionResponse$ampAvg)) # or which(!complete.cases(politeness))
+
+```
+
+```{r}
+boxplot(ampAvg_pos ~ block_type ,col=c("white","lightgray"),data=subset(o_sepRF, timeWin == "300-400"))
+#boxplot(ampAvg_neg ~ ses ,col=c("white","lightgray"),data=subset(o_sepRF))
+```
+
+
+```{r}
+### orig plan: 
+# for modeling the contribution of each fixed effect
+#omissionResponse.model = lmer(ampAvg ~ expectation +numBlock + numTrial +(1|sub),data=omissionData)
+```
+
+
+```{r}
+################ Includes variable 'block_type'  #######################
+################ Within ses & timeWin &  block_type #######################
+# 'seniority','blockpos','tonepos'
+block_type_vars <- c('fixed','random')
+ses_vars <- c("wake_morning" , "wake_night")
+timeWin_vars <- c("0-100","100-200","200-300","300-400","0-224","224-444","0-48","48-100","100-148","148-200","200-248","248-300","300-348","348-400","400-444")
+
+# Exp models & filenames
+exp_mod_pos_1 <- "ampAvg_pos ~ blockpos + (1|sub)"
+exp_mod_neg_1 <- "ampAvg_neg ~ blockpos + (1|sub)"
+str_1 = "mm_8_res_sepRF_blockpos+1sub_within-SesTimewinBt.csv"
+exp_mod_pos_2 <- "ampAvg_pos ~ opos + (1|sub)"
+exp_mod_neg_2 <- "ampAvg_neg ~ opos + (1|sub)"
+str_2 = "mm_8_res_sepRF_tonepos+1sub_within-SesTimewinBt.csv"
+exp_mod_pos_3 <- "ampAvg_pos ~ seniority + (1|sub)"
+exp_mod_neg_3 <- "ampAvg_neg ~ seniority + (1|sub)"
+str_3 = "mm_8_res_sepRF_seniority+1sub_within-SesTimewinBt.csv"
+exp_mod_pos_4 <- "ampAvg_pos ~ blockpos + opos + seniority + (1|sub)"
+exp_mod_neg_4 <- "ampAvg_neg ~ blockpos + opos + seniority + (1|sub)"
+str_4 = "mm_8_res_sepRF_blockpos+opos+seniority+1sub_within-SesTimewinBt.csv"
+
+exp_pos_mods <- list(exp_mod_pos_1, exp_mod_pos_2,exp_mod_pos_3,exp_mod_pos_4)
+exp_neg_mods <- list(exp_mod_neg_1, exp_mod_neg_2,exp_mod_neg_3,exp_mod_neg_4)
+contrast_str <- list(str_1, str_2,str_3,str_4)
+
+for (mod in 1:length(exp_pos_mods)) {
+  output_sepRF <- data.frame(blocktype = character(), ses = character(), timeWin = character(), posNeg = character(), Bayes = numeric(), anovaPval = numeric())
+  for (i in ses_vars) {
+    for (j in timeWin_vars) {
+      for (k in block_type_vars) {
+        # define models
+        o_sepRF_pos.null <- lmer(ampAvg_pos ~ (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        o_sepRF_neg.null <- lmer(ampAvg_neg ~ (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        o_sepRF_neg.model<-lmer(as.formula(exp_neg_mods[[mod]]) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        o_sepRF_pos.model<-lmer(as.formula(exp_pos_mods[[mod]]) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        
+        # compute Bayes & Anova
+        anova_out_pos = anova(o_sepRF_pos.null,o_sepRF_pos.model)
+        anova_out_neg = anova(o_sepRF_neg.null,o_sepRF_neg.model)
+        bayes_out_neg <- bayesfactor_models(o_sepRF_neg.null,o_sepRF_neg.model,denominator=o_sepRF_neg.null) 
+        bayes_out_pos <- bayesfactor_models(o_sepRF_pos.null,o_sepRF_pos.model,denominator=o_sepRF_pos.null)
+        
+        # Append variables to the data frame
+        newEntry_pos <- data.frame(blocktype = k, ses = i,timeWin = j,posNeg = "Pos", Bayes = exp(bayes_out_pos$log_BF[2]), anovaPval = anova_out_pos$"Pr(>Chisq)"[2])
+        newEntry_neg <- data.frame(blocktype = k, ses = i,timeWin = j,posNeg = "Neg", Bayes = exp(bayes_out_neg$log_BF[2]), anovaPval = anova_out_neg$"Pr(>Chisq)"[2])
+        output_sepRF <- rbind(output_sepRF, newEntry_pos)
+        output_sepRF <- rbind(output_sepRF, newEntry_neg)
+      }
+    }
+  }
+  sortedTable <- output_sepRF[order(output_sepRF$Bayes, decreasing = TRUE), ]
+  #header <- "lmer(ampAvg ~ seniority  + (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i)"
+  #header_and_tabel <- rbind(header, sortedTable)
+  write.csv(sortedTable, paste0(output_dir,"\\",contrast_str[mod]))
+}
+  
+```
+
+
+

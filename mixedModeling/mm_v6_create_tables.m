@@ -16,25 +16,23 @@ subs = {'09','10','11','13','14','15','16','17','19','20','21','22','23','24','2
 %%
 blocktypes = {'random','fixed'};
 timewin = {"0-48","48-100","100-148","148-200","200-248","248-300","300-348","348-400","400-444","0-100","100-200","200-300","300-400","0-224","224-444"};
-seniority = cell(1, 30);
-for i = 1:30
+max_seniority = 10;
+seniority = cell(1, max_seniority);
+for i = 1:max_seniority
     seniority{i} = num2str(i);
 end
-blockpos = cell(1, 24);
-for i = 1:24
-    blockpos{i} = num2str(i);
-end
-tonepos = {'6','7','8','9','10'};
-[g b a e f c d] = ndgrid(1:numel(tonepos),1:numel(blockpos),1:numel(blocktypes),1:numel(timewin),1:numel(seniority),1:numel(referenced_filename_ses_types),1:numel(subs)); % c and d must stay last
 %% load the two clusters electrodes
-clustering_res = load ('C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm\wake_morning_referenced\cond1_Vs_cond2\OEf6VsORf6_avg.mat');
+% maybe you want to change to the mm7 clusters?
+clustering_res = load ('C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm\wake_all_referenced\preStim_Vs_postStim\preVsPoststim_bl-100_O.mat');
+% maybe you want to change to the mm7 clusters?
 posClustElect = find(any(clustering_res.posclusterslabelmat == 1, 2));
 negClustElect = find(any(clustering_res.negclusterslabelmat == 1, 2));
 %% Includes variable 'block_type'
-mm_mat = [ subs(d(:)).'  referenced_filename_ses_types(c(:)).' blocktypes(a(:)).' timewin(e(:)).' seniority(f(:)).' blockpos(b(:)).'  tonepos(g(:)).'];
-mm_mat = cell2struct(mm_mat, {'sub','ses','block_type','timeWin','seniority','blockpos','tonepos'},2);
+[a e f c d] = ndgrid(1:numel(blocktypes),1:numel(timewin),1:numel(seniority),1:numel(referenced_filename_ses_types),1:numel(subs)); % c and d must stay last
+mm_mat = [ subs(d(:)).'  referenced_filename_ses_types(c(:)).' blocktypes(a(:)).' timewin(e(:)).' seniority(f(:)).'];
+mm_mat = cell2struct(mm_mat, {'sub','ses','block_type','timeWin','seniority'},2);
 % create elaborated event file for referenced event files
-output_filename = sprintf('%s//mm_7_sub-OrOf-ses-posnegClust-tonepos-blockpos-senior30-manyTimeWin.csv',output_dir);
+output_filename = sprintf('%s//mm_6_sub-OrOf-ses-posnegClust-senior10-manyTimeWin.csv',output_dir);
 curr_sub = '00';
 curr_ses = '00';
 for mm_i=1:numel(mm_mat)
@@ -56,11 +54,15 @@ for mm_i=1:numel(mm_mat)
         end
     end
 
-    indexes = find( strcmp({elaborated_events.('TOA')},'O')  == 1 ...
-                    & [elaborated_events.('omission_type_seniority')] == str2double(mm_mat(mm_i).('seniority')) ...
-                    & [elaborated_events.('block_pos_in_file')] == str2double(mm_mat(mm_i).('blockpos')) ...
-                    & [elaborated_events.('tone_pos_in_trial')] == str2double(mm_mat(mm_i).('tonepos')) ...
-                    & strcmp({elaborated_events.('block_type')},mm_mat(mm_i).('block_type')));
+    if strcmp(mm_mat(mm_i).('seniority'),seniority{end})
+        indexes = find( strcmp({elaborated_events.('TOA')},'O')  == 1 ...
+                & [elaborated_events.('omission_type_seniority')] >= str2double(mm_mat(mm_i).('seniority')) ...
+                & strcmp({elaborated_events.('block_type')},mm_mat(mm_i).('block_type')));
+    else
+        indexes = find( strcmp({elaborated_events.('TOA')},'O')  == 1 ...
+                & [elaborated_events.('omission_type_seniority')] == str2double(mm_mat(mm_i).('seniority')) ...
+                & strcmp({elaborated_events.('block_type')},mm_mat(mm_i).('block_type')));
+    end
 
     curr_timeWin = split(mm_mat(mm_i).('timeWin'),'-');
     timeWinInd_start = find(eeglab_referenced.times == str2double(curr_timeWin{1}));
@@ -86,10 +88,11 @@ end
  writetable(mm_mat_tabel, output_filename);
 
 %% Doesn't includes variable 'block_type'. Instead includes differnce between fixed-rand
+[e f c d] = ndgrid(1:numel(timewin),1:numel(seniority),1:numel(referenced_filename_ses_types),1:numel(subs)); % c and d must stay last
 mm_mat = [ subs(d(:)).'  referenced_filename_ses_types(c(:)).' timewin(e(:)).' seniority(f(:)).'];
 mm_mat = cell2struct(mm_mat, {'sub','ses','timeWin','seniority'},2);
 % create elaborated event file for referenced event files
-output_filename = sprintf('%s//mm_6_sub-OrOf-ses-posnegClust-senior10-manyTimeWin_diffRF.csv',output_dir);
+output_filename = sprintf('%s//mm_6_sub-ses-posnegClust-senior10-manyTimeWin_diffRF.csv',output_dir);
 curr_sub = '00';
 curr_ses = '00';
 for mm_i=1:numel(mm_mat)
@@ -111,18 +114,18 @@ for mm_i=1:numel(mm_mat)
         end
     end
 
-    if strcmp(mm_mat(mm_i).('seniority'),'10')
-        indexes_rand = find( [elaborated_events.('omission_type_seniority')] >= 10 ...
+    if strcmp(mm_mat(mm_i).('seniority'),seniority{end})
+        indexes_rand = find( [elaborated_events.('omission_type_seniority')] >= str2double(mm_mat(mm_i).('seniority')) ...
                         & strcmp({elaborated_events.('block_type')},'random') ...
                         & strcmp({elaborated_events.('TOA')},'O')  == 1);
-        indexes_fixed = find( [elaborated_events.('omission_type_seniority')] >= 10 ...
+        indexes_fixed = find( [elaborated_events.('omission_type_seniority')] >= str2double(mm_mat(mm_i).('seniority')) ...
                         & strcmp({elaborated_events.('block_type')},'fixed') ...
                         & strcmp({elaborated_events.('TOA')},'O')  == 1);
     else
         indexes_rand = find( [elaborated_events.('omission_type_seniority')] == str2double(mm_mat(mm_i).('seniority')) ...
                         & strcmp({elaborated_events.('block_type')},'random') ...
                         & strcmp({elaborated_events.('TOA')},'O')  == 1);
-        indexes_fixed = find( [elaborated_events.('omission_type_seniority')] >= 10 ...
+        indexes_fixed = find([elaborated_events.('omission_type_seniority')] == str2double(mm_mat(mm_i).('seniority')) ... 
                         & strcmp({elaborated_events.('block_type')},'fixed') ...
                         & strcmp({elaborated_events.('TOA')},'O')  == 1);
     end
