@@ -1,0 +1,70 @@
+---
+title: "R Notebook"
+output: html_notebook
+#tutorial: https://bodowinter.com/tutorial/bw_LME_tutorial2.pdf
+#youtube: https://www.youtube.com/watch?v=u1ePV1ntMNs&t=297s&ab_channel=LiquidBrainBioinformatics
+---
+
+```{r}
+plot(cars)
+```
+
+```{r}
+library(lme4)
+politeness= read.csv("http://www.bodowinter.com/tutorial/politeness_data.csv")
+# politeness = read.csv(file.choose( ))
+
+head(politeness)
+tail(politeness)
+str(politeness)
+colnames(politeness)
+summary(politeness)
+which(is.na(politeness$frequency)) # or which(!complete.cases(politeness))
+
+```
+
+```{r}
+boxplot(frequency ~ attitude*gender,col=c("white","lightgray"),politeness)
+```
+
+```{r}
+# Cosntracting a model
+politeness.model = lmer(frequency ~ attitude +(1|subject) + (1|scenario), data=politeness) # fixed effect - attitude. random intercepts - subjects and scenario
+summary(politeness.model)
+```
+
+```{r}
+# Now lets add gender:
+politeness.model = lmer(frequency ~ attitude +gender + (1|subject) +(1|scenario), data=politeness)
+summary(politeness.model)
+```
+
+```{r}
+#Satistical significance
+#So far, we haven’t talked about significance yet. But, if you want to publish this,you’ll most likely need to report some kind of p-value. Unfortunately, p-values for mixed models aren’t as straightforward as they are for the linear model
+
+politeness.null = lmer(frequency ~ gender + (1|subject) + (1|scenario), data=politeness, REML=FALSE)
+
+politeness.model = lmer(frequency ~ attitude +
+gender + (1|subject) + (1|scenario),
+data=politeness, REML=FALSE)
+
+# We perform the likelihood ratio test using the anova() function:
+anova(politeness.null,politeness.model)
+```
+
+```{r}
+# for modeling the contribution of each fixed effect
+omissionResponse.model = lmer(avgAmp ~ expectation +numBlock + numTrial +(1|subject),data=omissionData)
+
+#and then for statistical sig for each of the fixed effects:
+omissionResponse.model1 = lmer(avgAmp ~ numBlock + (1|subject), data=omissionData, REML=FALSE)
+omissionResponse.model2 = lmer(avgAmp ~ numTrial + (1|subject), data=omissionData, REML=FALSE)
+omissionResponse.model3 = lmer(avgAmp ~ expectation + (1|subject), data=omissionData, REML=FALSE)
+
+omissionResponse.null = lmer(avgAmp ~ (1|subject), data=omissionData, REML=FALSE)
+
+anova(omissionResponse.null,omissionResponse.model1)
+anova(omissionResponse.null,omissionResponse.model2)
+anova(omissionResponse.null,omissionResponse.model3)
+```
