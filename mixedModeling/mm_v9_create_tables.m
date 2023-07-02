@@ -15,7 +15,7 @@ subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','2
 
 %%
 blocktypes = {'random','fixed'};
-timewin = {"0-48","48-100","100-148","148-200","200-248","248-300","300-348","348-400","400-444","0-100","100-200","200-300","300-400","0-224","224-444"};
+timewin = {"0-100","100-200","200-300","300-400","400-444"};
 o_trials_per_subSes = 240;
 
 %% load the two clusters electrodes
@@ -27,7 +27,7 @@ columns = {'sub','ses','timeWin','trialID','block_type','seniority','blockpos','
 mm_mat = cell(numel(subs)*numel(referenced_filename_ses_types)*o_trials_per_subSes*numel(timewin),numel(columns));
 mm_mat = cell2struct(mm_mat, columns,2);
 % create elaborated event file for referenced event files
-output_filename = sprintf('%s//mm_8_sub-ses-manyTimeWin_traits_posnegClust.csv',output_dir);
+output_filename = sprintf('%s//mm_9_sub-ses-lessTimeWin_traits_posnegClust.csv',output_dir);
 mm_i = 1;
 got_files = false;
 for sub_i=1:numel(subs)

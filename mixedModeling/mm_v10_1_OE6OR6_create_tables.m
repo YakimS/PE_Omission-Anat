@@ -15,19 +15,18 @@ subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','2
 
 %%
 blocktypes = {'random','fixed'};
-timewin = {"0-48","48-100","100-148","148-200","200-248","248-300","300-348","348-400","400-444","0-100","100-200","200-300","300-400","0-224","224-444"};
+timewin = {"0-100","100-200","200-300","300-400","400-444"};
 o_trials_per_subSes = 240;
 
 %% load the two clusters electrodes
-clustering_res = load ('C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm\wake_all_referenced\preStim_Vs_postStim\preVsPoststim_bl-100_O.mat');
-posClustElect = find(any(clustering_res.posclusterslabelmat == 1, 2));
+clustering_res = load ('C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm\wake_morning_referenced\cond1_Vs_cond2\OEf6VsORf6_avg.mat');
 negClustElect = find(any(clustering_res.negclusterslabelmat == 1, 2));
 %% Includes variable 'block_type'
-columns = {'sub','ses','timeWin','trialID','block_type','seniority','blockpos','opos','ampAvg_pos','ampAvg_neg'};
+columns = {'sub','ses','timeWin','block_type','seniority','blockpos','opos','ampAvg_neg'};
 mm_mat = cell(numel(subs)*numel(referenced_filename_ses_types)*o_trials_per_subSes*numel(timewin),numel(columns));
 mm_mat = cell2struct(mm_mat, columns,2);
 % create elaborated event file for referenced event files
-output_filename = sprintf('%s//mm_8_sub-ses-manyTimeWin_traits_posnegClust.csv',output_dir);
+output_filename = sprintf('%s//mm_10_1_sub-ses-100msTimeWin_traits_negOR6OE6Clust.csv',output_dir);
 mm_i = 1;
 got_files = false;
 for sub_i=1:numel(subs)
@@ -62,19 +61,24 @@ for sub_i=1:numel(subs)
                 timeWinInd_start = find(eeglab_referenced.times == str2double(curr_timeWin{1}));
                 timeWinInd_end = find(eeglab_referenced.times == str2double(curr_timeWin{2}));
     
-                pos_clust_activity = eeglab_referenced.data(posClustElect,timeWinInd_start:timeWinInd_end,o_events_indexes(o_i));
-                mean_posClust = mean(pos_clust_activity,'all');
                 neg_clust_activity = eeglab_referenced.data(negClustElect,timeWinInd_start:timeWinInd_end,o_events_indexes(o_i));
                 mean_negClust = mean(neg_clust_activity,'all');
 
                 mm_mat(mm_i).('ampAvg_neg') = mean_negClust;
-                mm_mat(mm_i).('ampAvg_pos') = mean_posClust;
 
                 mm_mat(mm_i).('opos') = elaborated_events(o_events_indexes(o_i)).tone_pos_in_trial;
-                mm_mat(mm_i).('blockpos') = elaborated_events(o_events_indexes(o_i)).block_pos_in_file;
-                mm_mat(mm_i).('seniority') = elaborated_events(o_events_indexes(o_i)).omission_type_seniority;
+                mm_mat(mm_i).('blockpos') = 1+floor(elaborated_events(o_events_indexes(o_i)).block_pos_in_file/10);
                 mm_mat(mm_i).('block_type') = elaborated_events(o_events_indexes(o_i)).block_type;
-                mm_mat(mm_i).('trialID') = sprintf('%s_%s_%d',curr_sub,curr_ses,elaborated_events(o_events_indexes(o_i)).event_id);
+                curr_sen = floor(elaborated_events(o_events_indexes(o_i)).omission_type_seniority);
+                if curr_sen <=3
+                    mm_mat(mm_i).('seniority') = 1;
+                elseif curr_sen >3 && curr_sen <=6
+                    mm_mat(mm_i).('seniority') = 2;
+                elseif curr_sen >6 && curr_sen <=9
+                    mm_mat(mm_i).('seniority') = 3;
+                else
+                    mm_mat(mm_i).('seniority') = 4;
+                end
                 mm_mat(mm_i).('timeWin') =timewin{j};
                 mm_mat(mm_i).('ses') = curr_ses;
                 mm_mat(mm_i).('sub') = curr_sub;

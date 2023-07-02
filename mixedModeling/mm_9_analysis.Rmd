@@ -1,0 +1,269 @@
+---
+title: "R Notebook"
+output: html_notebook
+#tutorial: https://bodowinter.com/tutorial/bw_LME_tutorial2.pdf
+#youtube: https://www.youtube.com/watch?v=u1ePV1ntMNs&t=297s&ab_channel=LiquidBrainBioinformatics
+---
+
+```{r}
+library(lmerTest)
+library(Matrix)
+library(bayestestR)
+library(dplyr)
+
+curr_ver = "9"
+
+o_sepRF <- read.csv("C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\mix_modeling\\mm_9_sub-ses-lessTimeWin_traits_posnegClust.csv")
+output_dir <- "C:\\Users\\User\\Cloud-Drive\\BigFiles\\OmissionExpOutput\\mix_modeling"
+# head(omissionResponse)
+# tail(omissionResponse)
+# str(omissionResponse)
+# colnames(omissionResponse)
+# summary(omissionResponse)
+# which(is.na(omissionResponse$ampAvg)) # or which(!complete.cases(politeness))
+
+```
+
+
+```{r}
+o_sepRF <- subset(o_sepRF, ses != "")
+o_sepRF$sub <- as.factor(o_sepRF$sub)
+o_sepRF$ses <- as.factor(o_sepRF$ses)
+o_sepRF$block_type <- as.factor(o_sepRF$block_type)
+
+o_sepRF$timeWin <- as.ordered(o_sepRF$timeWin)
+o_sepRF$opos <- as.ordered(o_sepRF$opos)
+
+o_sepRF$seniority <- as.integer(o_sepRF$seniority)
+o_sepRF$blockpos <- as.integer(o_sepRF$blockpos)
+str(o_sepRF)
+
+# Numeric (continuous): Real numbers.
+# Factor (categorical): Unordered categorical variables.
+# Ordered factor (ordinal): Ordered categorical variables.
+# Binary (logical): Binary values, often coded as 0/1.
+# Integer: Whole numbers.
+```
+
+```{r}
+posneg_vector = c('pos','neg')
+ses_vars <- unique(o_sepRF$ses)
+timeWin_vars <- unique(o_sepRF$timeWin)
+block_type_vars <- unique(o_sepRF$block_type)
+```
+
+
+```{r}
+# Combinations of fixed variables, vs. null 
+# Within timeWin & session
+
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-TimewinSes_interOnly.csv", sep = "")
+
+fixed_vars= c( "blockpos", "opos", "block_type","seniority")
+
+# all posible combinations
+all_models_fix_var <- unlist(sapply(1:length(fixed_vars), function(x) combn(fixed_vars, x, paste, collapse = "+")))
+
+# create res table
+res_table <- data.frame('elect_clust' = character(), 'timewin' = character(),'session' = character(),"fixed_vars" = character(), "BF" = numeric(), "anova_Pval_Chisq" = list())
+for (var_name in fixed_vars) {
+  res_table[[var_name]] <-  numeric()
+}
+
+for (mod in all_models_fix_var) {
+  for (posneg in posneg_vector) {
+    for (j in timeWin_vars) {
+      for (i in ses_vars) {
+        exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
+        null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+        o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF, timeWin == j & ses==i ), REML=FALSE)
+        o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF, timeWin == j & ses==i ), REML=FALSE)
+        
+        anova_preTerm_out = anova(o_sepRF.model)
+        anova_out = anova(o_sepRF.null,o_sepRF.model)
+        bayes_out <- bayesfactor_models(o_sepRF.model,denominator=o_sepRF.null)
+        
+        res_table <- add_row(res_table)
+        row_num = nrow(res_table)
+        res_table[row_num, "elect_clust"] <- posneg
+        res_table[row_num, "timewin"] <- j
+        res_table[row_num, "session"] <- i
+        res_table[row_num, "fixed_vars"] <- mod[[1]]
+        res_table[row_num, "BF"] <- exp(bayes_out$log_BF[1])
+        res_table[row_num, "anova_Pval_Chisq"] <- anova_out$"Pr(>Chisq)"[2]
+        
+        for (i in 1:nrow(anova_preTerm_out)) {
+          row_name <- rownames(anova_preTerm_out)[i]
+          row_value <- anova_preTerm_out[i,"Pr(>F)"]
+          res_table[row_num, row_name] <- row_value
+        }
+      }
+    }
+  }
+}
+
+sortedTable <- res_table[order(res_table$BF, decreasing = TRUE), ]
+sortedTable <- sortedTable[, c('elect_clust','timewin' ,'session',"fixed_vars", 'BF', 'anova_Pval_Chisq',  names(sortedTable)[-2])]
+write.csv(sortedTable, paste0(output_dir,"\\",paste(filename)))
+print(sortedTable)
+
+```
+
+```{r}
+# Combinations of fixed variables, vs. null 
+# Within timeWin
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-Timewin_interOnly.csv", sep = "")
+
+fixed_vars= c( "blockpos", "ses", "opos","block_type","seniority") #"ses*block_type" will raise an error
+
+# all posible combinations
+all_models_fix_var <- unlist(sapply(1:length(fixed_vars), function(x) combn(fixed_vars, x, paste, collapse = "+")))
+
+# create res table
+res_table <- data.frame('elect_clust' = character(), 'time_win' = character(),"fixed_vars" = character(), "BF" = numeric(), "anova_Pval_Chisq" = list())
+for (var_name in fixed_vars) {
+  res_table[[var_name]] <-  numeric()
+}
+
+for (mod in all_models_fix_var) {
+  for (posneg in posneg_vector) {
+    for (j in timeWin_vars) {
+      exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
+      null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+      o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF, timeWin == j), REML=FALSE)
+      o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF, timeWin == j), REML=FALSE)
+      
+      anova_preTerm_out = anova(o_sepRF.model)
+      anova_out = anova(o_sepRF.null,o_sepRF.model)
+      bayes_out <- bayesfactor_models(o_sepRF.model,denominator=o_sepRF.null)
+      
+      res_table <- add_row(res_table)
+      row_num = nrow(res_table)
+      res_table[row_num, "elect_clust"] <- posneg
+      res_table[row_num, "time_win"] <- j
+      res_table[row_num, "fixed_vars"] <- mod[[1]]
+      res_table[row_num, "BF"] <- exp(bayes_out$log_BF[1])
+      res_table[row_num, "anova_Pval_Chisq"] <- anova_out$"Pr(>Chisq)"[2]
+      
+      for (i in 1:nrow(anova_preTerm_out)) {
+        row_name <- rownames(anova_preTerm_out)[i]
+        row_value <- anova_preTerm_out[i,"Pr(>F)"]
+        res_table[row_num, row_name] <- row_value
+      }
+    }
+  }
+}
+
+sortedTable <- res_table[order(res_table$BF, decreasing = TRUE), ]
+sortedTable <- sortedTable[, c('elect_clust',"fixed_vars","time_win", 'BF', 'anova_Pval_Chisq',  names(sortedTable)[-2])]
+write.csv(sortedTable, paste0(output_dir,"\\",paste(filename)))
+print(sortedTable)
+```
+
+```{r}
+# Combinations of fixed variables, vs. null 
+# Within ALL
+
+fixed_vars= c( "blockpos", "timeWin", "ses", "opos", "block_type","seniority") #"ses*block_type" will raise an error
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-X_interOnly.csv", sep = "")
+
+# all posible combinations
+all_models_fix_var <- unlist(sapply(1:length(fixed_vars), function(x) combn(fixed_vars, x, paste, collapse = "+")))
+
+# create res table
+res_table <- data.frame('elect_clust' = character(), "fixed_vars" = character(), "BF" = numeric(), "anova_Pval_Chisq" = list())
+for (var_name in fixed_vars) {
+  res_table[[var_name]] <-  numeric()
+}
+
+for (mod in all_models_fix_var) {
+  for (posneg in posneg_vector) {
+    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
+    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+    o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF), REML=FALSE)
+    o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF), REML=FALSE)
+    
+    
+    anova_preTerm_out = anova(o_sepRF.model)
+    anova_out = anova(o_sepRF.null,o_sepRF.model)
+    bayes_out <- bayesfactor_models(o_sepRF.model,denominator=o_sepRF.null)
+    
+    res_table <- add_row(res_table)
+    row_num = nrow(res_table)
+    res_table[row_num, "elect_clust"] <- posneg
+    res_table[row_num, "fixed_vars"] <- mod[[1]]
+    res_table[row_num, "BF"] <- exp(bayes_out$log_BF[1])
+    res_table[row_num, "anova_Pval_Chisq"] <- anova_out$"Pr(>Chisq)"[2]
+    
+    for (i in 1:nrow(anova_preTerm_out)) {
+      row_name <- rownames(anova_preTerm_out)[i]
+      row_value <- anova_preTerm_out[i,"Pr(>F)"]
+      res_table[row_num, row_name] <- row_value
+    }
+  }
+}
+
+sortedTable <- res_table[order(res_table$BF, decreasing = TRUE), ]
+sortedTable <- sortedTable[, c('elect_clust',"fixed_vars", 'BF', 'anova_Pval_Chisq',  names(sortedTable)[-2])]
+write.csv(sortedTable, paste0(output_dir,"\\",paste(filename)))
+print(sortedTable)
+
+```
+
+Specify the model yourself:
+
+```{r}
+################ Includes variable 'block_type'  #######################
+################ Within ses & timeWin &  block_type #######################
+# 'seniority','blockpos'
+ses_vars <- c("wake_morning" , "wake_night")
+
+# Exp models & filenames
+exp_mod_pos_1 <- "ampAvg_pos ~ blockpos + (1|sub)"
+exp_mod_neg_1 <- "ampAvg_neg ~ blockpos + (1|sub)"
+str_1 = "mm_X_res_sepRF_blockpos+1sub_within-SesTimewinBt.csv"
+exp_mod_pos_2 <- "ampAvg_pos ~ opos + (1|sub)"
+exp_mod_neg_2 <- "ampAvg_neg ~ opos + (1|sub)"
+str_2 = "mm_X_res_sepRF_opos+1sub_within-SesTimewinBt.csv"
+exp_mod_pos_3 <- "ampAvg_pos ~ seniority + (1|sub)"
+exp_mod_neg_3 <- "ampAvg_neg ~ seniority + (1|sub)"
+str_3 = "mm_X_res_sepRF_seniority+1sub_within-SesTimewinBt.csv"
+exp_mod_pos_4 <- "ampAvg_pos ~ blockpos + opos + seniority + (1|sub)"
+exp_mod_neg_4 <- "ampAvg_neg ~ blockpos + opos + seniority + (1|sub)"
+str_4 = "mm_X_res_sepRF_blockpos+opos+seniority+1sub_within-SesTimewinBt.csv"
+
+exp_pos_mods <- list(exp_mod_pos_1,exp_mod_pos_2,exp_mod_pos_3,exp_mod_pos_4)
+exp_neg_mods <- list(exp_mod_neg_1,exp_mod_neg_2,exp_mod_neg_3,exp_mod_neg_4)
+contrast_str <- list(str_1,str_2,str_3,str_4)
+
+for (mod in 1:length(exp_pos_mods)) {
+  output_sepRF <- data.frame(blocktype = character(), ses = character(), timeWin = character(), posNeg = character(), Bayes = numeric(), anovaPval = numeric())
+  for (i in ses_vars) {
+    for (j in timeWin_vars) {
+      for (k in block_type_vars) {
+        # define models
+        o_sepRF_pos.null <- lmer(ampAvg_pos ~ (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        o_sepRF_neg.null <- lmer(ampAvg_neg ~ (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        o_sepRF_neg.model<-lmer(as.formula(exp_neg_mods[[mod]]) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        o_sepRF_pos.model<-lmer(as.formula(exp_pos_mods[[mod]]) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
+        
+        # compute Bayes & Anova
+        anova_out_pos = anova(o_sepRF_pos.null,o_sepRF_pos.model)
+        anova_out_neg = anova(o_sepRF_neg.null,o_sepRF_neg.model)
+        bayes_out_neg <- bayesfactor_models(o_sepRF_neg.null,o_sepRF_neg.model,denominator=o_sepRF_neg.null) 
+        bayes_out_pos <- bayesfactor_models(o_sepRF_pos.null,o_sepRF_pos.model,denominator=o_sepRF_pos.null)
+        
+        # Append variables to the data frame
+        newEntry_pos <- data.frame(blocktype = k, ses = i,timeWin = j,posNeg = "Pos", Bayes = exp(bayes_out_pos$log_BF[2]), anovaPval = anova_out_pos$"Pr(>Chisq)"[2])
+        newEntry_neg <- data.frame(blocktype = k, ses = i,timeWin = j,posNeg = "Neg", Bayes = exp(bayes_out_neg$log_BF[2]), anovaPval = anova_out_neg$"Pr(>Chisq)"[2])
+        output_sepRF <- rbind(output_sepRF, newEntry_pos)
+        output_sepRF <- rbind(output_sepRF, newEntry_neg)
+      }
+    }
+  }
+  sortedTable <- output_sepRF[order(output_sepRF$Bayes, decreasing = TRUE), ]
+  write.csv(sortedTable, paste0(output_dir,"\\",contrast_str[mod]))
+}
+  
+```
+
