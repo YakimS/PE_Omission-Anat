@@ -30,6 +30,7 @@ o_sepRF <- subset(o_sepRF, ses != "")
 o_sepRF$sub <- as.factor(o_sepRF$sub)
 o_sepRF$ses <- as.factor(o_sepRF$ses)
 o_sepRF$block_type <- as.factor(o_sepRF$block_type)
+o_sepRF$trialID <- as.factor(o_sepRF$trialID)
 
 o_sepRF$timeWin <- as.factor(o_sepRF$timeWin)
 o_sepRF$opos <- as.ordered(o_sepRF$opos)
@@ -74,8 +75,8 @@ for (mod in all_models_fix_var) {
   for (posneg in posneg_vector) {
     for (j in timeWin_vars) {
       for (i in ses_vars) {
-        exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
-        null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+        exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)+ (1|trialID)", sep = "")
+        null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)+ (1|trialID)", sep = "")
         o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF, timeWin == j & ses==i ), REML=FALSE)
         o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF, timeWin == j & ses==i ), REML=FALSE)
         
@@ -128,8 +129,8 @@ for (var_name in fixed_vars) {
 for (mod in all_models_fix_var) {
   for (posneg in posneg_vector) {
     for (j in timeWin_vars) {
-      exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
-      null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+      exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)+ (1|trialID)", sep = "")
+      null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)+ (1|trialID)", sep = "")
       o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF, timeWin == j), REML=FALSE)
       o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF, timeWin == j), REML=FALSE)
       
@@ -164,8 +165,8 @@ print(sortedTable)
 # Combinations of fixed variables, vs. null 
 # Within ALL
 
-fixed_vars= c( "blockpos", "timeWin", "ses", "opos", "block_type","seniority")
-filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-X_interOnly.csv", sep = "")
+fixed_vars= c( "blockpos", "timeWin", "opos", "block_type","seniority")
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-sesnight_interOnly.csv", sep = "")
 
 # all posible combinations
 all_models_fix_var <- unlist(sapply(1:length(fixed_vars), function(x) combn(fixed_vars, x, paste, collapse = "+")))
@@ -178,10 +179,10 @@ for (var_name in fixed_vars) {
 
 for (mod in all_models_fix_var) {
   for (posneg in posneg_vector) {
-    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
-    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
-    o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF), REML=FALSE)
-    o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF), REML=FALSE)
+    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)+ (1|trialID)", sep = "")
+    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)+ (1|trialID)", sep = "")
+    o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF, ses=="wake_night"), REML=FALSE)
+    o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF, ses=="wake_night"), REML=FALSE)
     
     
     anova_preTerm_out = anova(o_sepRF.model)
@@ -219,51 +220,35 @@ Specify the model yourself:
 ses_vars <- c("wake_morning" , "wake_night")
 
 # Exp models & filenames
-exp_mod_pos_1 <- "ampAvg_pos ~ blockpos + (1|sub)"
-exp_mod_neg_1 <- "ampAvg_neg ~ blockpos + (1|sub)"
-str_1 = "mm_X_res_sepRF_blockpos+1sub_within-SesTimewinBt.csv"
-exp_mod_pos_2 <- "ampAvg_pos ~ opos + (1|sub)"
-exp_mod_neg_2 <- "ampAvg_neg ~ opos + (1|sub)"
-str_2 = "mm_X_res_sepRF_opos+1sub_within-SesTimewinBt.csv"
-exp_mod_pos_3 <- "ampAvg_pos ~ seniority + (1|sub)"
-exp_mod_neg_3 <- "ampAvg_neg ~ seniority + (1|sub)"
-str_3 = "mm_X_res_sepRF_seniority+1sub_within-SesTimewinBt.csv"
-exp_mod_pos_4 <- "ampAvg_pos ~ blockpos + opos + seniority + (1|sub)"
-exp_mod_neg_4 <- "ampAvg_neg ~ blockpos + opos + seniority + (1|sub)"
-str_4 = "mm_X_res_sepRF_blockpos+opos+seniority+1sub_within-SesTimewinBt.csv"
+exp_mod_neg_1 <- "ampAvg_neg ~ timeWin+opos+block_type + (1|sub)"
+str_1 = "mm_X_res_sepRF_timeWin+opos+block_type+1sub_within-X.csv"
+exp_mod_neg_2 <- "ampAvg_neg ~ blockpos+timeWin+opos+block_type + (1|sub)"
+str_2 = "mm_X_res_sepRF_blockpos+timeWin+opos+block_type+1sub_within-X.csv"
+exp_mod_neg_3 <- "ampAvg_neg ~ timeWin+opos+block_type+seniority + (1|sub)"
+str_3 = "mm_X_res_sepRF_timeWin+opos+block_type+seniority+1sub_within-X.csv"
+exp_mod_neg_4 <- "ampAvg_neg ~ blockpos+timeWin+opos+block_type+seniority + (1|sub)"
+str_4 = "mm_X_res_sepRF_blockpos+timeWin+opos+block_type+seniority+1sub_within-X.csv"
 
-exp_pos_mods <- list(exp_mod_pos_1,exp_mod_pos_2,exp_mod_pos_3,exp_mod_pos_4)
 exp_neg_mods <- list(exp_mod_neg_1,exp_mod_neg_2,exp_mod_neg_3,exp_mod_neg_4)
 contrast_str <- list(str_1,str_2,str_3,str_4)
 
-for (mod in 1:length(exp_pos_mods)) {
-  output_sepRF <- data.frame(blocktype = character(), ses = character(), timeWin = character(), posNeg = character(), Bayes = numeric(), anovaPval = numeric())
-  for (i in ses_vars) {
-    for (j in timeWin_vars) {
-      for (k in block_type_vars) {
-        # define models
-        o_sepRF_pos.null <- lmer(ampAvg_pos ~ (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
-        o_sepRF_neg.null <- lmer(ampAvg_neg ~ (1|sub) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
-        o_sepRF_neg.model<-lmer(as.formula(exp_neg_mods[[mod]]) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
-        o_sepRF_pos.model<-lmer(as.formula(exp_pos_mods[[mod]]) , data=subset(o_sepRF, timeWin == j & ses==i & block_type==k), REML=FALSE)
-        
-        # compute Bayes & Anova
-        anova_out_pos = anova(o_sepRF_pos.null,o_sepRF_pos.model)
-        anova_out_neg = anova(o_sepRF_neg.null,o_sepRF_neg.model)
-        bayes_out_neg <- bayesfactor_models(o_sepRF_neg.null,o_sepRF_neg.model,denominator=o_sepRF_neg.null) 
-        bayes_out_pos <- bayesfactor_models(o_sepRF_pos.null,o_sepRF_pos.model,denominator=o_sepRF_pos.null)
-        
-        # Append variables to the data frame
-        newEntry_pos <- data.frame(blocktype = k, ses = i,timeWin = j,posNeg = "Pos", Bayes = exp(bayes_out_pos$log_BF[2]), anovaPval = anova_out_pos$"Pr(>Chisq)"[2])
-        newEntry_neg <- data.frame(blocktype = k, ses = i,timeWin = j,posNeg = "Neg", Bayes = exp(bayes_out_neg$log_BF[2]), anovaPval = anova_out_neg$"Pr(>Chisq)"[2])
-        output_sepRF <- rbind(output_sepRF, newEntry_pos)
-        output_sepRF <- rbind(output_sepRF, newEntry_neg)
-      }
-    }
-  }
-  sortedTable <- output_sepRF[order(output_sepRF$Bayes, decreasing = TRUE), ]
-  write.csv(sortedTable, paste0(output_dir,"\\",contrast_str[mod]))
+for (mod in 1:length(exp_neg_mods)) {
+  output_sepRF <- data.frame(fixed_vars = character(), posNeg = character(), Bayes = numeric(), anovaPval = numeric())
+  # define models
+  o_sepRF_neg.null <- lmer(ampAvg_neg ~ (1|sub) , data=o_sepRF, REML=FALSE)
+  o_sepRF_neg.model<-lmer(as.formula(exp_neg_mods[[mod]]) , data=o_sepRF, REML=FALSE)
+  
+  # compute Bayes & Anova
+  anova_out_neg = anova(o_sepRF_neg.null,o_sepRF_neg.model)
+  bayes_out_neg <- bayesfactor_models(o_sepRF_neg.null,o_sepRF_neg.model,denominator=o_sepRF_neg.null)
+  anova_preTerm_out = anova(o_sepRF_neg.model)
+  
+  # Append variables to the data frame
+  newEntry_neg <- data.frame(fixed_vars = exp_neg_mods[[mod]],posNeg = "Neg", Bayes = exp(bayes_out_neg$log_BF[2]), anovaPval = anova_out_neg$"Pr(>Chisq)"[2])
+  output_sepRF <- rbind(output_sepRF, newEntry_neg)
 }
+
+
   
 ```
 
@@ -325,7 +310,7 @@ print(sortedTable)
 # Within ALL
 
 fixed_vars= c( "blockpos", "timeWin", "ses", "opos", "block_type","seniority") 
-filename = paste("mm_", curr_ver,"_res_sepRF_oneFixed+1sub_within-X_interAndSlope.csv", sep = "")
+filename = paste("mm_", curr_ver,"_res_sepRF_oneFixed+1sub+trailID_within-X_interAndSlope.csv", sep = "")
 
 # create res table
 res_table <- data.frame('elect_clust' = character(), "fixed_vars" = character(), "BF" = numeric(), "anova_Pval_Chisq" = list())
@@ -335,8 +320,8 @@ for (var_name in fixed_vars) {
 
 for (mod in fixed_vars) {
   for (posneg in posneg_vector) {
-    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (",mod,"|sub)", sep = "")
-    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (",mod,"|sub)+ (1|trialID)", sep = "")
+    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)+ (1|trialID)", sep = "")
     o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF), REML=FALSE)
     o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF), REML=FALSE)
     

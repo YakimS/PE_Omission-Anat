@@ -40,7 +40,7 @@ classdef funcs_spatioTemporalAnalysis
             cfg.clustertail      = 0;
             cfg.alpha            = 0.025;
             cfg.clusteralpha     = 0.05;  
-            cfg.numrandomization = 1000;
+            cfg.numrandomization = 10000;
             cfg.neighbours    = neig;
             cfg.latency     = [0,0.45];
             cfg.ivar             = 1; % number or list with indices indicating the independent variable(s)
@@ -329,8 +329,8 @@ classdef funcs_spatioTemporalAnalysis
                             y2 = grandavg_cond2{isub}.avg(clust_electd,:);
                             y3 = mean(grandavg_cond3{isub}.avg(clust_electd,:),1);
                             x = grandavg_cond1{isub}.time;
-                            shadedErrorBar(x,y1,{@mean,@std},'lineprops','-b','patchSaturation',0.2); 
-                            shadedErrorBar(x,y2,{@mean,@std},'lineprops','-r','patchSaturation',0.2); 
+                            shadedErrorBar2(x,y1,{@mean,@std},'lineprops','-b','patchSaturation',0.2); 
+                            shadedErrorBar2(x,y2,{@mean,@std},'lineprops','-r','patchSaturation',0.2); 
                             plot(grandavg_cond1{isub}.time,y3, 'g');
             
                             title(strcat('subject ',subs{isub}))
@@ -613,18 +613,18 @@ classdef funcs_spatioTemporalAnalysis
             end
         end
         
-        function plot_OClusters_contrasts(f,conds,conds_preVsPoststim,dir_clusters_erp,is_with_timeElectrode_lines)
+        function plot_OClusters_contrasts(f,conds,cond_preVsPoststim,dir_clusters_erp,is_with_timeElectrode_lines, is_with_T_lines)
             subs = f.imp.get_subs(f.imp);
             bl = f.imp.get_baseline_length(f.imp);
             for pos_neg_ind=1:2
                 if pos_neg_ind ==1
-                    clusters = {conds_preVsPoststim.(conds{3}).posclusters.prob};
-                    clust_mask = conds_preVsPoststim.(conds{3}).posclusterslabelmat;
+                    clusters = {cond_preVsPoststim.posclusters.prob};
+                    clust_mask = cond_preVsPoststim.posclusterslabelmat;
                     title_text = sprintf("PreVsPoststim %s - positive clusters",conds{3});
                     pos_or_neg_text = 'pos';
                 else
-                    clusters = {conds_preVsPoststim.(conds{3}).negclusters.prob};
-                    clust_mask = conds_preVsPoststim.(conds{3}).negclusterslabelmat;
+                    clusters = {cond_preVsPoststim.negclusters.prob};
+                    clust_mask = cond_preVsPoststim.negclusterslabelmat;
                     title_text = sprintf("PreVsPoststim %s - negative clusters",conds{3});
                     pos_or_neg_text = 'neg';
                 end
@@ -687,15 +687,19 @@ classdef funcs_spatioTemporalAnalysis
                     else
                         one_div_sqrt_samp_size = 1/sqrt(size(subs,2));
                         x = squeeze(allSubs_conds_AvgActivity(1,:,:));
-                        shadedErrorBar(f.time,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',FOROO_colors{1},'DisplayName',sprintf("%s-cluster electrode",conds{1})},'patchSaturation',0.2);
+                        shadedErrorBar2(f.time,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',FOROO_colors{1},'DisplayName',sprintf("%s-cluster electrode",conds{1})},'patchSaturation',0.2);
                         hold on;
                         x = squeeze(allSubs_conds_AvgActivity(2,:,:));
-                        shadedErrorBar(f.time,squeeze(allSubs_conds_AvgActivity(2,:,:)),{@mean,@(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',FOROO_colors{2},'DisplayName',sprintf("%s-cluster electrode",conds{2})},'patchSaturation',0.2);
+                        shadedErrorBar2(f.time,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',FOROO_colors{2},'DisplayName',sprintf("%s-cluster electrode",conds{2})},'patchSaturation',0.2);
                         hold on;
                         plot(f.time, mean_activity_per_cond_clustSpace(3,:)','DisplayName',sprintf("%s-cluster electrode",conds{3}),'Color',FOROO_colors{3})
                     end
+
                     % plot T 
-                    plot(f.time, mean_activity_per_cond_clustSpace(4,:)','DisplayName',sprintf("%s-cluster electrode",conds{4}),'Color','black')
+                    if is_with_T_lines
+                        plot(f.time, mean_activity_per_cond_clustSpace(4,:)','DisplayName',sprintf("%s-cluster electrode",conds{4}),'Color','black')
+                    end
+                    
                     % plot sig points
                     if ~all(stat.mask ==0)
                         mask_in_trial = zeros(size(f.time,2),1);
@@ -703,7 +707,7 @@ classdef funcs_spatioTemporalAnalysis
                         plot(f.time(find(mask_in_trial)),mean_activity_per_cond_clustSpace(3,find(mask_in_trial)),'.', 'DisplayName', sprintf('%s vs. %s - electrode',conds{1},conds{2}),"Color",'black',"MarkerSize",8)
                     end
 
-                    electrods_string = join({conds_preVsPoststim.(conds{3}).label{clust_electd}},",");
+                    electrods_string = join({cond_preVsPoststim.label{clust_electd}},",");
                     electrods_string = erase(electrods_string,"E");
                     electrods_string = electrods_string{1};
                     title(sprintf("%s, clust ind=%d, pval=%f, baseline=%dms",title_text,clust_ind,clusters{clust_ind},bl), ...
@@ -722,15 +726,83 @@ classdef funcs_spatioTemporalAnalysis
                     figure();
                     cfg = [];
                     cfg.feedback    = 'no';
-                    elec = ft_read_sens('GSN-HydroCel-129.sfp'); % if Cz is ref, use GSN-HydroCel-128.sfp. If not, use 'GSN-HydroCel-129.sfp'
-                    cfg.elec=elec;
+                    cfg.elec= cond_preVsPoststim.elec;
                     layout = ft_prepare_layout(cfg);
-                    ft_plot_layout(layout,'label','no','box','no','chanindx',clust_electd,'pointsize',11);
+                    ft_plot_layout(layout,'label','no','box','no','chanindx',clust_electd,'pointsize',22);
                     saveas(gcf, sprintf("%s_topography.png",erase(curr_output_filename,".png")))            
                 end
             end
         end
         
+        function plot_erp_per_contrast_and_sov(f,sov,contrast,contrast_strings,output_main_dir,electrode_cluster_name)
+            curr_colormap = funcs_spatioTemporalAnalysis.get_colormap_for_sov(sov,numel(contrast));
+            cond_preVsPoststim_name = "O";
+        
+            cond1_Vs_cond2_dir = sprintf('%s\\%s\\cond1_Vs_cond2',output_main_dir,sov);
+        
+            pre_vs_poststim_cluster_dir = sprintf("%s\\%s\\preStim_Vs_postStim",output_main_dir,electrode_cluster_name);
+            bl = f.imp.get_baseline_length(f.imp);
+            cond_preVsPoststim = load(sprintf("%s\\preVsPoststim_bl-%d_%s_avg",pre_vs_poststim_cluster_dir,bl,cond_preVsPoststim_name));
+        
+            subs = f.imp.get_subs(f.imp);
+            
+            for pos_neg_ind=1:2
+                if pos_neg_ind ==1
+                    clusters = {cond_preVsPoststim.posclusters.prob};
+                    clust_mask = cond_preVsPoststim.posclusterslabelmat;
+                    pos_or_neg_text = 'pos';
+                    ylim = [-0.8 0.3];
+                    ylim = [-1 1];
+                else
+                    clusters = {cond_preVsPoststim.negclusters.prob};
+                    clust_mask = cond_preVsPoststim.negclusterslabelmat;
+                    pos_or_neg_text = 'neg';
+                    ylim = [-0.3 0.8];
+                    ylim = [-1 1];
+                end
+                for clust_ind=1:size(clusters,2)
+                    if clusters{clust_ind} > 0.05 continue;  end
+        
+                    curr_output_filename = sprintf('%s\\ERP_sov-%s_cond-%s_clust-%s-%s-%s.png',cond1_Vs_cond2_dir,sov,['{' strjoin(contrast, ',') '}'],cond_preVsPoststim_name,pos_or_neg_text,electrode_cluster_name);
+                    %if isfile(curr_output_filename) continue; end
+        
+                    % get time-electrode mask for current cluster
+                    curr_clust_mask = clust_mask;
+                    curr_clust_mask(curr_clust_mask~=clust_ind) = 0;
+                    curr_clust_mask(curr_clust_mask ~= 0) = 1;
+                    temp = mean(curr_clust_mask,2);
+                    clust_electd = find(temp>0);
+                    temp = mean(curr_clust_mask,1);
+                    clust_times = find(temp>0);
+                    
+                    stat = funcs_spatioTemporalAnalysis.cluster_permu_erp(f,contrast,clust_electd,[f.time(clust_times(1)),f.time(clust_times(end))]);
+        
+                    % plot sig points
+                    if ~all(stat.mask ==0)
+                        mask_in_trial = zeros(size(f.time,2),1);
+                        mask_in_trial(clust_times(1):clust_times(end)) = stat.mask; 
+                        sig_timerange = mask_in_trial;
+                    else
+                        sig_timerange = 0;
+                    end
+        
+                    % get mean activity per sub and cond
+                    % allSubs_conds_AvgActivity average the activity over all electrods and time
+                    allSubs_conds_AvgActivity = zeros(size(subs,2),size(f.time,2),size(contrast,2)); 
+                    for cond_j = 1:size(contrast,2)
+                        curr_cond_timelock = f.imp.get_cond_timelocked(f.imp,contrast{cond_j}); 
+                        for sub_i = 1:size(subs,2)
+                            curr_sub_cond_struct =  curr_cond_timelock{sub_i};
+                            allSubs_conds_AvgActivity(sub_i,:,cond_j) = mean(curr_sub_cond_struct.avg(clust_electd,:),1);
+                        end
+                    end
+        
+                    title_ = sprintf('ERP, %s, %d subjects', sov, size(subs,2));
+                    subtitle_ = sprintf('Electrodes from per-vs-post stim cluster: %s, %s, %s',cond_preVsPoststim_name, electrode_cluster_name ,pos_or_neg_text);
+                    funcs_spatioTemporalAnalysis.plot_erps(f.time,contrast_strings,allSubs_conds_AvgActivity,curr_output_filename, curr_colormap,sig_timerange,title_,subtitle_,ylim)
+                end
+            end
+        end
     end
 
     methods(Access=private, Static)
@@ -754,7 +826,7 @@ classdef funcs_spatioTemporalAnalysis
             cfg.tail             = 0;         
             cfg.clustertail      = 0;
             cfg.alpha            = 0.25;
-            cfg.numrandomization = 1000;
+            cfg.numrandomization = 10000;
             cfg.neighbours    = neighbours; 
             cfg.latency     = latency;
             n_fc  = size(timelockFC.trial, 2);
@@ -764,10 +836,6 @@ classdef funcs_spatioTemporalAnalysis
             [stat] = ft_timelockstatistics(cfg, timelockFIC, timelockFC);
             save(sprintf("%s",stat_file_string), '-struct', 'stat');
             metadata.ft_timelockstatistics =  stat.cfg;
-        
-            if all(stat.mask == 0)
-                return
-            end
         
             %plot
             % cfg.toi makes sure to plot also the baseline timeperiod
@@ -808,17 +876,37 @@ classdef funcs_spatioTemporalAnalysis
             stat = ft_timelockstatistics(cfg,cond1_struct{:}, cond2_struct{:});
             save(sprintf("%s",mat_filename), '-struct', 'stat');
             metadata.ft_timelockstatistics =  stat.cfg;
-        
+
+            pos_prob = [stat.posclusters.('prob')];
+            neg_prob = [stat.negclusters.('prob')];
+            if pos_prob(1)<=0.2 || neg_prob(1)<=0.2
+                is_cluster_exists = true;
+            else
+                is_cluster_exists = false;
+            end
+            
             % plot
             if is_plot_topoplot
-                timediff = 0.04;
-                toi = latency(1): timediff :latency(2);
                 png_filename = erase(mat_filename,".mat");
-                cfg = funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,png_filename);
-                metadata.cfg_ft_clusterplot =  cfg;
+                if is_cluster_exists
+                    timediff = 0.004;
+                    toi = latency(1): timediff :latency(2);
+                    cfg = funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,png_filename);
+                    metadata.cfg_ft_clusterplot =  cfg;
+    
+                    timediff = 0.04;
+                    toi = latency(1): timediff :latency(2);
+                    png_filename = sprintf("%s_summary",png_filename);
+                    funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,png_filename);
+                else
+                    png_summary_filename = sprintf("%s_summary.png",png_filename);
+                    timediff = 0.04;
+                    toi = latency(1): timediff :latency(2);
+                    cfg = funcs_spatioTemporalAnalysis.topo_plot(stat,toi,png_summary_filename);
+                end
             end
         end
-        
+
         function stat = cluster_permu_erp(f,conds,clust_mask,latency)
             subs = f.imp.get_subs(f.imp);
             all_conds_timelocked_currClustElecd = cell(1, size(conds,2));
@@ -848,10 +936,11 @@ classdef funcs_spatioTemporalAnalysis
             cfg.latency     = latency;
             cfg.avgovertime = 'no';
             cfg.parameter   = 'avg';
-            cfg.method      = 'analytic';
+            cfg.method      = 'montecarlo';
             cfg.statistic   = 'ft_statfun_depsamplesT';
+            cfg.numrandomization = 1000;
             cfg.alpha       = 0.05;
-            cfg.correctm    = 'no';            
+            cfg.correctm = 'cluster'; %'no';            
             Nsub = size(subs,2);
             cfg.design(1,1:2*Nsub)  = [ones(1,Nsub) 2*ones(1,Nsub)];
             cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
@@ -859,19 +948,112 @@ classdef funcs_spatioTemporalAnalysis
             cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
             stat = ft_timelockstatistics(cfg, all_conds_timelocked_currClustElecd{1}{:}, all_conds_timelocked_currClustElecd{2}{:});   % don't forget the {:}!
         end
-        
+
+        % plotting
+
         function cfg = cluster_plot(stat,toi,png_filename)
             % make a plot
             cfg = [];
-            %cfg.highlightsymbolseries = ['*','.','.','.','.']; %%  (default ['*', 'x', '+', 'o', '.'] for p < [0.01 0.05 0.1 0.2 0.3]
-            cfg.highlightsizeseries     = [5,4,4,4,4];  %1x5 vector, highlight marker size series   (default [6 6 6 6 6] for p < [0.01 0.05 0.1 0.2 0.3])
             cfg.zlim = [-5 5];
             cfg.alpha = 0.2; % This is the max alpha to be plotted. (0.3 is the hights value possible)
             cfg.saveaspng = png_filename;
             cfg.visible = 'no';
             cfg.toi =toi;
+            %cfg.highlightsymbolseries   =[0.01 0.05 0.1 0.2 0.3]; %1x5 vector, highlight marker symbol series (default ['*', 'x', '+', 'o', '.'] for p < [0.01 0.05 0.1 0.2 0.3]
+            cfg.highlightsizeseries     = [4 4 4 4 4];
+             cfg.highlightcolorpos       = [0.3 0 0];
+             cfg.highlightcolorneg       = [0 0 0.3];
             cfg = ft_clusterplot(cfg, stat);
+
         end
+
+        function cfg = topo_plot(preVsPoststim_res,toi,png_filename)
+            cfg = [];
+            cfg.xlim = toi;
+            cfg.parameter = 'stat';
+            cfg.zlim = [-5 5];
+            cfg.comment  ='xlim';
+            cfg.commentpos = 'middletop';
+            cfg.colormap = 'coolwarm';
+            cfg  = ft_topoplotER(cfg,png_filename,preVsPoststim_res); %to enable saving you need to delete:"saveif ~ft_nargout don't return anything clear cfg end", and add "saveas(gcf,png_filename);" at the end and png_filename to the argument list
+        end
+    
+        function custom_colormap = get_colormap_for_sovs(sovs)
+            % Initialize the colormap cell array
+            custom_colormap = zeros(numel(sovs),3);
+        
+            % Loop over each sleep stage in the input cell array
+            for i = 1:numel(sovs)
+                % Get the colormap for the current sleep stage with one shade
+                custom_colormap(i,:) = get_colormap_for_sov(sovs{i}, 1);
+            end
+        end
+        
+        function custom_colormap = get_colormap_for_sov(sov, num_shades)
+            % Define the color dictionary
+            color_dict = containers.Map(...
+                {'wake_morning', 'wake_night', 'N2', 'N3', 'REM', 'N1'}, ...
+                {[0.5, 0.8, 1], [0, 0, 1], [1, 0.8, 0], [0, 1, 0], [1, 0, 0], [1, 0, 1]} ...
+            );
+        
+            % Get the RGB color from the dictionary
+            if isKey(color_dict, sov)
+                color_ = color_dict(sov);
+                custom_colormap = funcs_spatioTemporalAnalysis.create_custom_colormap(color_, num_shades);
+            else
+                error('Invalid sleep stage. Supported sleep stages are: wake_morning, wake_night, N2, N3, REM, N1');
+            end
+        end
+        
+        function custom_colormap = create_custom_colormap(color_, num_shades)
+            % Create a colormap with the specified number of shades
+            custom_colormap = zeros(num_shades, 3);
+            
+            % Linearly interpolate each color component (R, G, B) independently
+            for i = 1:3
+                custom_colormap(:, i) = linspace(0, color_(i), num_shades);
+            end
+        end
+        
+        function plot_erps(time_,curr_variable,curr_clust_res,curr_output_filename, colormap_,sig_timerange,title_,subtitle_,ylim)
+            figure();
+        
+            % plot variables lines
+            one_div_sqrt_samp_size = 1/sqrt(size(curr_clust_res,1));
+            for val_i=1:numel(curr_variable)
+                curr_var_val_name = num2str(curr_variable{val_i});
+        %       plot without errorbar        
+        %       mean_subs = squeeze(mean(curr_clust_res(:,:,val_i),1));
+        %       plot(time_X,mean_subs,'Color',custom_colormap(val_i,:),'DisplayName',curr_var_val_name);
+                x = squeeze(curr_clust_res(:,:,val_i));
+                shadedErrorBar2(time_,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',colormap_(val_i,:),'DisplayName',curr_var_val_name},'patchSaturation',0.1);
+                hold on;
+            end
+        
+            % plot sig line
+            if ~isequal(sig_timerange, 0) && ~all(sig_timerange == 0)
+                time_of_sig = time_(find(sig_timerange));
+                sig_line_height =   ylim(1)+((ylim(2) - ylim(1)) / 8);
+                plot(time_of_sig,sig_line_height*ones(numel(time_of_sig)),'Color',colormap_(1,:),'DisplayName','','HandleVisibility', 'off',LineWidth=1.5);
+                hold on;
+                plot(time_of_sig,sig_line_height*ones(numel(time_of_sig)),'Color',colormap_(end,:),'DisplayName','','HandleVisibility', 'off',LineWidth=1.5,LineStyle=':');
+                hold on;
+            end
+           
+            axis([time_(1) time_(end) ylim(1) ylim(2)]) 
+            
+            title(title_);
+            subtitle(subtitle_);
+            if numel(curr_variable)<=6
+                legend("Location","northwest","FontSize",10);
+            end
+            xlabel('Time (ms)')
+            ylabel('µV')
+        
+            saveas(gcf, curr_output_filename)
+            close;
+        end
+
     end
 end
 

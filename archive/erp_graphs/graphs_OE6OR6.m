@@ -1,19 +1,14 @@
 addpath 'C:\Users\User\Cloud-Drive\BigFiles\libs\eeglab2023.0'
 addpath 'C:\Users\User\Cloud-Drive\BigFiles\libs'
-eeglab;
+eeglab nogui;
 %%
-imported_preproce_name =  'orig';
 referenced_preproce_name =  'referenced';
-imported_filename_ses_types = {'sleep1','sleep2','sleep3','sleep4','sleep5','wake_morning','wake_night'};
 referenced_filename_ses_types = {'wake_morning','wake_night'};
-imported_input_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\imported';
-imported_output_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\imported\elaborated_events';
 referenced_set_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced';
-referenced_event_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced\elaborated_events';
 output_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\mix_modeling\graphs';
 referenced_elaboEvents_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced\elaborated_events';
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+subs = {'08','09'};
 %% load the two clusters electrodes
 clustering_res = load ('C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_erpAnalysis\spatiotemp_clusterPerm\wake_morning_referenced\cond1_Vs_cond2\OEf6VsORf6_avg.mat');
 negClustElect = find(any(clustering_res.negclusterslabelmat == 1, 2));

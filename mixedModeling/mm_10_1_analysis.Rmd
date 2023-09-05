@@ -29,6 +29,7 @@ o_sepRF <- subset(o_sepRF, ses != "")
 o_sepRF$sub <- as.factor(o_sepRF$sub)
 o_sepRF$ses <- as.factor(o_sepRF$ses)
 o_sepRF$block_type <- as.factor(o_sepRF$block_type)
+o_sepRF$trialID <- as.factor(o_sepRF$trialID)
 
 o_sepRF$timeWin <- as.factor(o_sepRF$timeWin)
 o_sepRF$opos <- as.ordered(o_sepRF$opos)
@@ -164,7 +165,7 @@ print(sortedTable)
 # Within ALL
 
 fixed_vars= c( "blockpos", "timeWin", "ses", "opos", "block_type","seniority")
-filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-X_interOnly.csv", sep = "")
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub+trailID_within-X_interOnly.csv", sep = "")
 
 # all posible combinations
 all_models_fix_var <- unlist(sapply(1:length(fixed_vars), function(x) combn(fixed_vars, x, paste, collapse = "+")))
@@ -177,8 +178,8 @@ for (var_name in fixed_vars) {
 
 for (mod in all_models_fix_var) {
   for (posneg in posneg_vector) {
-    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
-    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)+ (1|trialID)", sep = "")
+    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)+ (1|trialID)", sep = "")
     o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF), REML=FALSE)
     o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF), REML=FALSE)
     

@@ -29,9 +29,10 @@ o_sepRF <- subset(o_sepRF, ses != "")
 o_sepRF$sub <- as.factor(o_sepRF$sub)
 o_sepRF$ses <- as.factor(o_sepRF$ses)
 o_sepRF$block_type <- as.factor(o_sepRF$block_type)
+o_sepRF$trialID <- as.factor(o_sepRF$trialID)
 
-o_sepRF$timeWin <- as.ordered(o_sepRF$timeWin)
-levels(o_sepRF$timeWin) = c("0-48" ,"48-100", "100-148", "148-200", "200-248" ,"248-300" ,"300-348","348-400","400-444")
+o_sepRF$timeWin <- as.factor(o_sepRF$timeWin)
+#levels(o_sepRF$timeWin) = c("0-48" ,"48-100", "100-148", "148-200", "200-248" ,"248-300" ,"300-348","348-400","400-444")
 o_sepRF$opos <- as.ordered(o_sepRF$opos)
 o_sepRF$seniority <- as.ordered(o_sepRF$seniority)
 o_sepRF$blockpos <- as.ordered(o_sepRF$blockpos)
@@ -57,7 +58,7 @@ block_type_vars <- unique(o_sepRF$block_type)
 # Combinations of fixed variables, vs. null 
 # Within timeWin & session
 
-filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-TimewinSes_interOnly.csv", sep = "")
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-TimewinSes_interOnly_timeAsFactor.csv", sep = "")
 
 fixed_vars= c( "blockpos", "opos", "block_type","seniority")
 
@@ -112,7 +113,7 @@ print(sortedTable)
 ```{r}
 # Combinations of fixed variables, vs. null 
 # Within timeWin
-filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-Timewin_interOnly.csv", sep = "")
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-Timewin_interOnly_timeAsFactor.csv", sep = "")
 
 fixed_vars= c( "blockpos", "ses", "opos","block_type","seniority") #"ses*block_type" will raise an error
 
@@ -165,7 +166,7 @@ print(sortedTable)
 # Within ALL
 
 fixed_vars= c( "blockpos", "timeWin", "ses", "opos", "block_type","seniority") #"ses*block_type" will raise an error
-filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub_within-X_interOnly.csv", sep = "")
+filename = paste("mm_", curr_ver,"_res_sepRF_allFixed+1sub+trailID_within-X_interOnly_timeAsFactor.csv", sep = "")
 
 # all posible combinations
 all_models_fix_var <- unlist(sapply(1:length(fixed_vars), function(x) combn(fixed_vars, x, paste, collapse = "+")))
@@ -178,8 +179,8 @@ for (var_name in fixed_vars) {
 
 for (mod in all_models_fix_var) {
   for (posneg in posneg_vector) {
-    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub)", sep = "")
-    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub)", sep = "")
+    exp_mod <- paste("ampAvg_", posneg ," ~ 1 + ",mod," + (1|sub) + (1|trialID)", sep = "")
+    null_mod <- paste("ampAvg_",posneg ," ~ 1 + (1|sub) + (1|trialID)", sep = "")
     o_sepRF.model<-lmer(as.formula(exp_mod) , data=subset(o_sepRF), REML=FALSE)
     o_sepRF.null <- lmer(as.formula(null_mod) , data=subset(o_sepRF), REML=FALSE)
     

@@ -2,13 +2,14 @@ function run_spatioTemporalAnalysis(args_path)
     %% args set
     args = load(args_path);
     args = args.args;
-    subs = args.subs;
-    wake_files_name_suffix = args.wake_files_name_suffix;
+    subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','38'}; %  args.subs;
+    wake_files_name_suffix = "wake_morning";%args.wake_files_name_suffix;
     ft_cond_dir = args.ft_cond_dir;
     bl = args.bl;
-    contrasts = args.contrasts;
-    pre_vs_post_conds_names = args.pre_vs_post_conds_names;
+    contrasts = {{'ORsenBig5','OFsenBig5'},{'ORsenSmall6','OFsenSmall6'}};%args.contrasts;
+    pre_vs_post_conds_names = {"O"}; %args.pre_vs_post_conds_names;
     output_main_dir = args.output_main_dir;
+    %%
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
@@ -20,12 +21,12 @@ function run_spatioTemporalAnalysis(args_path)
     addpath(args.code_dir)
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%
-    cond_rand_name ='OR';
-    imp = ft_importer(subs,ft_cond_dir,bl,wake_files_name_suffix);
+    cond_rand_name ='O';
+    imp = ft_importer(subs,ft_cond_dir,bl,wake_files_name_suffix); 
     neig = imp.get_neighbours(imp);
-    timelock_OR = imp.get_cond_timelocked(imp,cond_rand_name);
-    electrodes = timelock_OR{1}.label;
-    time = timelock_OR{1}.time;
+    timelock = imp.get_cond_timelocked(imp,cond_rand_name);
+    electrodes = timelock{1}.label;
+    time = timelock{1}.time;
     time0_ind = find(time == 0, 1);
     time_from0 = time(time0_ind:end);
     f = funcs_spatioTemporalAnalysis(imp, electrodes,time);
@@ -48,22 +49,22 @@ function run_spatioTemporalAnalysis(args_path)
     f.spatiotempoClustPerm_cond1VsCond2_subAvg(f,cond1_Vs_cond2_dir, contrasts,plot_topoplot)
     
     %% Cond1 VS Cond2 - per subject
-    plot_topoplot = false;
-    f.spatiotempoClustPerm_cond1VsCond2_perSub(f,cond1_Vs_cond2_dir, contrasts, plot_topoplot)
+%     plot_topoplot = false;
+%     f.spatiotempoClustPerm_cond1VsCond2_perSub(f,cond1_Vs_cond2_dir, contrasts, plot_topoplot)
     
     %% baseline vs activity - subjects mean
     plot_topoplot = true;
     f.spatiotempoClustPerm_baselineVsActivity_subAvg(f,pre_vs_poststim_dir, pre_vs_post_conds_names,plot_topoplot)
 
-    %% Cond1 VS Cond2 - per subject
-    plot_topoplot = false;
-    f.spatiotempoClustPerm_baselineVsActivity_perSub(f,pre_vs_poststim_dir, pre_vs_post_conds_names,plot_topoplot)
-    
+    %% baseline vs activity  - per subject
+%     plot_topoplot = false;
+%     f.spatiotempoClustPerm_baselineVsActivity_perSub(f,pre_vs_poststim_dir, pre_vs_post_conds_names,plot_topoplot)
+%     
 
     %% baseline_avgAndStd_allElectd
-    f.baseline_avgAndStd_allElectd(f,pre_vs_post_conds_names)
+%     f.baseline_avgAndStd_allElectd(f,pre_vs_post_conds_names)
     %% Is the baseline activity signigicantly different than 0
-    f.plot_and_test_basline_different_that_0(f,pre_vs_post_conds_names,dir_baseline_erp)
+%     f.plot_and_test_basline_different_that_0(f,pre_vs_post_conds_names,dir_baseline_erp)
     
     %% Explore clusters deviancy
     % % % cond1_text =  'O';
@@ -92,12 +93,13 @@ function run_spatioTemporalAnalysis(args_path)
     % % %   line(X, Y, 'color', 'r')
     % % % end
     
-    %% print_clusters_probability
-    f.print_clusters_probability(f,contrasts,cond1_Vs_cond2_dir)
+    %% print_clusters_probability per subject
+%     f.print_clusters_probability(f,contrasts,cond1_Vs_cond2_dir)
     
     %% Common time-electrodes matrix for every subjects cond1 vs. cond2 cluster test
     
-    f.timeElectedMatrix_perCond1VsCond2Cluster(f,contrasts,cond1_Vs_cond2_dir)
+%     f.timeElectedMatrix_perCond1VsCond2Cluster(f,contrasts,cond1_Vs_cond2_dir)
+
     %%%%%%%%% Given allSub_masksSum, it plotes topographys for every 100ms  %%%%%%
     % % % [imp,grandAvg_cond] = imp.get_cond_grandAvg(imp,cond_rand_name);
     % % % for i=1:5
@@ -129,21 +131,18 @@ function run_spatioTemporalAnalysis(args_path)
     for cont_i=1:size(contrasts,2)
         conds = {contrasts{cont_i}{1},contrasts{cont_i}{2},'O','T'};  % makes sure it's size 4 (cond1, cond2, O, T)
 
-        conds_preVsPoststim = {};
-        for cond_j= 1:size(conds,2)
-            conds_preVsPoststim.(conds{cond_j}) = load(sprintf("%s\\preVsPoststim_bl-%d_%s_avg",pre_vs_poststim_dir,bl, conds{cond_j}));
-        end
+        cond_preVsPoststim = load(sprintf("%s\\preVsPoststim_bl-%d_%s_avg",pre_vs_poststim_dir,bl, 'O'));
 
-        f.plot_OClusters_contrasts(f,conds,conds_preVsPoststim,pre_vs_poststim_dir,true)
-        f.plot_OClusters_contrasts(f,conds,conds_preVsPoststim,pre_vs_poststim_dir,false)
+        f.plot_OClusters_contrasts(f,conds,cond_preVsPoststim,pre_vs_poststim_dir,true)
+        f.plot_OClusters_contrasts(f,conds,cond_preVsPoststim,pre_vs_poststim_dir,false)
     end
     
     %% Time permutation analysis for each electrode X subj
-    f.tempoClustPerm_cond1VsCond2_perSub(f,contrasts,persub_output_dir)
+%     f.tempoClustPerm_cond1VsCond2_perSub(f,contrasts,persub_output_dir)
     
     %% Create a graph sums all sig. electrode X subj
-    f.plot_allSubs_electrodes_sig_range(f,contrasts,persub_output_dir)
-    f.plot_allSubs_electrodes_sig_range_omissionAvgElect(f,contrasts,persub_output_dir,pre_vs_poststim_dir)
-    f.plot_allSubs_electrodes_sig_range_omissionPerSubElect(f,contrasts,persub_output_dir,pre_vs_poststim_dir)
+%     f.plot_allSubs_electrodes_sig_range(f,contrasts,persub_output_dir)
+%     f.plot_allSubs_electrodes_sig_range_omissionAvgElect(f,contrasts,persub_output_dir,pre_vs_poststim_dir)
+%     f.plot_allSubs_electrodes_sig_range_omissionPerSubElect(f,contrasts,persub_output_dir,pre_vs_poststim_dir)
 end
 

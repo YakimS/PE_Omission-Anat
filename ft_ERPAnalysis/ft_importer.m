@@ -1,7 +1,8 @@
 classdef ft_importer < handle
     properties (SetAccess = private)
       subs
-      dir
+      input_dir
+      output_dir
       baseline_length
       choosenSuffix
       
@@ -14,9 +15,10 @@ classdef ft_importer < handle
     end
     methods(Static)
         % constructor
-        function o = ft_importer(subs, dir, baseline_length,choosenSuffix)
+        function o = ft_importer(subs, input_dir,output_dir, baseline_length,choosenSuffix)
             o.subs = subs;
-            o.dir = dir;
+            o.input_dir = input_dir;
+            o.output_dir = output_dir;
             o.baseline_length = baseline_length;
             o.choosenSuffix = choosenSuffix;
 
@@ -32,8 +34,11 @@ classdef ft_importer < handle
         function s = get_subs(o)
             s = o.subs;
         end
-        function s = get_dir(o)
-            s = o.dir;
+        function s = get_input_dir(o)
+            s = o.input_dir;
+        end
+        function s = get_output_dir(o)
+            s = o.output_dir;
         end
         function s = get_baseline_length(o)
             s = o.baseline_length;
@@ -60,8 +65,8 @@ classdef ft_importer < handle
                 ft_subs_cond = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
                     if contains(o.choosenSuffix,'all') % import both wake night and morning
-                        file_path_ngt = sprintf("%s\\%s\\s_%s_%s_%s.mat",o.dir,'wake_night_referenced',o.subs{sub_i},'wake_night_referenced',cond);
-                        file_path_mng = sprintf("%s\\%s\\s_%s_%s_%s.mat",o.dir,'wake_morning_referenced',o.subs{sub_i},'wake_morning_referenced',cond);
+                        file_path_ngt = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_night',cond);
+                        file_path_mng = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_morning',cond);
                         try
                             sub_data_ngt = load(file_path_ngt);
                             sub_data_mng = load(file_path_mng);
@@ -73,7 +78,7 @@ classdef ft_importer < handle
                             sprintf('cant find: %s\n or: %s', file_path_ngt,file_path_mng)
                         end                            
                     else     % import only one cond 
-                        file_path = sprintf("%s\\%s\\s_%s_%s_%s.mat",o.dir,o.choosenSuffix,o.subs{sub_i},o.choosenSuffix,cond);
+                        file_path = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},o.choosenSuffix,cond);
                         try
                             sub_data = load(file_path);
                             ft_subs_cond{sub_i} = sub_data.ft_data;
@@ -91,7 +96,7 @@ classdef ft_importer < handle
             if ~isfield(o.timlocked,cond)
                 allsubs_cond_timlocked = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s//%s//timelocked_cond-%s_sub-%s.mat",o.dir,o.choosenSuffix,cond,o.subs{sub_i});
+                    file_path = sprintf("%s\\timelocked_%s_cond-%s_sub-%s.mat",o.output_dir,o.choosenSuffix,cond,o.subs{sub_i});
                     try
                         loaded = load(file_path);
                         allsubs_cond_timlocked{sub_i} = loaded.timelocked_subcond;
@@ -99,7 +104,7 @@ classdef ft_importer < handle
                         cfg = [];
                         conds_ftraw = o.get_rawFt_cond(o,cond);
                         allsubs_cond_timlocked{sub_i} = ft_timelockanalysis(cfg, conds_ftraw{sub_i});
-        
+                        allsubs_cond_timlocked{sub_i}.('trials_timelocked_avg') = numel(conds_ftraw{sub_i}.trial);
                         %save
                         timelocked_subcond = allsubs_cond_timlocked{sub_i};
                         save(file_path,"timelocked_subcond")
@@ -114,7 +119,7 @@ classdef ft_importer < handle
             if ~isfield(o.timlocked_bl,cond)
                 allsubs_cond_timlockedBl = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s//%s//bl%dms-timelocked_cond-%s_sub-%s.mat",o.dir,o.choosenSuffix,o.baseline_length,cond,o.subs{sub_i});
+                    file_path = sprintf("%s//bl%dms-timelocked_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,o.choosenSuffix,cond,o.subs{sub_i});
                     try
                         loaded = load(file_path);
                         allsubs_cond_timlockedBl{sub_i} = loaded.baseline_subcond;
@@ -143,7 +148,7 @@ classdef ft_importer < handle
             if ~isfield(o.raw_bl,cond)
                 allsubs_cond_rawBl = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s//%s//bl%dms-raw_cond-%s_sub-%s.mat",o.dir,o.choosenSuffix,o.baseline_length,cond,o.subs{sub_i});
+                    file_path = sprintf("%s//bl%dms-raw_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,o.choosenSuffix,cond,o.subs{sub_i});
                     try
                         loaded = load(file_path);
                         allsubs_cond_rawBl{sub_i} = loaded.baseline_subcond;
@@ -173,7 +178,7 @@ classdef ft_importer < handle
         function cond_grandAvg = get_cond_grandAvg(o,cond)
             if ~isfield(o.grandAvg,cond)
                 cfg = [];
-                file_path = sprintf("%s//%s//timelock_grandAvg_cond-%s.mat",o.dir,o.choosenSuffix,cond);
+                file_path = sprintf("%s//timelock_grandAvg_%s_cond-%s.mat",o.output_dir,o.choosenSuffix,cond);
                 try
                     loaded = load(file_path);
                     cond_grandAvg = loaded.timelockGrandavg_cond;
@@ -183,7 +188,7 @@ classdef ft_importer < handle
         
                     %save
                     timelockGrandavg_cond = cond_grandAvg;
-                    save(sprintf("%s/timelocked_cond-%s_sub-avg.mat",o.dir,cond),"timelockGrandavg_cond")
+                    save(sprintf("%s/timelocked_cond-%s_sub-avg.mat",o.output_dir,cond),"timelockGrandavg_cond")
                 end
             else
                 cond_grandAvg = o.grandAvg.(cond);

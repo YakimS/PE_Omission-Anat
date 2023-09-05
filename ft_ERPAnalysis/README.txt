@@ -12,4 +12,4 @@ inside ft_ERPAnalysis:
 
 	 - Run analysis: run_spatioTemporalAnalysis(“path/X.mat”)
 
-		 - You can run in cmd using this command: "C:\Program Files\MATLAB\R2023a\bin\matlab.exe" -nosplash -nodesktop -r "cd('C:\Users\User\OneDrive\Documents\githubProjects\PE_Omission-Anat\ERPAnalysis'), run_spatioTemporalAnalysis('spatioTempoAnaly_run_all.mat'), exit"
+		 - You can run in cmd using this command: "C:\Program Files\MATLAB\R2023a\bin\matlab.exe" -nosplash -nodesktop -r "cd('C:\Users\User\OneDrive\Documents\githubProjects\PE_Omission-Anat\ft_ERPAnalysis'), run_spatioTemporalAnalysis('spatioTempoAnaly_run_all.mat'), exit"

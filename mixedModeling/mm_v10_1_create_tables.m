@@ -10,7 +10,7 @@ imported_output_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\impo
 referenced_set_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced';
 referenced_event_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced\elaborated_events';
 output_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\mix_modeling';
-referenced_elaboEvents_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced\elaborated_events';
+referenced_elaboEventsoutliers_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced\elaborated_events+outliers';
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
 
 %%
@@ -23,7 +23,7 @@ clustering_res = load ('C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ft_
 posClustElect = find(any(clustering_res.posclusterslabelmat == 1, 2));
 negClustElect = find(any(clustering_res.negclusterslabelmat == 1, 2));
 %% Includes variable 'block_type'
-columns = {'sub','ses','timeWin','block_type','seniority','blockpos','opos','ampAvg_pos','ampAvg_neg'};
+columns = {'sub','ses','timeWin','trialID','block_type','seniority','blockpos','opos','ampAvg_pos','ampAvg_neg'};
 mm_mat = cell(numel(subs)*numel(referenced_filename_ses_types)*o_trials_per_subSes*numel(timewin),numel(columns));
 mm_mat = cell2struct(mm_mat, columns,2);
 % create elaborated event file for referenced event files
@@ -37,7 +37,7 @@ for sub_i=1:numel(subs)
         try 
             % get referenced file
             set_filename = sprintf('%s\\s_%s_%s_%s.set',referenced_set_dir,curr_sub,curr_ses,referenced_preproce_name);
-            event_mat_filename = sprintf('%s\\s_%s_%s_%s_elaboEvents.mat',referenced_elaboEvents_dir,curr_sub,curr_ses,referenced_preproce_name);
+            event_mat_filename = sprintf('%s\\s_%s_%s_%s_elaboEvents+outliers.mat',referenced_elaboEventsoutliers_dir,curr_sub,curr_ses,referenced_preproce_name);
             if isfile(set_filename)
                 eeglab_referenced =  pop_loadset(set_filename);
                 elaborated_events = load(event_mat_filename);
@@ -55,7 +55,8 @@ for sub_i=1:numel(subs)
         if ~got_files  continue;  end
 
         % get o data of sub in ses & put it in a table
-        o_events_indexes = find( strcmp({elaborated_events.('TOA')},'O')  == 1);
+        o_events_indexes = find( strcmp({elaborated_events.('TOA')},'O')  == 1 & ...
+            [elaborated_events.('is_outlier_trial')] == 0);
         for o_i=1:size(o_events_indexes,2)
             for j=1:numel(timewin)
                 curr_timeWin = split(timewin{j},'-');
@@ -72,7 +73,9 @@ for sub_i=1:numel(subs)
 
                 mm_mat(mm_i).('opos') = elaborated_events(o_events_indexes(o_i)).tone_pos_in_trial;
                 mm_mat(mm_i).('blockpos') = 1+floor(elaborated_events(o_events_indexes(o_i)).block_pos_in_file/10);
+                mm_mat(mm_i).('trialID') = sprintf('%s_%s_%d',curr_sub,curr_ses,elaborated_events(o_events_indexes(o_i)).event_id);
                 mm_mat(mm_i).('block_type') = elaborated_events(o_events_indexes(o_i)).block_type;
+                
                 curr_sen = floor(elaborated_events(o_events_indexes(o_i)).omission_type_seniority);
                 if curr_sen <=3
                     mm_mat(mm_i).('seniority') = 1;
