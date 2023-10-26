@@ -1,11 +1,13 @@
-args_path = "C:\Users\User\OneDrive\Documents\githubProjects\PE_Omission-Anat\ft_ERPAnalysis\running_mats\spatioTempoAnaly_run_wake_night.mat";
+args_path = "C:\Users\User\OneDrive\Documents\githubProjects\ft_ERPAnalysis\running_mats\spatioTempoAnaly_run_wake_night.mat";
 args = load(args_path);
 args = args.args;
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'}; %  args.subs;
-sovs = {'N1','N2','REM','N3','wake_night','wake_morning'}; %args.wake_files_name_suffix; % 
+sovs = {'wake_night','wake_morning','N1','N2','REM','N3'}; %args.wake_files_name_suffix; % 
 
 bl = args.bl;
 contrasts = {{'OF','OR'},{'A','T'},{'OFsenBig5','ORsenBig5'},{'OFsenSmall6','ORsenSmall6'},{'OFstrt','ORstrt'},{'OFmid','ORmid'},{'OFend','ORend'}}; %args.contrasts;
+contrasts = {{'OF','OR'},{'A','T'}};
+contrasts_strings = {{'Fixed Omission','Random Omission'},{'Omission', 'Tone'}};
 %{'A',"O",'T','ORsenBig5','ORsenSmall6','OFsenBig5','OFsenSmall6','OR','OF','OEf6','OEf2','OEf3','OEf4','OEf5','ORl6','ORl7'};
 pre_vs_post_conds_names = {"O"}; %args.pre_vs_post_conds_names;
 output_main_dir = args.output_main_dir;
@@ -39,8 +41,6 @@ for sov_i = 1:numel(sovs)
 %     else
 %         curr_contrasts = remove_strtMidEnd_contrasts(contrasts);
 %     end
-    contrasts = {{'O','T'}};
-    contrasts_strings = {{'Omission', 'Tone'}};
     curr_contrasts = contrasts;
     curr_contrast_strings = contrasts_strings;
     for contrast_i=1:numel(curr_contrasts)
@@ -74,28 +74,26 @@ function between_subs_analysis(subs,contrast,output_main_dir,bl,ft_cond_input_di
 
         
 %     % baseline vs activity - subjects mean
-%     plot_topoplot = true;
-%     f.spatiotempoClustPerm_baselineVsActivity_subAvg(f,pre_vs_poststim_dir, pre_vs_post_conds_names,plot_topoplot)
+    plot_topoplot = true;
+    f.spatiotempoClustPerm_baselineVsActivity_subAvg(f,pre_vs_poststim_dir, pre_vs_post_conds_names,plot_topoplot)
     
     f.plot_erp_per_contrast_and_sov(f,sov,contrast,contrast_strings,output_main_dir,'wake_night')
     f.plot_erp_per_contrast_and_sov(f,sov,contrast,contrast_strings,output_main_dir,sov)
 
 %     
     % Cond1 VS Cond2 - subjects mean
-%     plot_topoplot = true;
-%     f.spatiotempoClustPerm_cond1VsCond2_subAvg(f,cond1_Vs_cond2_dir, {contrast},plot_topoplot)
-% 
-%     % Get time-electodes clusters of cond O vs. baseline. Look for difference in OF vs. OR in that time-electrode range
-%     % with cluster permutatiton diff results
-%     
-%     for cont_i=1:size(contrasts,2)
-%         conds = {contrasts{cont_i}{1},contrasts{cont_i}{2},'O'};  % makes sure it's size 4 (cond1, cond2, O, T), or 3 but then you need to check "false" on the is_with_T_lines
-%     
-%         cond_preVsPoststim = load(sprintf("%s\\preVsPoststim_bl-%d_%s_avg",pre_vs_poststim_dir,bl, 'O'));
-% 
-%         plot_OClusters_contrasts(f,conds,cond_preVsPoststim,pre_vs_poststim_dir,true,false)
-%         plot_OClusters_contrasts(f,conds,cond_preVsPoststim,pre_vs_poststim_dir,false,false)
-%     end 
+    plot_topoplot = true;
+    f.spatiotempoClustPerm_cond1VsCond2_subAvg(f,cond1_Vs_cond2_dir, {contrast},plot_topoplot)
+
+    % Get time-electodes clusters of cond O vs. baseline. Look for difference in OF vs. OR in that time-electrode range
+    % with cluster permutatiton diff results
+
+    conds = {contrast{1},contrast{2},'O'};  % makes sure it's size 4 (cond1, cond2, O, T), or 3 but then you need to check "false" on the is_with_T_lines
+
+    cond_preVsPoststim = load(sprintf("%s\\preVsPoststim_bl-%d_%s_avg",pre_vs_poststim_dir,bl, 'O'));
+
+    f.plot_OClusters_contrasts(f,conds,cond_preVsPoststim,pre_vs_poststim_dir,true,false)
+    f.plot_OClusters_contrasts(f,conds,cond_preVsPoststim,pre_vs_poststim_dir,false,false)
 end
 
 

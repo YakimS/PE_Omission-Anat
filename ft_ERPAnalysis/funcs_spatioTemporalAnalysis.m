@@ -86,8 +86,8 @@ classdef funcs_spatioTemporalAnalysis
                 cond1_name = contrasrs{contrast_ind}{1};
                 cond2_name = contrasrs{contrast_ind}{2};
 
-                curr_output_filename = sprintf("%s\\%svs%s_summary-allSubElectd.png",persub_output_dir,cond1_name,cond2_name);
-                if isfile(curr_output_filename) continue; end
+                curr_output_filename = sprintf("%s\\%svs%s_summary-allSubElectd",persub_output_dir,cond1_name,cond2_name);
+                if isfile(sprintf("%s.png",curr_output_filename)) continue; end
 
                 num_of_subs_with_clust = 0;
                 num_of_sig_electrodes = 0;
@@ -119,7 +119,9 @@ classdef funcs_spatioTemporalAnalysis
                 ylim([0,plot_counter])
                 xlim([f.time(1),f.time(end)])
                 hold off
-                saveas(gcf, curr_output_filename)
+                saveas(gcf,sprintf("%s.png",curr_output_filename));
+                saveas(gcf,sprintf("%s.svg",curr_output_filename));
+                saveas(gcf,sprintf("%s.fig",curr_output_filename));
             end
         end
         
@@ -130,8 +132,8 @@ classdef funcs_spatioTemporalAnalysis
                 cond1_name = contrasrs{contrast_ind}{1};
                 cond2_name = contrasrs{contrast_ind}{2};
         
-                curr_output_filename = sprintf("%s\\%svs%s_summary-allSubElectd_omissionAvgElect.png",persub_output_dir,cond1_name,cond2_name);
-                if isfile(curr_output_filename) continue; end
+                curr_output_filename = sprintf("%s\\%svs%s_summary-allSubElectd_omissionAvgElect",persub_output_dir,cond1_name,cond2_name);
+                if isfile(sprintf("%s.png",curr_output_filename)) continue; end
         
                 time0_ind = find(f.time == 0, 1);
                 num_of_subs_with_clust = 0;
@@ -196,7 +198,9 @@ classdef funcs_spatioTemporalAnalysis
                 xlim([f.time(1),f.time(end)])
                 ylim([0,plot_counter])
                 hold off
-                saveas(gcf, curr_output_filename)
+                saveas(gcf,sprintf("%s.png",curr_output_filename));
+                saveas(gcf,sprintf("%s.svg",curr_output_filename));
+                saveas(gcf,sprintf("%s.fig",curr_output_filename));
             end
         end
 
@@ -208,8 +212,8 @@ classdef funcs_spatioTemporalAnalysis
                 cond1_name = contrasrs{contrast_ind}{1};
                 cond2_name = contrasrs{contrast_ind}{2};
         
-                curr_output_filename = sprintf("%s\\%svs%s_summary-allSubElectd_omissionPerSubElect.png",persub_output_dir,cond1_name,cond2_name);
-                if isfile(curr_output_filename) continue; end
+                curr_output_filename = sprintf("%s\\%svs%s_summary-allSubElectd_omissionPerSubElect",persub_output_dir,cond1_name,cond2_name);
+                if isfile(sprintf("%s.png",curr_output_filename)) continue; end
             
                 currsub_preVsPoststim.("O") = load(sprintf("%s\\preVsPoststim_bl-%d_O_avg.mat",pre_vs_poststim_dir, bl));
                 num_of_subs_with_clust = 0;
@@ -274,7 +278,10 @@ classdef funcs_spatioTemporalAnalysis
                 xlim([f.time(1),f.time(end)])
                 ylim([0,plot_counter])
                 hold off
-                saveas(gcf, curr_output_filename)
+                saveas(gcf,sprintf("%s.png",curr_output_filename));
+                saveas(gcf,sprintf("%s.svg",curr_output_filename));
+                saveas(gcf,sprintf("%s.fig",curr_output_filename));
+                
             end
         end
 
@@ -301,8 +308,8 @@ classdef funcs_spatioTemporalAnalysis
                         pos_or_neg_text = 'neg';
                     end
                     for clust_ind=1:size(clusters,2)
-                        curr_output_filename = sprintf("%s//clustCond-%s_contrast-%svs%s_bl-%d_clustInd-%d%s_PerSub.png",pre_vs_poststim_dir,bl_cond_text,cond1_text,cond2_text,bl,clust_ind,pos_or_neg_text);
-                        if isfile(curr_output_filename) continue; end
+                        curr_output_filename = sprintf("%s//clustCond-%s_contrast-%svs%s_bl-%d_clustInd-%d%s_PerSub",pre_vs_poststim_dir,bl_cond_text,cond1_text,cond2_text,bl,clust_ind,pos_or_neg_text);
+                        if isfile(sprintf("%s.png",curr_output_filename)) continue; end
                         if clusters{clust_ind} > 0.05   continue; end
                         
                         % get time-electrode mask for current cluster
@@ -342,7 +349,9 @@ classdef funcs_spatioTemporalAnalysis
                         text(0.5,0.7,cond1_text,'Color','b')
                         text(0.5,0.5,cond2_text,'Color','r')
                         text(0.5,0.2,'O','Color','g')
-                        saveas(fig, curr_output_filename)
+                        saveas(fig,sprintf("%s.png",curr_output_filename));
+                        saveas(fig,sprintf("%s.svg",curr_output_filename));
+                        saveas(fig,sprintf("%s.fig",curr_output_filename));
                     end
                 end
             end
@@ -443,8 +452,8 @@ classdef funcs_spatioTemporalAnalysis
             neig = f.imp.get_neighbours(f.imp);
             time0_ind = find(f.time == 0, 1);
             for cond_i= 1:size(conds_names,2)
-                curr_output_filename = sprintf("%s//Cond-%s_baseline_perSub_allelectd.png",dir_baseline_erp, conds_names{cond_i});
-                if isfile(curr_output_filename) continue; end
+                curr_output_filename = sprintf("%s//Cond-%s_baseline_perSub_allelectd",dir_baseline_erp, conds_names{cond_i});
+                if isfile(sprintf("%s.png", curr_output_filename)) continue; end
 
                 number_of_different_than_0_baseline = 0;
                 fig = figure;
@@ -479,7 +488,9 @@ classdef funcs_spatioTemporalAnalysis
                 
                
                 title(han,sprintf('Cond - %s : All electrodes, baseline activity per subject',conds_names{cond_i}));
-                saveas(gcf, curr_output_filename)
+                saveas(gcf,sprintf("%s.png",curr_output_filename));
+                saveas(gcf,sprintf("%s.svg",curr_output_filename));
+                saveas(gcf,sprintf("%s.fig",curr_output_filename));
                 fprintf("Cond-%s: number_of_different_than_0_baseline: %d,   out of: %d\n",conds_names{cond_i},number_of_different_than_0_baseline,size(subs,2)*size(neig,2))
             end
         end
@@ -589,8 +600,8 @@ classdef funcs_spatioTemporalAnalysis
                 cond1_text = contrasrs{contrast_ind}{1};
                 cond2_text = contrasrs{contrast_ind}{2};
 
-                curr_output_filename = sprintf("%s//%svs%s_prevelenceInSpatiotemporalCluster.png",cond1_Vs_cond2_dir,cond1_text,cond2_text);
-                if isfile(curr_output_filename) continue; end
+                curr_output_filename = sprintf("%s//%svs%s_prevelenceInSpatiotemporalCluster",cond1_Vs_cond2_dir,cond1_text,cond2_text);
+                if isfile(springf("%s.png", curr_output_filename)) continue; end
 
                 allSub_masksSum = zeros(size(f.electrodes,1),size(f.time,2));
                 number_of_sub_with_sig_clusters = 0;
@@ -609,7 +620,9 @@ classdef funcs_spatioTemporalAnalysis
                     sprintf('Number of subjects with sig electrodes is: %d',number_of_sub_with_sig_clusters))
                 colorbar
                 %caxis([0, 5]);
-                saveas(gcf, curr_output_filename)
+                saveas(gcf,sprintf("%s.png",curr_output_filename));
+                saveas(gcf,sprintf("%s.svg",curr_output_filename));
+                saveas(gcf,sprintf("%s.fig",curr_output_filename));
             end
         end
         
@@ -636,8 +649,8 @@ classdef funcs_spatioTemporalAnalysis
                     else
                         is_with_timeElectrode_lines_string = "SEM";
                     end
-                    curr_output_filename = sprintf("%s//clustCond-%s_contrast-%svs%s_bl-%d_clustInd-%d%s_%s.png",dir_clusters_erp,conds{3},conds{1},conds{2},bl,clust_ind,pos_or_neg_text,is_with_timeElectrode_lines_string);
-                    if isfile(curr_output_filename) continue; end
+                    curr_output_filename = sprintf("%s//clustCond-%s_contrast-%svs%s_bl-%d_clustInd-%d%s_%s",dir_clusters_erp,conds{3},conds{1},conds{2},bl,clust_ind,pos_or_neg_text,is_with_timeElectrode_lines_string);
+                    if isfile(sprintf("%s.png",curr_output_filename)) continue; end
                     
                     % get time-electrode mask for current cluster
                     curr_clust_mask = clust_mask;
@@ -720,7 +733,9 @@ classdef funcs_spatioTemporalAnalysis
                     end
                     xlabel('Time (s)')
                     ylabel('µV')
-                    saveas(gcf, curr_output_filename)
+                    saveas(gcf,sprintf("%s.png",curr_output_filename));
+                    saveas(gcf,sprintf("%s.svg",curr_output_filename));
+                    saveas(gcf,sprintf("%s.fig",curr_output_filename));
 
                     % plot the clusters electrodes topography
                     figure();
@@ -729,7 +744,9 @@ classdef funcs_spatioTemporalAnalysis
                     cfg.elec= cond_preVsPoststim.elec;
                     layout = ft_prepare_layout(cfg);
                     ft_plot_layout(layout,'label','no','box','no','chanindx',clust_electd,'pointsize',22);
-                    saveas(gcf, sprintf("%s_topography.png",erase(curr_output_filename,".png")))            
+                    saveas(gcf,sprintf("%s_topography.png",curr_output_filename));
+                    saveas(gcf,sprintf("%s_topography.svg",curr_output_filename));
+                    saveas(gcf,sprintf("%s_topography.fig",curr_output_filename));
                 end
             end
         end
@@ -763,7 +780,7 @@ classdef funcs_spatioTemporalAnalysis
                 for clust_ind=1:size(clusters,2)
                     if clusters{clust_ind} > 0.05 continue;  end
         
-                    curr_output_filename = sprintf('%s\\ERP_sov-%s_cond-%s_clust-%s-%s-%s.png',cond1_Vs_cond2_dir,sov,['{' strjoin(contrast, ',') '}'],cond_preVsPoststim_name,pos_or_neg_text,electrode_cluster_name);
+                    curr_output_filename = sprintf('%s\\ERP_sov-%s_cond-%s_clust-%s-%s-%s',cond1_Vs_cond2_dir,sov,['{' strjoin(contrast, ',') '}'],cond_preVsPoststim_name,pos_or_neg_text,electrode_cluster_name);
                     %if isfile(curr_output_filename) continue; end
         
                     % get time-electrode mask for current cluster
@@ -842,8 +859,8 @@ classdef funcs_spatioTemporalAnalysis
             timediff = cond1_struct.time{1}(2) - cond1_struct.time{1}(1);
             toi = latency(1): timediff :latency(2);
             if is_plot_topoplot
-                png_filename = erase(stat_file_string,".mat");
-                cfg = funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,png_filename);
+                filename = erase(stat_file_string,".mat");
+                cfg = funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,filename);
                 metadata.cfg_ft_clusterplot =  cfg;
             end
         end
@@ -887,22 +904,21 @@ classdef funcs_spatioTemporalAnalysis
             
             % plot
             if is_plot_topoplot
-                png_filename = erase(mat_filename,".mat");
+                filename = erase(mat_filename,".mat");
+                summary_filename = sprintf("%s_summary",filename);
                 if is_cluster_exists
                     timediff = 0.004;
                     toi = latency(1): timediff :latency(2);
-                    cfg = funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,png_filename);
+                    cfg = funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,filename);
                     metadata.cfg_ft_clusterplot =  cfg;
     
                     timediff = 0.04;
                     toi = latency(1): timediff :latency(2);
-                    png_filename = sprintf("%s_summary",png_filename);
-                    funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,png_filename);
+                    funcs_spatioTemporalAnalysis.cluster_plot(stat,toi,summary_filename);
                 else
-                    png_summary_filename = sprintf("%s_summary.png",png_filename);
                     timediff = 0.04;
                     toi = latency(1): timediff :latency(2);
-                    cfg = funcs_spatioTemporalAnalysis.topo_plot(stat,toi,png_summary_filename);
+                    cfg = funcs_spatioTemporalAnalysis.topo_plot(stat,toi,summary_filename);
                 end
             end
         end
@@ -951,23 +967,23 @@ classdef funcs_spatioTemporalAnalysis
 
         % plotting
 
-        function cfg = cluster_plot(stat,toi,png_filename)
+        function cfg = cluster_plot(stat,toi,filename)
             % make a plot
             cfg = [];
             cfg.zlim = [-5 5];
             cfg.alpha = 0.2; % This is the max alpha to be plotted. (0.3 is the hights value possible)
-            cfg.saveaspng = png_filename;
+            cfg.saveaspng = filename;
             cfg.visible = 'no';
             cfg.toi =toi;
             %cfg.highlightsymbolseries   =[0.01 0.05 0.1 0.2 0.3]; %1x5 vector, highlight marker symbol series (default ['*', 'x', '+', 'o', '.'] for p < [0.01 0.05 0.1 0.2 0.3]
             cfg.highlightsizeseries     = [4 4 4 4 4];
              cfg.highlightcolorpos       = [0.3 0 0];
              cfg.highlightcolorneg       = [0 0 0.3];
-            cfg = ft_clusterplot(cfg, stat);
+            cfg = ft_clusterplot(cfg, stat); % i added saveas(gcf,sprintf("%s.png",filename)); etc to the function's code.
 
         end
 
-        function cfg = topo_plot(preVsPoststim_res,toi,png_filename)
+        function cfg = topo_plot(preVsPoststim_res,toi,filename)
             cfg = [];
             cfg.xlim = toi;
             cfg.parameter = 'stat';
@@ -975,7 +991,7 @@ classdef funcs_spatioTemporalAnalysis
             cfg.comment  ='xlim';
             cfg.commentpos = 'middletop';
             cfg.colormap = 'coolwarm';
-            cfg  = ft_topoplotER(cfg,png_filename,preVsPoststim_res); %to enable saving you need to delete:"saveif ~ft_nargout don't return anything clear cfg end", and add "saveas(gcf,png_filename);" at the end and png_filename to the argument list
+            cfg  = ft_topoplotER(cfg,filename,preVsPoststim_res); %to enable saving you need to delete:"saveif ~ft_nargout don't return anything clear cfg end", and add "saveas(gcf,png_filename);" at the end and png_filename to the argument list
         end
     
         function custom_colormap = get_colormap_for_sovs(sovs)
@@ -1050,7 +1066,9 @@ classdef funcs_spatioTemporalAnalysis
             xlabel('Time (ms)')
             ylabel('µV')
         
-            saveas(gcf, curr_output_filename)
+            saveas(gcf,sprintf("%s.png",curr_output_filename));
+            saveas(gcf,sprintf("%s.svg",curr_output_filename));
+            saveas(gcf,sprintf("%s.fig",curr_output_filename));
             close;
         end
 
