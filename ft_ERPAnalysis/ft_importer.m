@@ -7,8 +7,10 @@ classdef ft_importer < handle
       choosenSuffix
       
       ftRaw
+      ftRaw_bl_interblock
       timlocked
-      timlocked_bl
+      timlocked_bl_pretrial
+      timlocked_bl_interblock
       raw_bl
       grandAvg
       neighbours
@@ -24,7 +26,7 @@ classdef ft_importer < handle
 
             o.ftRaw = {};
             o.timlocked = {};
-            o.timlocked_bl = {};
+            o.timlocked_bl_pretrial = {};
             o.raw_bl = {};
             o.grandAvg = {};
         end
@@ -59,6 +61,35 @@ classdef ft_importer < handle
             neighbours = o.neighbours;
         end
 
+        function rawFt_interblockBl_sov = get_rawFt_interblockBl_sov(o,sov)
+            if ~isfield(o.ftRaw_bl_interblock,sov)
+                ft_subs_sov = cell(1, size(o.subs,2));
+                for sub_i=1:size(o.subs,2)
+                    if strcmp(o.choosenSuffix,'wake') % import both wake night and morning
+                        file_path = sprintf("%s\\s_%s_%s_interblock.mat",o.input_dir,o.subs{sub_i},'wake');
+                        try
+                            sub_data = load(file_path);
+
+                            cfg = [];
+                            ft_data =  ft_appenddata(cfg, sub_data.ft_data);
+                            ft_subs_sov{sub_i} = ft_data;
+                        catch ME
+                            sprintf('cant find: %s\n or: %s', file_path)
+                        end                            
+                    else     % import only one cond 
+                        file_path = sprintf("%s\\s_%s_%s_interblock.mat",o.input_dir,o.subs{sub_i},sov);
+                        try
+                            sub_data = load(file_path);
+                            ft_subs_sov{sub_i} = sub_data.ft_data;
+                        catch ME
+                            sprintf('cant find: %s', file_path)
+                        end
+                    end
+                end
+                o.ftRaw_bl_interblock.(sov) = ft_subs_sov;
+            end
+            rawFt_interblockBl_sov = o.ftRaw_bl_interblock.(sov);
+        end
 
         function cond_ftRaw = get_rawFt_cond(o,cond)
             if ~isfield(o.ftRaw,cond)
@@ -115,8 +146,8 @@ classdef ft_importer < handle
             cond_timlocked = o.timlocked.(cond);
         end
         
-        function cond_timlockedBl = get_cond_timelockedBl(o,cond)
-            if ~isfield(o.timlocked_bl,cond)
+        function cond_timlockedBl_preStim = get_cond_timelockedBl_preStim(o,cond)
+            if ~isfield(o.timlocked_bl_pretrial,cond)
                 allsubs_cond_timlockedBl = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
                     file_path = sprintf("%s//bl%dms-timelocked_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,o.choosenSuffix,cond,o.subs{sub_i});
@@ -141,7 +172,31 @@ classdef ft_importer < handle
                 end
                 o.timlocked_bl.(cond) = allsubs_cond_timlockedBl;
             end
-            cond_timlockedBl = o.timlocked_bl.(cond);
+            cond_timlockedBl_preStim = o.timlocked_bl_pretrial.(cond);
+        end
+
+        function cond_timlockedBl_interblock = get_cond_timelockedBl_interblock(o,sov)
+            if ~isfield(o.timlocked_bl_interblock,sov)
+                allsubs_cond_timlockedBl = cell(1, size(o.subs,2));
+                for sub_i=1:size(o.subs,2)
+                    file_path = sprintf("%s//bl-interblock-timelocked_sov-%s_sub-%s.mat",o.output_dir,sov,o.subs{sub_i});
+                    try
+                        loaded = load(file_path);
+                        allsubs_cond_timlockedBl{sub_i} = loaded.baseline_subcond;
+                    catch ME
+                        cfg = [];
+                        conds_ftraw_BlInterblock = o.get_rawFt_interblockBl_sov(o,sov);
+                        allsubs_cond_timlockedBl{sub_i} = ft_timelockanalysis(cfg, conds_ftraw_BlInterblock{sub_i});
+                        allsubs_cond_timlockedBl{sub_i}.('trials_timelocked_avg') = numel(conds_ftraw_BlInterblock{sub_i}.trial);
+
+                        %save
+                        timelocked_subcond = allsubs_cond_timlockedBl{sub_i};
+                        save(file_path,"timelocked_subcond")
+                    end
+                end
+                o.timlocked_bl_interblock.(sov) = allsubs_cond_timlockedBl;
+            end
+            cond_timlockedBl_interblock = o.timlocked_bl_interblock.(sov);
         end
 
         function cond_rawBl = get_cond_rawBl(o,cond)
