@@ -3,30 +3,26 @@ classdef ft_importer < handle
       subs
       input_dir
       output_dir
-      baseline_length
-      choosenSuffix
       
       ftRaw
       timlocked
-      timlocked_bl
-      raw_bl
       grandAvg
       neighbours
+      tfrHilbert
+      tfrWavelets
     end
     methods(Static)
         % constructor
-        function o = ft_importer(subs, input_dir,output_dir, baseline_length,choosenSuffix)
+        function o = ft_importer(subs, input_dir,output_dir)
             o.subs = subs;
             o.input_dir = input_dir;
             o.output_dir = output_dir;
-            o.baseline_length = baseline_length;
-            o.choosenSuffix = choosenSuffix;
 
             o.ftRaw = {};
             o.timlocked = {};
-            o.timlocked_bl = {};
-            o.raw_bl = {};
             o.grandAvg = {};
+            o.tfrHilbert = {};
+            o.tfrWavelets = {};
         end
 
         % get/set
@@ -39,12 +35,6 @@ classdef ft_importer < handle
         end
         function s = get_output_dir(o)
             s = o.output_dir;
-        end
-        function s = get_baseline_length(o)
-            s = o.baseline_length;
-        end
-        function s = get_choosenSuffix(o)
-            s = o.choosenSuffix;
         end
 
         function neighbours = get_neighbours(o)
@@ -59,14 +49,13 @@ classdef ft_importer < handle
             neighbours = o.neighbours;
         end
 
-
-        function cond_ftRaw = get_rawFt_cond(o,cond)
-            if ~isfield(o.ftRaw,cond)
+        function cond_ftRaw = get_rawFt_cond(o,cond,sov)
+            if ~isfield(o.ftRaw,sprintf("%s_%s",sov.short_s,cond.short_s))
                 ft_subs_cond = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
-                    if contains(o.choosenSuffix,'all') % import both wake night and morning
-                        file_path_ngt = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_night',cond);
-                        file_path_mng = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_morning',cond);
+                    if contains(sov.short_s,'WAll') % import both wake night and morning
+                        file_path_ngt = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_night',cond.import_s);
+                        file_path_mng = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_morning',cond.import_s);
                         try
                             sub_data_ngt = load(file_path_ngt);
                             sub_data_mng = load(file_path_mng);
@@ -78,7 +67,7 @@ classdef ft_importer < handle
                             sprintf('cant find: %s\n or: %s', file_path_ngt,file_path_mng)
                         end                            
                     else     % import only one cond 
-                        file_path = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},o.choosenSuffix,cond);
+                        file_path = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},sov.import_s,cond.import_s);
                         try
                             sub_data = load(file_path);
                             ft_subs_cond{sub_i} = sub_data.ft_data;
@@ -87,112 +76,281 @@ classdef ft_importer < handle
                         end
                     end
                 end
-                o.ftRaw.(cond) = ft_subs_cond;
+                o.ftRaw.(sprintf("%s_%s",sov.short_s,cond.short_s)) = ft_subs_cond;
             end
-            cond_ftRaw = o.ftRaw.(cond);
+            cond_ftRaw = o.ftRaw.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
         
-        function cond_timlocked = get_cond_timelocked(o,cond)
-            if ~isfield(o.timlocked,cond)
+        function cond_timlocked = get_cond_timelocked(o,cond,sov)
+            if ~isfield(o.timlocked,sprintf("%s_%s",sov.short_s,cond.short_s))
                 allsubs_cond_timlocked = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s\\timelocked_%s_cond-%s_sub-%s.mat",o.output_dir,o.choosenSuffix,cond,o.subs{sub_i});
+                    file_path = sprintf("%s\\timelocked_sov-%s_cond-%s_sub-%s.mat",o.output_dir,sov.short_s,cond.short_s,o.subs{sub_i});
                     try
                         loaded = load(file_path);
                         allsubs_cond_timlocked{sub_i} = loaded.timelocked_subcond;
+                        if allsubs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s\n',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
                     catch ME
                         cfg = [];
-                        conds_ftraw = o.get_rawFt_cond(o,cond);
+                        cfg.feedback = 'no';
+                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
                         allsubs_cond_timlocked{sub_i} = ft_timelockanalysis(cfg, conds_ftraw{sub_i});
-                        allsubs_cond_timlocked{sub_i}.('trials_timelocked_avg') = numel(conds_ftraw{sub_i}.trial);
+                        allsubs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') = numel(conds_ftraw{sub_i}.trial);
+                        if allsubs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
                         %save
                         timelocked_subcond = allsubs_cond_timlocked{sub_i};
                         save(file_path,"timelocked_subcond")
                     end
                 end
-                o.timlocked.(cond) = allsubs_cond_timlocked;
+                o.timlocked.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_timlocked;
             end
-            cond_timlocked = o.timlocked.(cond);
+            cond_timlocked = o.timlocked.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
         
-        function cond_timlockedBl = get_cond_timelockedBl(o,cond)
-            if ~isfield(o.timlocked_bl,cond)
-                allsubs_cond_timlockedBl = cell(1, size(o.subs,2));
-                for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s//bl%dms-timelocked_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,o.choosenSuffix,cond,o.subs{sub_i});
-                    try
-                        loaded = load(file_path);
-                        allsubs_cond_timlockedBl{sub_i} = loaded.baseline_subcond;
-                    catch ME
-                        timlocked = o.get_cond_timelocked(o,cond);
-                        time0_ind = find(timlocked{sub_i}.time == 0, 1);
-                        time_baseline_ind = find(timlocked{sub_i}.time == -o.baseline_length*0.001, 1);
-                
-                        baseline = timlocked{sub_i}.avg(:,time_baseline_ind:time0_ind);
-                        baseline_mean = mean(baseline,2);
-                        new_baseline_avg = ones(size(timlocked{sub_i}.avg)) .* baseline_mean;
-                        allsubs_cond_timlockedBl{sub_i} = rmfield(timlocked{sub_i},["dof","var"]);
-                        allsubs_cond_timlockedBl{sub_i}.avg = new_baseline_avg;
-                        
-                        %save
-                        baseline_subcond = allsubs_cond_timlockedBl{sub_i};
-                        save(file_path,"baseline_subcond")
-                    end
-                end
-                o.timlocked_bl.(cond) = allsubs_cond_timlockedBl;
-            end
-            cond_timlockedBl = o.timlocked_bl.(cond);
-        end
+        % deprecated function cond_timlockedBl_preStim = get_cond_timelockedBl_preStim(o,cond,sov)
+%             if ~isfield(o.timlocked_bl_pretrial,sprintf("%s_%s",sov,cond))
+%                 allsubs_cond_timlockedBl = cell(1, size(o.subs,2));
+%                 for sub_i=1:size(o.subs,2)
+%                     file_path = sprintf("%s//bl%dms-timelocked_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,sov,cond,o.subs{sub_i});
+%                     try
+%                         loaded = load(file_path);
+%                         allsubs_cond_timlockedBl{sub_i} = loaded.baseline_subcond;
+%                     catch ME
+%                         timlocked = o.get_cond_timelocked(o,cond,sov);
+%                         time0_ind = find(timlocked{sub_i}.time == 0, 1);
+%                         time_baseline_ind = find(timlocked{sub_i}.time == -o.baseline_length*0.001, 1);
+%                 
+%                         baseline = timlocked{sub_i}.avg(:,time_baseline_ind:time0_ind);
+%                         baseline_mean = mean(baseline,2);
+%                         new_baseline_avg = ones(size(timlocked{sub_i}.avg)) .* baseline_mean;
+%                         allsubs_cond_timlockedBl{sub_i} = rmfield(timlocked{sub_i},["dof","var"]);
+%                         allsubs_cond_timlockedBl{sub_i}.avg = new_baseline_avg;
+%                         
+%                         %save
+%                         baseline_subcond = allsubs_cond_timlockedBl{sub_i};
+%                         save(file_path,"baseline_subcond")
+%                     end
+%                 end
+%                 o.timlocked_bl.(sprintf("%s_%s",sov,cond)) = allsubs_cond_timlockedBl;
+%             end
+%             cond_timlockedBl_preStim = o.timlocked_bl_pretrial.(sprintf("%s_%s",sov,cond));
+%         end
 
-        function cond_rawBl = get_cond_rawBl(o,cond)
-            if ~isfield(o.raw_bl,cond)
-                allsubs_cond_rawBl = cell(1, size(o.subs,2));
-                for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s//bl%dms-raw_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,o.choosenSuffix,cond,o.subs{sub_i});
-                    try
-                        loaded = load(file_path);
-                        allsubs_cond_rawBl{sub_i} = loaded.baseline_subcond;
-                    catch ME
-                        rawFt = o.get_rawFt_cond(o,cond);
-                        curr_sub_raw_ft = rawFt{sub_i};
-                        time0_ind = find(curr_sub_raw_ft.time{1} == 0, 1);
-                        time_baseline_ind = find(curr_sub_raw_ft.time{1} == -o.baseline_length*0.001, 1);
-                        allsubs_cond_rawBl{sub_i} = curr_sub_raw_ft;
-                        for trial_i=1:size(curr_sub_raw_ft.trial,2)
-                            baseline = curr_sub_raw_ft.trial{trial_i}(:,time_baseline_ind:time0_ind);
-                            baseline_mean = mean(baseline,2);
-                            new_baseline_avg = ones(size(curr_sub_raw_ft.trial{trial_i})) .* baseline_mean;
-                            allsubs_cond_rawBl{sub_i}.trial{trial_i} = new_baseline_avg;
-                        end
-                
-                        %save
-                        baseline_subcond = allsubs_cond_rawBl{sub_i};
-                        save(file_path,"baseline_subcond")
-                    end
-                end
-                o.raw_bl.(cond) = allsubs_cond_rawBl;
-            end
-            cond_rawBl = o.raw_bl.(cond);
-        end
+        % depecated function cond_rawBl = get_cond_rawBl(o,cond,sov)
+%             if ~isfield(o.raw_bl,sprintf("%s_%s",sov,cond))
+%                 allsubs_cond_rawBl = cell(1, size(o.subs,2));
+%                 for sub_i=1:size(o.subs,2)
+%                     file_path = sprintf("%s//bl%dms-raw_%s_cond-%s_sub-%s.mat",o.output_dir,o.baseline_length,sov,cond,o.subs{sub_i});
+%                     try
+%                         loaded = load(file_path);
+%                         allsubs_cond_rawBl{sub_i} = loaded.baseline_subcond;
+%                     catch ME
+%                         rawFt = o.get_rawFt_cond(o,cond,sov);
+%                         curr_sub_raw_ft = rawFt{sub_i};
+%                         time0_ind = find(curr_sub_raw_ft.time{1} == 0, 1);
+%                         time_baseline_ind = find(curr_sub_raw_ft.time{1} == -o.baseline_length*0.001, 1);
+%                         allsubs_cond_rawBl{sub_i} = curr_sub_raw_ft;
+%                         for trial_i=1:size(curr_sub_raw_ft.trial,2)
+%                             baseline = curr_sub_raw_ft.trial{trial_i}(:,time_baseline_ind:time0_ind);
+%                             baseline_mean = mean(baseline,2);
+%                             new_baseline_avg = ones(size(curr_sub_raw_ft.trial{trial_i})) .* baseline_mean;
+%                             allsubs_cond_rawBl{sub_i}.trial{trial_i} = new_baseline_avg;
+%                         end
+%                 
+%                         %save
+%                         baseline_subcond = allsubs_cond_rawBl{sub_i};
+%                         save(file_path,"baseline_subcond")
+%                     end
+%                 end
+%                 o.raw_bl.(sprintf("%s_%s",sov,cond)) = allsubs_cond_rawBl;
+%             end
+%             cond_rawBl = o.raw_bl.(sprintf("%s_%s",sov,cond));
+%         end
 
-        function cond_grandAvg = get_cond_grandAvg(o,cond)
-            if ~isfield(o.grandAvg,cond)
+        function cond_grandAvg = get_cond_grandAvg(o,cond,sov)
+            if ~isfield(o.grandAvg,sprintf("%s_%s",sov.short_s,cond.short_s))
                 cfg = [];
-                file_path = sprintf("%s//timelock_grandAvg_%s_cond-%s.mat",o.output_dir,o.choosenSuffix,cond);
+                file_path = sprintf("%s//timelock_grandAvg_%s_cond-%s.mat",o.output_dir,sov.short_s,cond.short_s);
                 try
                     loaded = load(file_path);
                     cond_grandAvg = loaded.timelockGrandavg_cond;
                 catch ME
-                    timlocked = o.get_cond_timelocked(o,cond);
+                    timlocked = o.get_cond_timelocked(o,cond,sov);
                     cond_grandAvg  = ft_timelockgrandaverage(cfg, timlocked{:});
         
                     %save
                     timelockGrandavg_cond = cond_grandAvg;
-                    save(sprintf("%s/timelocked_cond-%s_sub-avg.mat",o.output_dir,cond),"timelockGrandavg_cond")
+                    save(sprintf("%s/timelocked_cond-%s_sub-avg.mat",o.output_dir,cond.short_s),"timelockGrandavg_cond")
                 end
             else
-                cond_grandAvg = o.grandAvg.(cond);
+                cond_grandAvg = o.grandAvg.(sprintf("%s_%s",sov.short_s,cond.short_s));
             end
         end
-   end
+   
+        function cond_TFR_hiblert=get_cond_TFR_hilbert(o,cond,sov)
+            if ~isfield(o.tfrHilbert,sprintf("%s_%s",sov.short_s,cond.short_s))
+                allsubs_cond_tfrHilbert = cell(1, size(o.subs,2));
+                for sub_i=1:size(o.subs,2)
+                    filename = sprintf("tfrHilbert_sov-%s_cond-%s_sub-%s.mat",sov.short_s,cond.short_s,o.subs{sub_i});
+                    file_path = sprintf("%s\\%s",o.output_dir,filename);
+                    try
+                        loaded = load(file_path);
+                        allsubs_cond_tfrHilbert{sub_i} = loaded.tfrHilbert_subcond;
+                        if allsubs_cond_tfrHilbert{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s\n',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                    catch ME
+                        fprintf("Running: %s\n",filename);
+                        cfg = [];
+                        cfg.feedback = 'no';
+                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+
+                        freq_bin = 1.5:0.5:40;
+                        sub_hilb_zsc = struct();
+                        sub_hilb_zsc.('label') = conds_ftraw{sub_i}.label;
+                        sub_hilb_zsc.('dimrod') = 'chan_freq_time';
+                        sub_hilb_zsc.('freq') = freq_bin;
+                        sub_hilb_zsc.('time') = conds_ftraw{sub_i}.time{1};
+                        sub_hilb_zsc.('elec') = conds_ftraw{sub_i}.elec;
+                        freq_bin_for_hilb = freq_bin;
+                        freq_bin_for_hilb(end+1) = freq_bin_for_hilb(end) + (freq_bin_for_hilb(end) - freq_bin_for_hilb(end-1));
+                        hilb_zsc = o.hilbert_zscore(conds_ftraw{sub_i},freq_bin_for_hilb,1:numel(conds_ftraw{sub_i}.label));
+                        sub_hilb_zsc.('powspctrm') = permute(squeeze(mean(hilb_zsc,4)),[2,1,3]);
+                        allsubs_cond_tfrHilbert{sub_i} = sub_hilb_zsc;
+
+%                         subs_hilb_trans = struct();
+%                         subs_hilb_trans.('label') = conds_ftraw{sub_i}.label;
+%                         subs_hilb_trans.('dimrod') = 'chan_freq_time';
+%                         subs_hilb_trans.('freq') = 1.5:0.5:30.5;
+%                         subs_hilb_trans.('time') = conds_ftraw{sub_i}.time{1};
+%                         subs_hilb_trans.('elec') = conds_ftraw{sub_i}.elec;
+%                         freqBin_for_hilb =subs_hilb_trans.('freq');
+%                         freqBin_for_hilb(end+1) = freqBin_for_hilb(end) + (freqBin_for_hilb(end) -freqBin_for_hilb(end-1));
+%                         nbin = length(freqBin_for_hilb)-1;
+%                         time_dim_num = 3;
+%                         hilbdata = zeros(nbin,numel(subs_hilb_trans.('label')),numel(subs_hilb_trans.('time')),numel(conds_ftraw{sub_i}.trial));
+%                         for i_bin = 1:nbin
+%                             d = designfilt('bandpassiir', 'FilterOrder', 4, ...
+%                                'HalfPowerFrequency1', freqBin_for_hilb(i_bin), 'HalfPowerFrequency2', freqBin_for_hilb(i_bin+1), ...
+%                                'SampleRate', 250);
+%                             for trial_i =1: numel(conds_ftraw{sub_i}) 
+%                 %                 [filt, B, A] = ft_preproc_bandpassfilter(subs_cond.trial{trial_i}(elec,:), 250, [freqbin(f),freqbin(f+1)]) ; %filtEEG = pop_eegfiltnew(EEG,freqbin(f),freqbin(f+1));
+%                                 dat = conds_ftraw{sub_i}.trial{trial_i}(1:numel(subs_hilb_trans.('label')),:);
+%                                 filt = filtfilt(d, dat')';
+%                                 hilbdata(i_bin,:,:,trial_i) =filt;
+%                             end
+%                             for trial_i =1: numel(conds_ftraw{sub_i}) 
+%                                 hilbdata(i_bin,:,:,trial_i) = hilbert(squeeze(hilbdata(i_bin,:,:,trial_i))')';
+%                             end
+%                         end
+%                         hilbdata = abs(hilbdata);
+%                         zscorehil = zscore(hilbdata,0,time_dim_num);
+%                         subs_hilb_trans.('powspctrm') = permute(squeeze(mean(zscorehil,4)),[2,1,3]);
+%                         allsubs_cond_tfrHilbert{sub_i} =subs_hilb_trans;
+
+%%%%                    Hilbert - ft func
+%                         cfg = [];
+%                         cfg.keeptrials = 'no';
+%                         cfg.channel      = 'all';
+%                         cfg.method     = 'hilbert';
+%                         cfg.detrend = 'yes'; % https://www.fieldtriptoolbox.org/faq/why_does_my_tfr_look_strange_part_ii/   
+%                         cfg.foi        = 1.5:0.5:40;
+%                         cfg.toi          = -0.1:0.004:0.448;  
+%                         cfg.edgartnan     = 'yes'; % similar to "hilbert" func in anat's data
+%                         % cfg.pad     = 'nextpow2';
+%                         % cfg.order = 4;
+%                         %  cfg.width      = 0.5; %?
+%                         allsubs_cond_tfrHilbert{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
+
+                        allsubs_cond_tfrHilbert{sub_i}.cfg.('trials_avg') = numel(conds_ftraw{sub_i}.trial);
+                        if allsubs_cond_tfrHilbert{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                        %save
+                        tfrHilbert_subcond = allsubs_cond_tfrHilbert{sub_i};
+                        save(file_path,"tfrHilbert_subcond")
+                    end
+                end
+                o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrHilbert;
+            end
+            cond_TFR_hiblert = o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s));
+        end
+
+        function cond_TFR_wavelets=get_cond_TFR_wavelets(o,cond,sov)
+            if ~isfield(o.tfrHilbert,sprintf("%s_%s",sov.short_s,cond.short_s))
+                allsubs_cond_tfrWavelets = cell(1, size(o.subs,2));
+                for sub_i=1:size(o.subs,2)
+                    filename = sprintf("tfrWaveletes_sov-%s_cond-%s_sub-%s.mat",sov.short_s,cond.short_s,o.subs{sub_i});
+                    file_path = sprintf("%s\\%s",o.output_dir,filename);
+                    try
+                        loaded = load(file_path);
+                        allsubs_cond_tfrWavelets{sub_i} = loaded.tfrWaveletes_subcond;
+                        if allsubs_cond_tfrWavelets{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s\n',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                    catch ME
+                        fprintf("Running: %s\n",filename);
+                        cfg = [];
+                        cfg.feedback = 'no';
+                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+
+%%%                    wavelet - ft func
+                        cfg = [];
+                        cfg.keeptrials = 'no';
+                        cfg.channel      = 'all';
+                        cfg.method     = 'wavelet';  
+                        cfg.foilim = [1.5, 40]; % cfg.foi        =  1.5:0.5:40;
+                        cfg.toi          = -0.1:0.004:0.448;  
+                        cfg.pad     = 'nextpow2';
+                        % cfg.order = 4;
+%                          cfg.width      = 0.2; %?
+                        allsubs_cond_tfrWavelets{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
+
+                        allsubs_cond_tfrWavelets{sub_i}.cfg.('trials_avg') = numel(conds_ftraw{sub_i}.trial);
+                        if allsubs_cond_tfrWavelets{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                        %save
+                        tfrWaveletes_subcond = allsubs_cond_tfrWavelets{sub_i};
+                        save(file_path,"tfrWaveletes_subcond")
+                    end
+                end
+                o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrWavelets;
+            end
+            cond_TFR_wavelets = o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s));
+        end
+
+
+        function zscorehil=hilbert_zscore(subs_cond_raw_ft,freqbin,elec)
+            nbin = length(freqbin)-1;
+            time_dim_num = 3;
+            hilbdata = zeros(nbin,numel(elec),numel(subs_cond_raw_ft.time{1}),numel(subs_cond_raw_ft.trial));
+            for f = 1:nbin
+                d = designfilt('bandpassiir', 'FilterOrder', 4, ...
+                   'HalfPowerFrequency1', freqbin(f), 'HalfPowerFrequency2', freqbin(f+1), ...
+                   'SampleRate', 250);
+                for trial_i =1: numel(subs_cond_raw_ft.trial) 
+    %                 [filt, B, A] = ft_preproc_bandpassfilter(subs_cond.trial{trial_i}(elec,:), 250, [freqbin(f),freqbin(f+1)]) ; %filtEEG = pop_eegfiltnew(EEG,freqbin(f),freqbin(f+1));
+                    dat = subs_cond_raw_ft.trial{trial_i}(elec,:);
+                    filt = filtfilt(d, dat')';
+                    hilbdata(f,:,:,trial_i) =filt;
+                end
+                for trial_i =1: numel(subs_cond_raw_ft.trial) 
+                    hilbdata(f,:,:,trial_i) = hilbert(squeeze(hilbdata(f,:,:,trial_i))')';
+                end
+            end
+            hilbdata = abs(hilbdata);
+            zscorehil = zscore(hilbdata,0,time_dim_num);
+        end
+    end
 end

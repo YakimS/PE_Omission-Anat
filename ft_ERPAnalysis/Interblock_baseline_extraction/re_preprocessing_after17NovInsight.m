@@ -1,0 +1,837 @@
+restoredefaultpath
+addpath D:\matlab_libs\fieldtrip-20230223
+ft_defaults
+addpath 'D:\matlab_libs\eeglab2023.0'
+eeglab nogui;
+%% Exteact inter-block baseline from basic-preprocessed set files
+input_set_dir = 'D:\\AnatArzData\Data\preProcessed';
+set_output_dir = 'D:\OExpOut\processed_data\set_subSovCond';
+ft_output_dir = 'D:\OExpOut\processed_data\ft_subSovCond';
+events_dir = 'D:\AnatArzData\Data\imported\elaborated_events';
+ica_input_dir = 'D:\AnatArzData\Data\ica';
+
+new_sample_rate = 250;
+
+subs = {'08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+subs = {'23'};
+sovs = {'wake_morning','wake_night',"N2","N3","REM","tREM","pREM",'wake','N1'};
+sovs = {'wake_night',"N2","N3","REM","tREM","pREM"};
+
+%% create "O","OF","OR",'intbk'
+
+events_type = {"O","OF","OR",'intbk'};
+length_of_bl_epoch_sec = 5;
+samples_per_trial = 138;
+trials_per_interblock_period = floor(length_of_bl_epoch_sec * new_sample_rate / samples_per_trial);
+
+for sub_i = 1:numel(subs)
+    % get files
+    file_pattern = fullfile(input_set_dir, sprintf('*%s*.set',subs{sub_i}));
+    if all(cellfun(@(x) ischar(x) && contains(x, 'wake'), sovs))
+        file_pattern = fullfile(input_set_dir, sprintf('*%s*wake*.set',subs{sub_i}));
+    elseif ~any(cellfun(@(x) ischar(x) && contains(x, 'wake'), sovs))
+        file_pattern = fullfile(input_set_dir, sprintf('*%s*sleep*.set',subs{sub_i}));
+    end
+    files_set = dir(file_pattern);
+
+    % skip sub if all it's output files exists
+    does_all_output_exist = true;
+    for sov_i=1:numel(sovs)
+        for events_type_i=1:numel(events_type)
+            set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            if ~isfile(sprintf("%s\\%s",set_output_dir,set_output_file_name)) 
+                does_all_output_exist = false; 
+            end
+        end
+    end
+    if does_all_output_exist continue; end
+
+    curr_sub_event_EEGs = struct();
+    for files_i = 1:length(files_set)
+        EEG_sub_file = pop_loadset('filename', files_set(files_i).name, 'filepath', input_set_dir);
+
+        if ~isempty(strfind(files_set(files_i).name, 'wake_morning'))
+            file_sleepwake_name = 'morning';
+        elseif ~isempty(strfind(files_set(files_i).name, 'wake_night'))
+            file_sleepwake_name = 'night';
+        else
+            file_sleepwake_name = 'sleep';
+        end
+
+        % load events and set files
+        if contains(files_set(files_i).name,'sleep') % if sleep file, gets it's sleep file number
+            match = regexp(files_set(files_i).name, 'sleep(\d)', 'tokens');
+            if ~isempty(match)
+                digitStr = match{1}{1};
+            else
+                error('Incorrect format of sleep file number')
+            end
+            events_file_pattern = fullfile(events_dir, sprintf('*%s*%s*%s*',subs{sub_i},file_sleepwake_name,digitStr));
+        else
+            events_file_pattern = fullfile(events_dir, sprintf('*%s*%s*',subs{sub_i},file_sleepwake_name));
+        end
+        files_events = dir(events_file_pattern);
+        if length(files_events) > 1
+            error('More than one file found. Please check the file pattern or directory.');
+        end
+        sub_events_filepath = sprintf("%s\\%s",events_dir,files_events(1).name);
+        sub_events = load(sub_events_filepath);
+        sub_events = sub_events.events;
+        allevents = {EEG_sub_file.event.type};
+
+        % get EEG struct for ica components and channels to reject
+        ICA_file_pattern = fullfile(ica_input_dir, sprintf('*%s*%s*ICA.set',subs{sub_i},file_sleepwake_name));
+        files_ica = dir(ICA_file_pattern);
+        if length(files_ica) > 1
+            warning('More than one file found. Please check the file pattern or directory.');
+        end
+        EEG_ica = pop_loadset('filepath',ica_input_dir,'filename',files_ica(1).name,'loadmode','info');
+
+        % apply ICA components
+        EEG_sub_file.chaninfo.icachansind = EEG_ica.chaninfo.icachansind;
+        EEG_sub_file.etc.icasphere_beforerms = EEG_ica.etc.icasphere_beforerms;
+        EEG_sub_file.etc.icaweights_beforerms = EEG_ica.etc.icaweights_beforerms;             
+        EEG_sub_file.icaact = EEG_ica.icaact;
+        EEG_sub_file.icachansind = EEG_ica.icachansind;
+        EEG_sub_file.icasphere = EEG_ica.icasphere;
+        EEG_sub_file.icaweights = EEG_ica.icaweights;
+        EEG_sub_file.icawinv = EEG_ica.icawinv;
+        EEG_sub_file.reject.gcompreject = EEG_ica.reject.gcompreject;
+        EEG_sub_file = eeg_checkset(EEG_sub_file); % it was critical in the continuos case. Not it's problematic. So I remove it.
+    
+        for events_type_i=1:numel(events_type)
+            if strcmp(events_type{events_type_i},'O')
+                curr_events = find(strcmp({sub_events.TOA}, 'O'));
+            elseif strcmp(events_type{events_type_i},'OF')
+                curr_events = find(strcmp({sub_events.TOA}, 'O') & strcmp({sub_events.block_type}, 'fixed'));
+            elseif strcmp(events_type{events_type_i},'OR')
+                curr_events = find(strcmp({sub_events.TOA}, 'O') & strcmp({sub_events.block_type}, 'random'));
+            elseif strcmp(events_type{events_type_i},'intbk')
+                curr_events = find(strcmp({sub_events.type}, 'BGIN'));
+            else
+                warning('no such event type');
+            end
+
+            for sov_i=1:numel(sovs)
+                set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+                if isfile(sprintf("%s\\%s",set_output_dir,set_output_file_name)) continue; end
+                                
+                % find event in the curr sov  
+                curr_sov_curr_eventtype_indexes =[];
+                if strcmp(sovs{sov_i},'wake') && (contains(files_set(files_i).name, "wake_morning") || contains(files_set(files_i).name, "wake_night"))
+                    curr_sov_curr_eventtype_indexes = curr_events;
+                elseif (strcmp(sovs{sov_i},'wake_morning') && contains(files_set(files_i).name, "wake_morning")) || ...
+                    (strcmp(sovs{sov_i},'wake_night') &&  contains(files_set(files_i).name, "wake_night"))
+                    curr_sov_curr_eventtype_indexes = curr_events;
+                elseif strcmp(sovs{sov_i},'REM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"tREM") | strcmp({sub_events.('sleep_stage')},"Rt") | ...
+                        strcmp({sub_events.('sleep_stage')},"pREM") | strcmp({sub_events.('sleep_stage')},"Rp"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                elseif strcmp(sovs{sov_i},'tREM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"tREM") | strcmp({sub_events.('sleep_stage')},"Rt"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                elseif strcmp(sovs{sov_i},'pREM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"pREM") | strcmp({sub_events.('sleep_stage')},"Rp"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                else
+                    curr_sov_curr_eventtype_indexes = intersect(find(strcmp({sub_events.sleep_stage}, sovs{sov_i})), curr_events);
+                end
+                if isempty(curr_sov_curr_eventtype_indexes) || numel(curr_sov_curr_eventtype_indexes)==1 continue;  end % if == 1, it creates issues with epochs.
+
+                % select events
+                if strcmp(events_type{events_type_i},'intbk')
+                    EEG_currSovEvent = pop_epoch(EEG_sub_file,{},[0 length_of_bl_epoch_sec],'eventindices',curr_sov_curr_eventtype_indexes);
+                    EEG_currSovEvent = pop_rmbase(EEG_currSovEvent, []); % EEG_currSov = pop_rmbase(EEG_currSov, 'timerange',[0 200]);
+                else
+                    EEG_currSovEvent = pop_epoch(EEG_sub_file,{},[-0.1 0.45],'eventindices',curr_sov_curr_eventtype_indexes);
+                    EEG_currSovEvent = pop_rmbase(EEG_currSovEvent, [-100   0]);
+                end
+   
+                % reject trials with +-300microVolt. 
+                % TODO: check that does what
+                % it suppose to do. maybe you should use also "EEG =
+                % pop_select(EEG, 'notrial', EEG.rejepoch);" Seems unnecessety,
+                % as the output includes the substraction of the epochs from
+                % the data array
+                if contains(sovs{sov_i}, 'wake')
+                    thresh_amp = 150;
+                else
+                    thresh_amp = 300;
+                end
+                if strcmp(events_type{events_type_i}, 'intbk')
+                    [EEG_currSovEvent, Indexes] = pop_eegthresh(EEG_currSovEvent, 1, 1:size(EEG_currSovEvent.data,1), -thresh_amp, thresh_amp, 0, 5-0.001, 0, 1);
+                else
+                    [EEG_currSovEvent, Indexes] = pop_eegthresh(EEG_currSovEvent, 1, 1:size(EEG_currSovEvent.data,1), -thresh_amp, thresh_amp, -0.1, 0.448, 0, 1);
+                end
+                if isempty(EEG_currSovEvent)   continue;  end
+    
+                % remove bad channels
+                EEG_currSovEvent = pop_select(EEG_currSovEvent,'nochannel',EEG_ica.reject.rejchan); 
+    
+                % remove ICA components
+                EEG_currSovEvent = pop_subcomp( EEG_currSovEvent,find(EEG_currSovEvent.reject.gcompreject), 0); 
+                EEG_currSovEvent = eeg_checkset(EEG_currSovEvent); % critical
+    
+                % resampling
+                EEG_currSovEvent =  pop_resample( EEG_currSovEvent, new_sample_rate); % NOT RECOMMENDED "Warning: Resampling of epoched data is not recommended (due to anti-aliasing filtering)! Note: For epoched datasets recomputing urevent latencies is not supported. The urevent structure will be cleared."
+    
+                % interpulate (make sure code correct. maybe "eeg_interp(EEG, EEG.rejchan);"?)
+                EEG_currSovEvent = eeg_interp(EEG_currSovEvent,EEG_currSovEvent.chaninfo.removedchans);
+                rowWithLabelCz = EEG_currSovEvent.chaninfo.ndchanlocs(strcmp({EEG_currSovEvent.chaninfo.ndchanlocs.labels}, 'Cz'));
+                EEG_currSovEvent = eeg_interp(EEG_currSovEvent,rowWithLabelCz);
+    
+                % rereferencing
+                EEG_currSovEvent = pop_reref( EEG_currSovEvent, []);
+    
+                % merge sleep set files into one EEGLAB stuct
+                curr_sov_eventtype_name = sprintf("%s_%s",sovs{sov_i},events_type{events_type_i});
+                if ~isempty(EEG_currSovEvent) && ~EEG_currSovEvent.trials == 0 
+                    if ~isfield(curr_sub_event_EEGs, curr_sov_eventtype_name)
+                        curr_sub_event_EEGs.(curr_sov_eventtype_name) = EEG_currSovEvent;
+                    else
+                        curr_sub_event_EEGs.(curr_sov_eventtype_name) = pop_mergeset(curr_sub_event_EEGs.(curr_sov_eventtype_name), EEG_currSovEvent, 0);
+                    end
+                end
+            end
+        end
+    end
+
+    % events - set to ft
+    for events_type_i=1:numel(events_type)
+        for sov_i=1:numel(sovs)
+            curr_sov_eventtype_name = sprintf("%s_%s",sovs{sov_i},events_type{events_type_i});
+            if ~isfield(curr_sub_event_EEGs, curr_sov_eventtype_name) continue; end
+            EEG_currSovEvent = curr_sub_event_EEGs.(curr_sov_eventtype_name);
+            EEG_currSovEvent = eeg_checkset(EEG_currSovEvent);
+    
+    %         % save .set of the sub's sov      
+            set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            pop_saveset(EEG_currSovEvent,'filename', set_output_file_name, 'filepath', set_output_dir);
+    
+            cfg = []; 
+            cfg.dataset = sprintf('%s\\%s',set_output_dir,set_output_file_name);
+            cfg.continuous = 'no';
+            ft_data = ft_preprocessing(cfg);
+
+            if strcmp(events_type{events_type_i}, 'intbk')
+                new_number_of_trials = length(ft_data.trial) * trials_per_interblock_period;
+
+                % devide ft_data to trials_per_interblock_period sections
+                new_ftdata_trial = cell(1, new_number_of_trials);
+                idx = 1;
+                for i = 1:length(ft_data.trial)
+                    data = ft_data.trial{i}; 
+                    % Divide into sections of size samples_per_trial
+                    for j = 1 : samples_per_trial : (samples_per_trial*trials_per_interblock_period)
+                        section = data(:, j:j+(samples_per_trial-1)); % Extract samples_per_trial columns
+                        new_ftdata_trial{idx} = section;
+                        idx = idx+1;
+                    end
+                end
+                ft_data.trial = new_ftdata_trial;
+        
+                % Creating the 1xsamples_per_trial double array
+                new_timestamps = -0.1:(1/new_sample_rate):0.45;
+                new_ftdata_time = cell(1, new_number_of_trials);
+                for i = 1:new_number_of_trials
+                    new_ftdata_time{i} = new_timestamps;
+                end
+                ft_data.time = new_ftdata_time;
+        
+                ft_data.hdr.nTrials = new_number_of_trials;
+                
+                % new ft_data.cfg.trl and ft_data.sampleinfo
+                new_ftdata_cfg_trl = zeros(new_number_of_trials, 3);
+                new_ftdata_cfg_trl(1,1) = 1;
+                for i = 2:new_number_of_trials
+                    new_ftdata_cfg_trl(i,1) = (new_ftdata_cfg_trl(i-1,1) + samples_per_trial);
+                end
+                new_ftdata_cfg_trl(:,2) = (new_ftdata_cfg_trl(:,1) + samples_per_trial -1);
+                ft_data.cfg.trl = new_ftdata_cfg_trl;
+                ft_data.sampleinfo = new_ftdata_cfg_trl(:, 1:end-1);
+        
+                % Baseline-correction options
+                cfg = [];
+                cfg.demean          = 'yes';
+                cfg.baselinewindow  = [-0.1 0];
+                ft_data = ft_preprocessing(cfg,ft_data);
+            end
+            mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+            save(ft_file_path,"ft_data");
+        end
+    end
+end
+
+
+%% 'intbk5'
+for sub_i = 1:numel(subs)
+    % events - set to ft
+    for sov_i=1:numel(sovs)
+        if (strcmp(sovs{sov_i},'wake_morning') && strcmp(subs{sub_i},'14')) || ...
+            (strcmp(sovs{sov_i},'wake_morning') && strcmp(subs{sub_i},'23')) 
+            continue;
+        end
+
+        % save .set of the sub's sov      
+        set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},'intbk'));
+
+        cfg = [];
+        cfg.dataset = sprintf('%s\\%s',set_output_dir,set_output_file_name);
+        cfg.continuous = 'no';
+        ft_data = ft_preprocessing(cfg);
+
+        mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},'intbk5'));
+        ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+        save(ft_file_path,"ft_data");
+    end
+end
+
+%% intbkLast2sec, LastOF2sec, LastOR2sec, intbk2(BGIN[0.5,2.5]+BGIN[2.5,4.5])
+events_type = {'intbkLast2sec','LastOR2sec', 'LastOFPerp2sec',"intbk2"};
+length_of_epoch_after_event = 2;
+length_of_epoch_before_event = 0.2;
+
+for sub_i = 1:numel(subs)
+    file_pattern = fullfile(input_set_dir, sprintf('*%s*.set',subs{sub_i}));
+    if all(cellfun(@(x) ischar(x) && contains(x, 'wake'), sovs))
+        file_pattern = fullfile(input_set_dir, sprintf('*%s*wake*.set',subs{sub_i}));
+    elseif ~any(cellfun(@(x) ischar(x) && contains(x, 'wake'), sovs))
+        file_pattern = fullfile(input_set_dir, sprintf('*%s*sleep*.set',subs{sub_i}));
+    end
+    files_set = dir(file_pattern);
+
+    % skip sub if all it's files are done
+    does_all_output_exist = true;
+    for sov_i=1:numel(sovs)
+        for events_type_i=1:numel(events_type)
+            set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            if ~isfile(sprintf("%s\\%s",set_output_dir,set_output_file_name)) does_all_output_exist = false; end
+        end
+    end
+    if does_all_output_exist continue; end
+
+    curr_sub_event_EEGs = struct();
+    for files_i = 1:length(files_set)
+        EEG_sub_file = pop_loadset('filename', files_set(files_i).name, 'filepath', input_set_dir);
+
+        if ~isempty(strfind(files_set(files_i).name, 'wake_morning'))
+            file_sleepwake_name = 'morning';
+        elseif ~isempty(strfind(files_set(files_i).name, 'wake_night'))
+            file_sleepwake_name = 'night';
+        else
+            file_sleepwake_name = 'sleep';
+        end
+
+        % load events and set files
+        if contains(files_set(files_i).name,'sleep')
+            file_pattern = fullfile(events_dir, sprintf('*%s*%s*%d*',subs{sub_i},file_sleepwake_name,files_i));
+        else
+            file_pattern = fullfile(events_dir, sprintf('*%s*%s*',subs{sub_i},file_sleepwake_name));
+        end
+        files_events = dir(file_pattern);
+        if length(files_events) > 1
+            error('More than one file found. Please check the file pattern or directory.');
+        end
+        sub_events_filepath = sprintf("%s\\%s",events_dir,files_events(1).name); % todo: make sure the right file is loadied by entering fileUM TO REGEX
+        sub_events = load(sub_events_filepath);
+        sub_events = sub_events.events;
+        allevents = {EEG_sub_file.event.type};
+
+        % get EEG struct for ica components and channels to reject
+        file_pattern = fullfile(ica_input_dir, sprintf('*%s*%s*ICA.set',subs{sub_i},file_sleepwake_name));
+        files_ica = dir(file_pattern);
+        if length(files_ica) > 1
+            warning('More than one file found. Please check the file pattern or directory.');
+        end
+        EEG_ica = pop_loadset('filepath',ica_input_dir,'filename',files_ica(1).name,'loadmode','info');
+
+        EEG_sub_file.chaninfo.icachansind = EEG_ica.chaninfo.icachansind;
+        EEG_sub_file.etc.icasphere_beforerms = EEG_ica.etc.icasphere_beforerms;
+        EEG_sub_file.etc.icaweights_beforerms = EEG_ica.etc.icaweights_beforerms;             
+        EEG_sub_file.icaact = EEG_ica.icaact;
+        EEG_sub_file.icachansind = EEG_ica.icachansind;
+        EEG_sub_file.icasphere = EEG_ica.icasphere;
+        EEG_sub_file.icaweights = EEG_ica.icaweights;
+        EEG_sub_file.icawinv = EEG_ica.icawinv;
+        EEG_sub_file.reject.gcompreject = EEG_ica.reject.gcompreject;
+        EEG_sub_file = eeg_checkset(EEG_sub_file); % it was critical in the continuos case. Not it's problematic. So I remove it.
+    
+        for events_type_i=1:numel(events_type)
+            if strcmp(events_type{events_type_i},'LastOFPerp2sec')
+                curr_events = find(strcmp({sub_events.TOA}, 'O') ...
+                                    & [sub_events.trial_pos_in_block] == 10 ...
+                                    & strcmp({sub_events.block_type}, 'fixed'));
+            elseif strcmp(events_type{events_type_i},'LastOR2sec')
+                curr_events = find([sub_events.tone_pos_in_trial] == 10 ...
+                                    & [sub_events.trial_pos_in_block] == 10 ...
+                                    & strcmp({sub_events.TOA}, 'T') ...
+                                    & strcmp({sub_events.block_type}, 'random'));
+            elseif strcmp(events_type{events_type_i},'intbkLast2sec') || strcmp(events_type{events_type_i},'intbk2')
+                curr_events = find(strcmp({sub_events.type}, 'BGIN'));
+            else
+                error('no such event type');
+            end
+
+            for sov_i=1:numel(sovs)
+                set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+                if isfile(sprintf("%s\\%s",set_output_dir,set_output_file_name)) continue; end
+                                
+                % find event in the curr sov  
+                curr_sov_curr_eventtype_indexes =[];
+                if strcmp(sovs{sov_i},'wake') && (contains(files_set(files_i).name, "wake_morning") || contains(files_set(files_i).name, "wake_night"))
+                    curr_sov_curr_eventtype_indexes = curr_events;
+                elseif (strcmp(sovs{sov_i},'wake_morning') && contains(files_set(files_i).name, "wake_morning")) || ...
+                    (strcmp(sovs{sov_i},'wake_night') &&  contains(files_set(files_i).name, "wake_night"))
+                    curr_sov_curr_eventtype_indexes = curr_events;
+                elseif strcmp(sovs{sov_i},'REM')
+                    rem_strings = (contains({sub_events.('sleep_stage')},"REM") | strcmp({sub_events.('sleep_stage')},"Rt") | strcmp({sub_events.('sleep_stage')},"Rp"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                elseif strcmp(sovs{sov_i},'tREM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"tREM") | strcmp({sub_events.('sleep_stage')},"Rt"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                elseif strcmp(sovs{sov_i},'pREM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"pREM") | strcmp({sub_events.('sleep_stage')},"Rp"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                else
+                    curr_sov_curr_eventtype_indexes = intersect(find(strcmp({sub_events.sleep_stage}, sovs{sov_i})), curr_events);
+                end
+                if isempty(curr_sov_curr_eventtype_indexes) || numel(curr_sov_curr_eventtype_indexes)==1 continue;  end % if == 1, it creates issues with epochs.
+                    
+                % select events
+                if strcmp(events_type{events_type_i},'intbkLast2sec')
+                    EEG_currSovEvent = pop_epoch(EEG_sub_file,{},[3-length_of_epoch_before_event, 3+length_of_epoch_after_event],'eventindices',curr_sov_curr_eventtype_indexes);
+                    EEG_currSovEvent.times  = EEG_currSovEvent.times - 200;
+                    EEG_currSovEvent.xmin   = length_of_epoch_before_event;
+                    EEG_currSovEvent.xmax   = length_of_epoch_after_event;
+                    EEG_currSovEvent = pop_rmbase(EEG_currSovEvent, [0 100]);
+                elseif strcmp(events_type{events_type_i},'intbk2sec')
+                    EEG_currSovEvent1 = pop_epoch(EEG_sub_file,{},[3-length_of_epoch_before_event, 3+length_of_epoch_after_event],'eventindices',curr_sov_curr_eventtype_indexes);
+                    EEG_currSovEvent2 = pop_epoch(EEG_sub_file,{},[1-length_of_epoch_before_event, 1+length_of_epoch_after_event],'eventindices',curr_sov_curr_eventtype_indexes);
+                    EEG_currSovEvent = pop_mergeset(EEG_currSovEvent1, EEG_currSovEvent2, 0);
+                    EEG_currSovEvent.times  = EEG_currSovEvent.times - 200;
+                    EEG_currSovEvent.xmin   = length_of_epoch_before_event;
+                    EEG_currSovEvent.xmax   = length_of_epoch_after_event;
+                    EEG_currSovEvent = pop_rmbase(EEG_currSovEvent, [0 100]);                    
+                else
+                    EEG_currSovEvent = pop_epoch(EEG_sub_file,{},[-length_of_epoch_before_event length_of_epoch_after_event],'eventindices',curr_sov_curr_eventtype_indexes);
+                    EEG_currSovEvent = pop_rmbase(EEG_currSovEvent, [-100 0]);
+                end
+                
+   
+                % reject trials with +-300microVolt. 
+                % TODO: check that does what
+                % it suppose to do. maybe you should use also "EEG =
+                % pop_select(EEG, 'notrial', EEG.rejepoch);" Seems unnecessety,
+                % as the output includes the substraction of the epochs from
+                % the data array
+                if contains(sovs{sov_i}, 'wake')
+                    thresh_amp = 150;
+                else
+                    thresh_amp = 300;
+                end
+
+                [EEG_currSovEvent, Indexes] = pop_eegthresh(EEG_currSovEvent, 1, 1:size(EEG_currSovEvent.data,1), -thresh_amp, thresh_amp, EEG_currSovEvent.xmin, EEG_currSovEvent.xmax, 0, 1);
+                
+                if isempty(EEG_currSovEvent)   continue;  end
+    
+                % remove bad channels
+                EEG_currSovEvent = pop_select(EEG_currSovEvent,'nochannel',EEG_ica.reject.rejchan); 
+                EEG_currSovEvent = eeg_checkset(EEG_currSovEvent); % critical
+    
+                % remove ICA components
+                EEG_currSovEvent = pop_subcomp( EEG_currSovEvent,find(EEG_currSovEvent.reject.gcompreject), 0); 
+                EEG_currSovEvent = eeg_checkset(EEG_currSovEvent); % critical
+    
+                % resampling
+                EEG_currSovEvent =  pop_resample( EEG_currSovEvent, new_sample_rate); % NOT RECOMMENDED "Warning: Resampling of epoched data is not recommended (due to anti-aliasing filtering)! Note: For epoched datasets recomputing urevent latencies is not supported. The urevent structure will be cleared."
+    
+                % interpulate (make sure code correct. maybe "eeg_interp(EEG, EEG.rejchan);"?)
+                EEG_currSovEvent = eeg_interp(EEG_currSovEvent,EEG_currSovEvent.chaninfo.removedchans);
+                rowWithLabelCz = EEG_currSovEvent.chaninfo.ndchanlocs(strcmp({EEG_currSovEvent.chaninfo.ndchanlocs.labels}, 'Cz'));
+                EEG_currSovEvent = eeg_interp(EEG_currSovEvent,rowWithLabelCz);
+    
+                % rereferencing
+                EEG_currSovEvent = pop_reref( EEG_currSovEvent, []);
+    
+                % merge sleep set files into one EEGLAB stuct
+                curr_sov_eventtype_name = sprintf("%s_%s",sovs{sov_i},events_type{events_type_i});
+                if ~isempty(EEG_currSovEvent) && ~EEG_currSovEvent.trials == 0 
+                    if ~isfield(curr_sub_event_EEGs, curr_sov_eventtype_name)
+                        curr_sub_event_EEGs.(curr_sov_eventtype_name) = EEG_currSovEvent;
+                    else
+                        curr_sub_event_EEGs.(curr_sov_eventtype_name) = pop_mergeset(curr_sub_event_EEGs.(curr_sov_eventtype_name), EEG_currSovEvent, 0);
+                    end
+                end
+            end
+        end
+    end
+
+    % events - set to ft
+    for events_type_i=1:numel(events_type)
+        for sov_i=1:numel(sovs)
+            curr_sov_eventtype_name = sprintf("%s_%s",sovs{sov_i},events_type{events_type_i});
+            if ~isfield(curr_sub_event_EEGs, curr_sov_eventtype_name) continue; end
+            EEG_currSovEvent = curr_sub_event_EEGs.(curr_sov_eventtype_name);
+            EEG_currSovEvent = eeg_checkset(EEG_currSovEvent);
+    
+    %         % save .set of the sub's sov      
+            set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            pop_saveset(EEG_currSovEvent,'filename', set_output_file_name, 'filepath', set_output_dir);
+    
+            cfg = []; 
+            cfg.dataset = sprintf('%s\\%s',set_output_dir,set_output_file_name);
+            cfg.continuous = 'no';
+            ft_data = ft_preprocessing(cfg);
+
+            mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+            save(ft_file_path,"ft_data");
+        end
+    end
+end
+
+
+%% create 'intbkstart' and 'intbkend','intbkMid' conds (0.5s mean)
+length_of_bl_epoch_sec = 5;
+samples_per_trial = 138;
+trials_per_interblock_period = floor(length_of_bl_epoch_sec * new_sample_rate / samples_per_trial);
+
+events_type = {'intbkStart','intbkEnd', 'intbkMid'};
+events_type = {'intbkMid'};
+for sub_i = 1:numel(subs)
+    for sov_i=1:numel(sovs)
+        if strcmp(sovs{sov_i},'wake_morning') && strcmp(subs{sub_i},'14') ||  ...
+             strcmp(sovs{sov_i},'tREM') && strcmp(subs{sub_i},'36')|| ...
+            (strcmp(sovs{sov_i},'wake_morning') && strcmp(subs{sub_i},'23')) 
+            continue;
+        end
+%         % save .set of the sub's sov      
+        set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},"intbk"));
+        EEG_currSovEvent = pop_loadset('filename', set_output_file_name, 'filepath', set_output_dir);
+
+        cfg = []; 
+        cfg.dataset = sprintf('%s\\%s',set_output_dir,set_output_file_name);
+        cfg.continuous = 'no';
+        ft_data_all = ft_preprocessing(cfg);
+        
+        new_number_of_trials = length(ft_data_all.trial) * trials_per_interblock_period;
+
+        % devide ft_data to trials_per_interblock_period sections
+        new_ftdata_trial = cell(1, new_number_of_trials);
+        idx = 1;
+        for i = 1:length(ft_data_all.trial)
+            data = ft_data_all.trial{i}; 
+            % Divide into sections of size samples_per_trial
+            for j = 1 : samples_per_trial : (samples_per_trial*trials_per_interblock_period)
+                section = data(:, j:j+(samples_per_trial-1)); % Extract samples_per_trial columns
+                new_ftdata_trial{idx} = section;
+                idx = idx+1;
+            end
+        end
+        ft_data_all.trial = new_ftdata_trial;
+
+        % Creating the 1xsamples_per_trial double array
+        new_timestamps = -0.1:(1/new_sample_rate):0.45;
+        new_ftdata_time = cell(1, new_number_of_trials);
+        for i = 1:new_number_of_trials
+            new_ftdata_time{i} = new_timestamps;
+        end
+        ft_data_all.time = new_ftdata_time;
+
+        ft_data_all.hdr.nTrials = new_number_of_trials;
+        
+        % new ft_data.cfg.trl and ft_data.sampleinfo
+        new_ftdata_cfg_trl = zeros(new_number_of_trials, 3);
+        new_ftdata_cfg_trl(1,1) = 1;
+        for i = 2:new_number_of_trials
+            new_ftdata_cfg_trl(i,1) = (new_ftdata_cfg_trl(i-1,1) + samples_per_trial);
+        end
+        new_ftdata_cfg_trl(:,2) = (new_ftdata_cfg_trl(:,1) + samples_per_trial -1);
+        ft_data_all.cfg.trl = new_ftdata_cfg_trl;
+        ft_data_all.sampleinfo = new_ftdata_cfg_trl(:, 1:end-1);
+
+        if any(ismember(events_type, 'intbkStart'))
+            cfg = [];
+            cfg.demean          = 'yes';
+            cfg.baselinewindow  = [-0.1 0];
+            cfg.trials = find(mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 0 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 1);
+            ft_data = ft_preprocessing(cfg,ft_data_all);
+    
+            mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},'intbkStart'));
+            ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+            save(ft_file_path,"ft_data");
+        end
+
+        if any(ismember(events_type, 'intbkEnd'))
+            cfg = [];
+            cfg.demean          = 'yes';
+            cfg.baselinewindow  = [-0.1 0];
+            cfg.trials = find(mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 8 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 9);
+            ft_data = ft_preprocessing(cfg,ft_data_all);
+    
+            mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},'intbkEnd'));
+            ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+            save(ft_file_path,"ft_data");
+        end
+
+        if any(ismember(events_type, 'intbkMid'))
+            cfg = [];
+            cfg.demean          = 'yes';
+            cfg.baselinewindow  = [-0.1 0];
+            cfg.trials = find(mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 2 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 3 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 4 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 5 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 6 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 7 ...
+                | mod(1:size(ft_data_all.trial,2), trials_per_interblock_period) == 8);
+            ft_data = ft_preprocessing(cfg,ft_data_all);
+    
+            mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},'intbkMid'));
+            ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+            save(ft_file_path,"ft_data");
+        end
+    end
+end
+
+%% create 'LastOF18','LastOR18', 'OR618', 'OR718', 'OR818', 'OR918','OF18'
+events_type = {'LastOF18','LastOR18', 'OR618', 'OR718', 'OR818', 'OR918','OF18'};
+length_of_epoch_after_event = 6;
+length_of_epoch_before_event = 12;
+
+for sub_i = 1:numel(subs)
+    file_pattern = fullfile(input_set_dir, sprintf('*%s*.set',subs{sub_i}));
+    if all(cellfun(@(x) ischar(x) && contains(x, 'wake'), sovs))
+        file_pattern = fullfile(input_set_dir, sprintf('*%s*wake*.set',subs{sub_i}));
+    elseif ~any(cellfun(@(x) ischar(x) && contains(x, 'wake'), sovs))
+        file_pattern = fullfile(input_set_dir, sprintf('*%s*sleep*.set',subs{sub_i}));
+    end
+    files_set = dir(file_pattern);
+
+    % skip sub if all it's files are done
+    does_all_output_exist = true;
+    for sov_i=1:numel(sovs)
+        for events_type_i=1:numel(events_type)
+            set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            if ~isfile(sprintf("%s\\%s",set_output_dir,set_output_file_name)) does_all_output_exist = false; end
+        end
+    end
+    if does_all_output_exist continue; end
+
+    curr_sub_event_EEGs = struct();
+    for files_i = 1:length(files_set)
+        EEG_sub_file = pop_loadset('filename', files_set(files_i).name, 'filepath', input_set_dir);
+
+        if ~isempty(strfind(files_set(files_i).name, 'wake_morning'))
+            file_sleepwake_name = 'morning';
+        elseif ~isempty(strfind(files_set(files_i).name, 'wake_night'))
+            file_sleepwake_name = 'night';
+        else
+            file_sleepwake_name = 'sleep';
+        end
+
+        % load events and set files
+        if contains(files_set(files_i).name,'sleep')
+            file_pattern = fullfile(events_dir, sprintf('*%s*%s*%d*',subs{sub_i},file_sleepwake_name,files_i));
+        else
+            file_pattern = fullfile(events_dir, sprintf('*%s*%s*',subs{sub_i},file_sleepwake_name));
+        end
+        files_events = dir(file_pattern);
+        if length(files_events) > 1
+            error('More than one file found. Please check the file pattern or directory.');
+        end
+        sub_events_filepath = sprintf("%s\\%s",events_dir,files_events(1).name); % todo: make sure the right file is loadied by entering fileUM TO REGEX
+        sub_events = load(sub_events_filepath);
+        sub_events = sub_events.events;
+        allevents = {EEG_sub_file.event.type};
+
+        % get EEG struct for ica components and channels to reject
+        file_pattern = fullfile(ica_input_dir, sprintf('*%s*%s*ICA.set',subs{sub_i},file_sleepwake_name));
+        files_ica = dir(file_pattern);
+        if length(files_ica) > 1
+            warning('More than one file found. Please check the file pattern or directory.');
+        end
+        EEG_ica = pop_loadset('filepath',ica_input_dir,'filename',files_ica(1).name,'loadmode','info');
+
+        EEG_sub_file.chaninfo.icachansind = EEG_ica.chaninfo.icachansind;
+        EEG_sub_file.etc.icasphere_beforerms = EEG_ica.etc.icasphere_beforerms;
+        EEG_sub_file.etc.icaweights_beforerms = EEG_ica.etc.icaweights_beforerms;             
+        EEG_sub_file.icaact = EEG_ica.icaact;
+        EEG_sub_file.icachansind = EEG_ica.icachansind;
+        EEG_sub_file.icasphere = EEG_ica.icasphere;
+        EEG_sub_file.icaweights = EEG_ica.icaweights;
+        EEG_sub_file.icawinv = EEG_ica.icawinv;
+        EEG_sub_file.reject.gcompreject = EEG_ica.reject.gcompreject;
+        EEG_sub_file = eeg_checkset(EEG_sub_file); % it was critical in the continuos case. Not it's problematic. So I remove it.
+    
+        for events_type_i=1:numel(events_type)
+            if strcmp(events_type{events_type_i},'LastOF18')
+                curr_events = find(strcmp({sub_events.TOA}, 'O') ...
+                                    & [sub_events.trial_pos_in_block] == 10 ...
+                                    & strcmp({sub_events.block_type}, 'fixed'));
+            elseif strcmp(events_type{events_type_i},'OF18')
+                curr_events = find(strcmp({sub_events.TOA}, 'O') ...
+                                    & strcmp({sub_events.block_type}, 'fixed'));
+            elseif strcmp(events_type{events_type_i},'LastOR18')
+                curr_events = find([sub_events.tone_pos_in_trial] == 10 ...
+                                    & [sub_events.trial_pos_in_block] == 10 ...
+                                    & strcmp({sub_events.TOA}, 'T') ...
+                                    & strcmp({sub_events.block_type}, 'random'));
+            elseif strcmp(events_type{events_type_i},'OR618')
+                curr_events = find( [sub_events.trial_pos_in_block] == 6 ...
+                                    & strcmp({sub_events.TOA}, 'O') ...
+                                    & strcmp({sub_events.block_type}, 'random'));
+            elseif strcmp(events_type{events_type_i},'OR718')
+                curr_events = find( [sub_events.trial_pos_in_block] == 7 ...
+                                    & strcmp({sub_events.TOA}, 'O') ...
+                                    & strcmp({sub_events.block_type}, 'random'));
+            elseif strcmp(events_type{events_type_i},'OR818')
+                curr_events = find( [sub_events.trial_pos_in_block] == 8 ...
+                                    & strcmp({sub_events.TOA}, 'O') ...
+                                    & strcmp({sub_events.block_type}, 'random'));
+            elseif strcmp(events_type{events_type_i},'OR918')
+                curr_events = find( [sub_events.trial_pos_in_block] == 9 ...
+                                    & strcmp({sub_events.TOA}, 'O') ...
+                                    & strcmp({sub_events.block_type}, 'random'));
+            else
+                error('no such event type');
+            end
+
+            for sov_i=1:numel(sovs)
+                set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+                if isfile(sprintf("%s\\%s",set_output_dir,set_output_file_name)) continue; end
+                                
+                % find event in the curr sov  
+                curr_sov_curr_eventtype_indexes =[];
+                if strcmp(sovs{sov_i},'wake') && (contains(files_set(files_i).name, "wake_morning") || contains(files_set(files_i).name, "wake_night"))
+                    curr_sov_curr_eventtype_indexes = curr_events;
+                elseif (strcmp(sovs{sov_i},'wake_morning') && contains(files_set(files_i).name, "wake_morning")) || ...
+                    (strcmp(sovs{sov_i},'wake_night') &&  contains(files_set(files_i).name, "wake_night"))
+                    curr_sov_curr_eventtype_indexes = curr_events;
+                elseif strcmp(sovs{sov_i},'REM')
+                    rem_strings = (contains({sub_events.('sleep_stage')},"REM") | strcmp({sub_events.('sleep_stage')},"Rt") | strcmp({sub_events.('sleep_stage')},"Rp"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                elseif strcmp(sovs{sov_i},'tREM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"tREM") | strcmp({sub_events.('sleep_stage')},"Rt"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                elseif strcmp(sovs{sov_i},'pREM')
+                    rem_strings = (strcmp({sub_events.('sleep_stage')},"pREM") | strcmp({sub_events.('sleep_stage')},"Rp"));
+                    curr_sov_curr_eventtype_indexes = intersect(find(rem_strings), curr_events);
+                else
+                    curr_sov_curr_eventtype_indexes = intersect(find(strcmp({sub_events.sleep_stage}, sovs{sov_i})), curr_events);
+                end
+                if isempty(curr_sov_curr_eventtype_indexes) || numel(curr_sov_curr_eventtype_indexes)==1 continue;  end % if == 1, it creates issues with epochs.
+                    
+                % select events
+                EEG_currSovEvent = pop_epoch(EEG_sub_file,{},[-length_of_epoch_before_event length_of_epoch_after_event],'eventindices',curr_sov_curr_eventtype_indexes);
+                EEG_currSovEvent = pop_rmbase(EEG_currSovEvent, [-100 0]);
+
+   
+                % reject trials with +-300microVolt. 
+                % TODO: check that does what
+                % it suppose to do. maybe you should use also "EEG =
+                % pop_select(EEG, 'notrial', EEG.rejepoch);" Seems unnecessety,
+                % as the output includes the substraction of the epochs from
+                % the data array
+                if contains(sovs{sov_i}, 'wake')
+                    thresh_amp = 150;
+                else
+                    thresh_amp = 300;
+                end
+                [EEG_currSovEvent, Indexes] = pop_eegthresh(EEG_currSovEvent, 1, 1:size(EEG_currSovEvent.data,1), -thresh_amp, thresh_amp, 0, 5-0.001, 0, 1);
+                if isempty(EEG_currSovEvent)   continue;  end
+    
+                % remove bad channels
+                EEG_currSovEvent = pop_select(EEG_currSovEvent,'nochannel',EEG_ica.reject.rejchan); 
+    
+                % remove ICA components
+                EEG_currSovEvent = pop_subcomp( EEG_currSovEvent,find(EEG_currSovEvent.reject.gcompreject), 0); 
+                EEG_currSovEvent = eeg_checkset(EEG_currSovEvent); % critical
+    
+                % resampling
+                EEG_currSovEvent =  pop_resample( EEG_currSovEvent, new_sample_rate); % NOT RECOMMENDED "Warning: Resampling of epoched data is not recommended (due to anti-aliasing filtering)! Note: For epoched datasets recomputing urevent latencies is not supported. The urevent structure will be cleared."
+    
+                % interpulate (make sure code correct. maybe "eeg_interp(EEG, EEG.rejchan);"?)
+                EEG_currSovEvent = eeg_interp(EEG_currSovEvent,EEG_currSovEvent.chaninfo.removedchans);
+                rowWithLabelCz = EEG_currSovEvent.chaninfo.ndchanlocs(strcmp({EEG_currSovEvent.chaninfo.ndchanlocs.labels}, 'Cz'));
+                EEG_currSovEvent = eeg_interp(EEG_currSovEvent,rowWithLabelCz);
+    
+                % rereferencing
+                EEG_currSovEvent = pop_reref( EEG_currSovEvent, []);
+    
+                % merge sleep set files into one EEGLAB stuct
+                curr_sov_eventtype_name = sprintf("%s_%s",sovs{sov_i},events_type{events_type_i});
+                if ~isempty(EEG_currSovEvent) && ~EEG_currSovEvent.trials == 0 
+                    if ~isfield(curr_sub_event_EEGs, curr_sov_eventtype_name)
+                        curr_sub_event_EEGs.(curr_sov_eventtype_name) = EEG_currSovEvent;
+                    else
+                        curr_sub_event_EEGs.(curr_sov_eventtype_name) = pop_mergeset(curr_sub_event_EEGs.(curr_sov_eventtype_name), EEG_currSovEvent, 0);
+                    end
+                end
+            end
+        end
+    end
+
+    % events - set to ft
+    for events_type_i=1:numel(events_type)
+        for sov_i=1:numel(sovs)
+            curr_sov_eventtype_name = sprintf("%s_%s",sovs{sov_i},events_type{events_type_i});
+            if ~isfield(curr_sub_event_EEGs, curr_sov_eventtype_name) continue; end
+            EEG_currSovEvent = curr_sub_event_EEGs.(curr_sov_eventtype_name);
+            EEG_currSovEvent = eeg_checkset(EEG_currSovEvent);
+    
+    %         % save .set of the sub's sov      
+            set_output_file_name = char(sprintf("s-%s_sov-%s_%s.set",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            pop_saveset(EEG_currSovEvent,'filename', set_output_file_name, 'filepath', set_output_dir);
+    
+            cfg = []; 
+            cfg.dataset = sprintf('%s\\%s',set_output_dir,set_output_file_name);
+            cfg.continuous = 'no';
+            ft_data = ft_preprocessing(cfg);
+
+            mat_output_file_name = char(sprintf("s_%s_%s_%s",subs{sub_i}, sovs{sov_i},events_type{events_type_i}));
+            ft_file_path = sprintf('%s\\%s',ft_output_dir,mat_output_file_name);
+            save(ft_file_path,"ft_data");
+        end
+    end
+end
+
+
+
+%% Functions
+replaceStringInFilenames("C:\OExpOut\processed_data\set_subSovCond", "interblock", "intbk")
+
+function replaceStringInFilenames(directory, strToReplace, replacementStr)
+    % Check if the specified directory exists
+    if ~isfolder(directory)
+        error('Directory does not exist: %s', directory);
+    end
+
+    % Get a list of all files in the directory
+    files = dir(directory);
+    
+    % Iterate through each file
+    for i = 1:length(files)
+        % Skip directories
+        if ~files(i).isdir
+            oldName = files(i).name;
+            % New filename with the specified string replaced
+            newName = strrep(oldName, strToReplace, replacementStr);
+            
+            % Check if the name actually needs to be changed
+            if ~strcmp(oldName, newName)
+                % Full path for old and new filenames
+                oldFilePath = fullfile(directory, oldName);
+                newFilePath = fullfile(directory, newName);
+                
+                % Rename the file
+                movefile(oldFilePath, newFilePath);
+            end
+        end
+    end
+end
+
+

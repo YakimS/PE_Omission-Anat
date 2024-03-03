@@ -139,11 +139,11 @@ for j=1:2
     end
     
     curr_clust_name = 'neg';
-    curr_output_filename = sprintf('%s//ERP_within-%s=%s_var-sovs_%s-%s.png',output_dir,variable,value,O_clust_per_sov_text,curr_clust_name);
+    curr_output_filename = sprintf('%s//ERP_within-%s=%s_var-sovs_%s-%s',output_dir,variable,value,O_clust_per_sov_text,curr_clust_name);
     plot_erps(time,subs,curr_sovs,sovs_var_name,subs_avgErp_var_neg,curr_clust_name,curr_output_filename,custom_colormap);
     
     curr_clust_name = 'pos';
-    curr_output_filename = sprintf('%s//ERP_within-%s=%s_var-sovs_%s-%s.png',output_dir,variable,value,O_clust_per_sov_text,curr_clust_name);
+    curr_output_filename = sprintf('%s//ERP_within-%s=%s_var-sovs_%s-%s',output_dir,variable,value,O_clust_per_sov_text,curr_clust_name);
     plot_erps(time,subs,curr_sovs,sovs_var_name,subs_avgErp_var_pos,curr_clust_name,curr_output_filename,custom_colormap);
 end
 
@@ -153,7 +153,7 @@ sovs = {'wake_morning','wake_night','N2','REM','N1','N3'};
 variables_name = {'omission_type_seniority','tone_pos_in_trial','block_pos_in_file','block_type'};
 variables = {num2cell(1:11),num2cell(6:10),num2cell(1:24),{'fixed','random'}};
 
-sovs = {'N2'} ;
+% sovs = {'wake_morning','wake_night','N2','REM','N1','N3'};
 % variables_name = {'block_type'};
 % variables = {{'fixed','random'}};
 
@@ -297,10 +297,10 @@ for j=1:2
             end
         
             curr_clust_name = 'neg';
-            curr_output_filename = sprintf('%s//ERP_within-sov=%s_var-%s_%s-%s.png',output_dir, curr_sov, curr_variable_name,O_clust_per_sov_text,curr_clust_name);
+            curr_output_filename = sprintf('%s//ERP_within-sov=%s_var-%s_%s-%s',output_dir, curr_sov, curr_variable_name,O_clust_per_sov_text,curr_clust_name);
             plot_erps(time,subs,curr_variable,curr_variable_name,subs_avgErp_var_neg,curr_clust_name,curr_output_filename,curr_colormap);
             curr_clust_name = 'pos';
-            curr_output_filename = sprintf('%s//ERP_within-sov=%s_var-%s_%s-%s.png',output_dir, curr_sov, curr_variable_name,O_clust_per_sov_text,curr_clust_name);
+            curr_output_filename = sprintf('%s//ERP_within-sov=%s_var-%s_%s-%s',output_dir, curr_sov, curr_variable_name,O_clust_per_sov_text,curr_clust_name);
             plot_erps(time,subs,curr_variable,curr_variable_name,subs_avgErp_var_pos,curr_clust_name,curr_output_filename,curr_colormap);
         end
     end
@@ -336,7 +336,9 @@ function plot_erps(time,subs,curr_variable,curr_variable_name,curr_clust_res,cur
     end
     xlabel('Time (s)')
     ylabel('µV')
-    saveas(gcf, curr_output_filename)
+    saveas(gcf, sprintf("%s.png",curr_output_filename));
+    saveas(gcf, sprintf("%s.svg",curr_output_filename));
+    saveas(gcf, sprintf("%s.fig",curr_output_filename));
     close;
 end
 

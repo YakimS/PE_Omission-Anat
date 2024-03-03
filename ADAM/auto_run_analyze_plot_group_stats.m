@@ -3,16 +3,17 @@ addpath 'C:\Users\User\Cloud-Drive\BigFiles\libs'
 
 plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resamp55_allSovs_subRandPerm';
 results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resamp55_allSovs_subRandPerm';
-all_subsets = {'subset-wmorning', 'subset-wnight','subset-N1','subset-N2'};
-all_subsets = {'subset-N3','subset-REM'};
+all_subsets = {'subset-wmorning', 'subset-wnight','subset-N1','subset-N2','subset-N3','subset-REM'};
+all_subsets = {'subset-N2'};
 all_contrasts = {'OF-vs-OR'};
+acclim = [.465 .565];
 
 % plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo';
 % results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo';
 % all_subsets = {'subset-wmorning', 'subset-wnight'};
 % all_contrasts = {'T-vs-A'};
+% acclim = [.465 .765];
 
-acclim = [.465 .565];
 
 for subset_i=1:numel(all_subsets)
     curr_subset = all_subsets{subset_i};
@@ -36,9 +37,13 @@ for subset_i=1:numel(all_subsets)
             plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
             save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,tail);
             save_plot_and_close_fig(plot_dir,save_file_name)
-        end
-        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset);
+       end
         save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',curr_subset,curr_contrast,tail);
+
+        plot_subPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset,plot_dir,save_file_name);
+
+        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset);
+        
         save_plot_and_close_fig(plot_dir,save_file_name)
     end
 end
@@ -53,6 +58,7 @@ all_contrasts = {'wmorning-vs-wnight','wmorning-vs-N1','wmorning-vs-N2','wmornin
                 'N1-vs-N2','N1-vs-N3','N1-vs-REM',...
                 'N2-vs-N3','N2-vs-REM',...
                 'N3-vs-REM'};
+timerange_test = 0; 
 
 for isDiag_i=1:2
     if isDiag_i==1
@@ -86,20 +92,20 @@ end
 
 
 %% Average decoding
-
+% 
 % plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo_allSovs_5fold';
 % results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs_5fold';
 % all_subsets = {'subset-wnight','subset-wmorning','subset-N1','subset-N2','subset-N3','subset-REM'};
 % all_contrasts = {'OF-vs-OR', 'OR-vs-OF'};
 
-plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo_allSovs_5fold';
-results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs_5fold';
-all_subsets = {'subset-O'};
-all_contrasts = {'wmorning-vs-wnight','wmorning-vs-N1','wmorning-vs-N2','wmorning-vs-N3','wmorning-vs-REM', ...
-                'wnight-vs-N1','wnight-vs-N2','wnight-vs-N3','wnight-vs-REM', ...
-                'N1-vs-N2','N1-vs-N3','N1-vs-REM',...
-                'N2-vs-N3','N2-vs-REM',...
-                'N3-vs-REM'};
+% plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo_allSovs_5fold';
+% results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs_5fold';
+% all_subsets = {'subset-O'};
+% all_contrasts = {'wmorning-vs-wnight','wmorning-vs-N1','wmorning-vs-N2','wmorning-vs-N3','wmorning-vs-REM', ...
+%                 'wnight-vs-N1','wnight-vs-N2','wnight-vs-N3','wnight-vs-REM', ...
+%                 'N1-vs-N2','N1-vs-N3','N1-vs-REM',...
+%                 'N2-vs-N3','N2-vs-REM',...
+%                 'N3-vs-REM'};
 
 % results_dir = "C:\adam-loo";
 % plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_loo_resampleNo';
@@ -174,11 +180,12 @@ end
 
 function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_)
     addpath('C:\Users\User\Cloud-Drive\BigFiles\libs');
+    indi_over_time = mvpa_stats.indivClassOverTime;
   
     time = mvpa_stats.settings.times{1};
     shadedErrorBar2(time,mvpa_stats.indivClassOverTime,{@mean,@std},'patchSaturation',0.1)%,'lineprops','-b');
     hold on;
-    plot(time,mvpa_stats.indivClassOverTime,'Color',[0 ,0, 0, 0.2]);
+    plot(time,indi_over_time,'Color',[0 ,0, 0, 0.2]);
     hold on;
     plot(time,mvpa_stats.ClassOverTime,'Color',[0, 0, 0, 1]);
     xlim([time(1),time(end)]);
@@ -189,6 +196,32 @@ function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_)
     xlabel("time (s)");
     ylabel("AUC");
     set(gcf,'Position',[100 100 600 300])
+end
+
+function plot_subPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name_prefix)
+    indi_over_time = mvpa_stats.indivClassOverTime;
+    pvals_indi_over_time = mvpa_stats.pvalsOverTime;
+    time = mvpa_stats.settings.times{1};
+    for i=1:size(indi_over_time,1)
+        plot(time,indi_over_time(i,:),'Color',[0, 0, 0, 1]);
+        for j=1:numel(time)
+           if pvals_indi_over_time(i,j) <= 0.05
+               hold on;
+               plot(time(j), indi_over_time(i,j), '.','color','black','MarkerSize',13); 
+           end
+        end
+
+        xlim([time(1),time(end)]);
+        if acclim ~=0
+            ylim(acclim);
+        end
+        title(sprintf("%s, subINDEX-%d",title_{1}, i));
+        xlabel("time (s)");
+        ylabel("AUC");
+        set(gcf,'Position',[100 100 600 300])
+        save_file_name = sprintf("%s_subINDEX-%d",save_file_name_prefix,i);
+        save_plot_and_close_fig(plot_dir,save_file_name)
+    end
 end
 
 function mvpa_stats=get_avg_decoding(dir,tail,isDiag,timerange)
@@ -234,9 +267,9 @@ end
 
 
 function save_plot_and_close_fig(folder,file_name)
-    f = gcf; 
-    %saveas(f, fullfile(folder, [file_name, '.fig']));
-    saveas(f, fullfile(folder, [file_name, '.png']));
+    saveas(gcf, sprintf("%s\\%s.fig", folder, file_name));
+    saveas(gcf, sprintf("%s\\%s.svg", folder, file_name));
+    saveas(gcf, sprintf("%s\\%s.png", folder, file_name));
     close(gcf);
 end
 

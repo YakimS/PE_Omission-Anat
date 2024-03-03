@@ -1,4 +1,6 @@
 %% turn a sleep .set file to a a ft file in 1000 trails batches
+% One day it can be improved by parralel all files needed for one subject
+% and then combining them together (it will make more sense also in terms of memory efficiency)
 
 restoredefaultpath
 addpath C:\Users\User\Cloud-Drive\BigFiles\libs\fieldtrip-20230223
@@ -9,18 +11,19 @@ clear;
 
 %%
 ref_input_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced';
-interim_res_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\import\reref_in_ft';
+interim_res_dir = 'C:\OExpOut\import\ft_reref';
 subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
 batchSize = 1000;  
 %%
-% delete(gcp('nocreate'))
-% tic
-% ticBytes(gcp);
-% parfor (sub_i=1:size(subs,2),3)
-for sub_i=1:size(subs,2)
+delete(gcp('nocreate'))
+tic
+ticBytes(gcp);
+parfor (sub_i=1:size(subs,2),4)
+% for sub_i=1:size(subs,2)
     set_file_name = sprintf('s_%s_sleep_referenced.set',subs{sub_i});
     mat_file_name = strrep(set_file_name, '.set', '.mat');
-    if isOutputFile(mat_file_name,interim_res_dir)
+    interimFileExists = any(~cellfun(@isempty, regexp({dir(interim_res_dir).name}, sprintf('interim-\\d+_s_%s', subs{sub_i}))));
+    if isOutputFile(mat_file_name,interim_res_dir) || interimFileExists
         continue;
     end
     tic
@@ -63,8 +66,8 @@ for sub_i=1:size(subs,2)
     
     toc
 end
-% tocBytes(gcp)
-% toc
+tocBytes(gcp)
+toc
 %% util funcs
 function parsave(fname, merged_data)
   save(fname,'merged_data', '-v7.3');
