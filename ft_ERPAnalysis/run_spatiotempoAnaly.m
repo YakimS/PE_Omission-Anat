@@ -1,20 +1,40 @@
 
 % sovs
-N1 = struct(); N1.import_s = "N1"; N1.short_s = "N1"; N1.long_s = "N1";
-N2 = struct(); N2.import_s = "N2"; N2.short_s = "N2"; N2.long_s = "N2";
-N3 = struct(); N3.import_s = "N3"; N3.short_s = "N3"; N3.long_s = "N3";
-REM = struct(); REM.import_s = "REM"; REM.short_s = "REM"; REM.long_s = "REM";
-tREM = struct(); tREM.import_s = "tREM"; tREM.short_s = "tREM"; tREM.long_s = "tREM";
-pREM = struct(); pREM.import_s = "pREM"; pREM.short_s = "pREM"; pREM.long_s = "pREM";
-Wnig = struct(); Wnig.import_s = "wake_night"; Wnig.short_s = "wn"; Wnig.long_s = "Wake Pre";
-Wmor = struct(); Wmor.import_s = "wake_morning"; Wmor.short_s = "wm"; Wmor.long_s = "Wake Post";
+N1 = defineExpStruct("N1", "N1", "N1", false);
+N2 = defineExpStruct("N2", "N2", "N2", false);
+N3 = defineExpStruct("N3", "N3", "N3", false);
+REM = defineExpStruct("REM", "REM", "REM", false);
+tREM = defineExpStruct("tREM", "tREM", "tREM", false);
+pREM = defineExpStruct("pREM", "pREM", "pREM", false);
+Wnig = defineExpStruct("wake_night", "wn", "Wake Pre", false);
+Wmor = defineExpStruct("wake_morning", "wm", "Wake Post", false);
 
-% [-0.1, 0.448]
-Omi = struct(); Omi.import_s = "O"; Omi.short_s = "O"; Omi.long_s = "Omission";
-OmiR = struct(); OmiR.import_s = "OR"; OmiR.short_s = "OR"; OmiR.long_s = "Omission Random";
-OmiF = struct(); OmiF.import_s = "OF"; OmiF.short_s = "OF"; OmiF.long_s = "Omission Fixed";
-intbk = struct(); intbk.import_s = "intbk"; intbk.short_s = "intbk"; intbk.long_s = "Interblock (Avg)";
-intbkMid = struct(); intbkMid.import_s = "intbkMid"; intbkMid.short_s = "intbkMid"; intbkMid.long_s = "Interblock middle (Avg)"; % 0.5s - 4.5s of the interblock cut to 0.5s
+% [-0.1, 0.58] - locked to A before
+AblOmi = defineExpStruct("AblO", "AblO", "Omission", false);
+AblOmiF = defineExpStruct("AblOF", "AblOF", "Omission Fixed", false);
+AblOmiR = defineExpStruct("AblOR", "AblOR", "Omission Random", false);
+intblksmpAblO = defineExpStruct("intblksmpAblO", "intblksmpAblO", "Interblock", true);
+intblksmpAblOF = defineExpStruct("intblksmpAblOF", "intblksmpAblOF", "Interblock", true);
+intblksmpAblOR = defineExpStruct("intblksmpAblOR", "intblksmpAblOR", "Interblock", true);
+
+noN2EventsAblOmi = defineExpStruct("noN2EventsAblO", "noN2EventsAblO", "Omission without ss&kc", false);
+
+% [-0.1, 1.16]
+AOmi = defineExpStruct("AO", "AO", "Omission", false);
+AOmiR = defineExpStruct("AOR", "AOR", "Omission Random", false);
+AOmiF = defineExpStruct("AOF", "AOF", "Omission Fixed", false);
+intblksmpAO = defineExpStruct("intblksmpAO", "intblksmpAO", "Interblock", true);
+intblksmpAOR = defineExpStruct("intblksmpAOR", "intblksmpAOR", "Interblock", true);
+intblksmpAOF = defineExpStruct("intblksmpAOF", "intblksmpAOF", "Interblock", true);
+
+noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission without ss&kc", false);
+noN2EventsAOF = defineExpStruct("noN2EventsAOF", "noN2EventsAOF", "Omission fixed without ss&kc", false);
+noN2EventsAOR = defineExpStruct("noN2EventsAOR", "noN2EventsAOR", "Omission random without ss&kc", false);
+noN2KcompAO = defineExpStruct("noN2KcompAO", "noN2KcompAO", "Omission without kc", false);
+noN2KcompAOF = defineExpStruct("noN2KcompAOF", "noN2KcompAOF", "Omission fixed without kc", false);
+noN2KcompAOR = defineExpStruct("noN2KcompAOR", "noN2KcompAOR", "Omission random without kc", false);
+noN2SsAO = defineExpStruct("noN2SsAO", "noN2SsAO", "Omission without ss", false);
+
 
 % % [-12, 6]
 % OmiR618 = struct(); OmiR618.import_s = "OR618"; OmiR618.short_s = "OR618"; OmiR618.long_s = "Omission Random, 6th";
@@ -58,13 +78,61 @@ close;
 addpath(libs_dir)
 addpath(genpath('C:\Users\User\OneDrive\Documents\githubProjects'))
 
-output_dir = sprintf("%s\\all",output_main_dir);
-mkdir(output_dir);
+%% RUN  (AO,AOF,AOR vs Aintbk) & (AOF vs. AOR) with a specific range [-0.1,1.16]
+output_dir = sprintf("%s\\AdaptorOmission",output_main_dir); mkdir(output_dir);
+
+sovs = {Wnig,N2,N3,REM};
+within_sov_conds = {AOmi,AOmiR,AOmiF};
+union_intersect_sovs = {Wnig,N2,N3,REM};
+contrasts = {{intblksmpAO,AOmi}, {AOmiF,AOmiR}};
+best_cluster_cont = {AOmiF,AOmiR};
+best_cluster_contSovs = {Wnig,Wnig};
+test_latency = [0.58,1.16];
+plot_latency= [-0.1,1.16];
+is_plot_topoplot = true;
+is_plot_video = false;
+
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Tone';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+event_lines = {adaptor_event,omission_event};
+
+run_full_O_OF_OR_vs_intblk_in_range(subs, sovs,union_intersect_sovs,within_sov_conds,contrasts,best_cluster_cont,best_cluster_contSovs,test_latency,plot_latency, ...
+                                    event_lines,is_plot_topoplot,is_plot_video,ft_cond_input_dir,ft_cond_output_dir,output_dir)
+
+%% RUN  (AblO,AblOF,AblOR vs intblksmpAO) & (AblOF vs. AblOR) with a specific range [-0.1,0.58]
+
+output_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir); mkdir(output_dir);
+sovs = {Wnig,N2,N3,REM};
+contrasts = {{intblksmpAblO,AblOmi}, {AblOmiF,AblOmiR}};
+conds = {AblOmi,AblOmiR,AblOmiF};
+f = get_funcs_instant(subs,sovs, conds{1},ft_cond_input_dir,ft_cond_output_dir);
+
+omission_event = struct();
+omission_event.("event_time") = 0;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+event_lines = {omission_event};
+
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency =  [0,0.58];
+cfg.plot_latency= [-0.1,0.58];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
+
+electd_clust = f.get_electdClust(f,'simple_contrast',sprintf("%s\\AdaptorOmission",output_main_dir),{intblksmpAO,AOmi},{REM,REM});
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust,output_dir,cfg)
 
 
 %% RUN TFR Cluster-permu 
 
-sovs = {Wnig,Wnig,N2,N3,REM};
+sovs = {Wnig,N2,N3,REM};
 pre_vs_post_conds = {Omi,OmiF,OmiR};
 contrasts = {{OmiF,OmiR}};
 f = get_funcs_instant(subs,sovs, pre_vs_post_conds{1},ft_cond_input_dir,ft_cond_output_dir);
@@ -91,272 +159,194 @@ for cond_i=1:numel(contrasts)
         end
     end
 end
-%% RUN  (O,OF,OR vs intbk) & (OF vs. OR) with a specific range [-0.1,0.448]
 
-bl_cond = intbkMid;
-% sovs = {Wnig,N2,N3,REM}; %Wmor,N3,REM,Wnig,N2,tREM,pREM
-sovs = {tREM,pREM};
-pre_vs_post_conds = {Omi,OmiF,OmiR};
-union_intersect_sovs = {Wnig,N2,N3,REM};
-contrasts = {{OmiF,OmiR}};
-best_cluster_cont = {bl_cond,Omi};
+%%
+output_dir = sprintf("%s\\test",output_main_dir); mkdir(output_dir);
+sovs = {Wnig,N2,N3,REM};
+contrasts = {{intblksmpAO,AOmi}, {AOmiF,AOmiR}};
+conds = {AOmi,AOmiF,AOmiR};
+f = get_funcs_instant(subs,sovs, conds{1},ft_cond_input_dir,ft_cond_output_dir);
+
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Tone';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+event_lines = {adaptor_event,omission_event};
+
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
+
+curr_cont_elec =  "curr_sov_cont_clustersElect";
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,cfg)
+
+best_cluster_cont = {AOmiF,AOmiR};
 best_cluster_contSovs = {Wnig,Wnig};
-test_latency = [0,0.448];
-plot_latency= [-0.1,0.448];
-is_plot_topoplot = true;
-is_plot_video = false;
+elcdClust_bestCluster =  f.get_electdClust(f,'simple_contrast',output_dir,best_cluster_cont,best_cluster_contSovs);
+% elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
 
-onset_event = struct();
-onset_event.("event_time") = 0;
-onset_event.("event_color") = [.3, .3 ,.3];
-onset_event.("event_text") = 'Omission Onset';
-event_lines = {onset_event};
-
-run_full_O_OF_OR_vs_intblk_in_range(subs,bl_cond, sovs,union_intersect_sovs,pre_vs_post_conds,contrasts,best_cluster_cont,best_cluster_contSovs,test_latency,plot_latency, ...
-                                    event_lines,is_plot_topoplot,is_plot_video,ft_cond_input_dir,ft_cond_output_dir,output_dir)
-
-
-%% RUN  (OF,OR vs intbk) & (OF vs. OR) with a specific range [-0.2,2]
-sovs = {Wnig,N2,N3,REM}; %Wmor,N3,REM,N2
-bl_cond = intbk2;
-pre_vs_post_conds = {LastOF2,LastOR2};
-contrasts = {{LastOF2,LastOR2}};
-best_cluster_cont = {bl_cond,LastOF2}; best_cluster_contSovs = {Wnig,Wnig};
-test_latency = [0,1.996]; plot_latency= [-0.2,1.996];
-is_plot_topoplot = true;
-is_plot_video = false;
-
-event_lines = {};
-event = struct();
-event.("event_time") = 0;
-event.("event_color") = [.3, .3 ,.3];
-event.("event_text") = '';
-event_lines{end+1} = event;
-event.("event_time") = 0.5;
-event_lines{end+1} = event;
-event.("event_time") = 1;
-event_lines{end+1} = event;
-event.("event_time") = 1.5;
-event_lines{end+1} = event;
-
-
-run_full_O_OF_OR_vs_intblk_in_range(subs,bl_cond, sovs,pre_vs_post_conds,contrasts,best_cluster_cont,best_cluster_contSovs,test_latency,plot_latency, ...
-                                    event_lines,is_plot_topoplot,is_plot_video,ft_cond_input_dir,ft_cond_output_dir,output_dir)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,elcdClust_bestCluster,output_dir,cfg)
+plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, output_dir,cfg)
+run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,elcdClust_bestCluster,output_dir,cfg)
+plot_erp_withinSovCond_allSubs(f, sovs, conds, elcdClust_bestCluster, output_dir,cfg)
 
 %%
-sovs = {Wnig,N2,N3,REM}; %Wmor,N3,REM,Wnig, N2
-for sov_i = 1:numel(sovs)
-    curr_sov_subs = sub_exclu_per_sov(subs, {sovs{sov_i}});
-    imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir); 
-    timelock = imp.get_cond_timelocked(imp,intbk5,sovs{sov_i});
-    electrodes = timelock{1}.label;
-    time = timelock{1}.time;
-    f = funcs_(imp, electrodes,time);
+sovs = {N2};
+cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
+output_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(output_dir);
+cfg = {};
+cfg.test_latency =  [0,0.58];
+cfg.plot_latency= [-0.1,0.58];
+omission_event = struct();
+omission_event.("event_time") = 0;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+cfg.event_lines = {omission_event};
 
-    f.plot_erp_per_cond_across_sovs(f,output_dir,intbk5,{sovs{sov_i}},{intbk,Omi},{Wnig,Wnig},{},[0,5])
-end
+f = get_funcs_instant(subs,sovs, intblksmpAblO,ft_cond_input_dir,ft_cond_output_dir);
+electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, noN2EventsAblOmi},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, AblOmi},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
 
-curr_sov_subs = sub_exclu_per_sov(subs, sovs);
-imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir); 
-timelock = imp.get_cond_timelocked(imp,intbk5,sovs{sov_i});
-electrodes = timelock{1}.label;
-time = timelock{1}.time;
-f = funcs_(imp, electrodes,time);
-f.plot_erp_per_cond_across_sovs(f,output_dir,intbk5,sovs,{intbk,Omi},{Wnig,Wnig},{},[0,5])
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAblO, noN2EventsAblOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
 
-%%
-curr_subs = subs;
-% curr_subs(ismember(curr_subs, {'14','15','17','27','37'})) = [];
-curr_subs(ismember(curr_subs, {'14','32','37'})) = [];
-rand_cond =OmiR618;
-imp = ft_importer(curr_subs,ft_cond_input_dir,ft_cond_output_dir); 
-timelock = imp.get_cond_timelocked(imp,rand_cond,Wnig);
-electrodes = timelock{1}.label;
-time = timelock{1}.time;
-sovs = {Wnig};%Wnig,N2,REM,N3
-f = funcs_(imp, electrodes,time);
-% f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiF,sovs,{Omi,intbk},{Wnig,Wnig},{})
-% f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiR,sovs,{Omi,intbk},{Wnig,Wnig},{})
 
-% f.plot_erp_per_cond_across_sovs(f,output_dir,OmiR618,sovs,{Omi,intbk},{Wnig,Wnig},{})
-% f.plot_erp_per_cond_across_sovs(f,output_dir,OmiR718,sovs,{Omi,intbk},{Wnig,Wnig},{})
-% f.plot_erp_per_cond_across_sovs(f,output_dir,OmiR818,sovs,{Omi,intbk},{Wnig,Wnig},{})
-% f.plot_erp_per_cond_across_sovs(f,output_dir,OmiR918,sovs,{Omi,intbk},{Wnig,Wnig},{})
 
-% f.plot_erp_per_cond_across_sovs(f,output_dir,OmiF18,sovs,{Omi,intbk},{Wnig,Wnig},{})
-
-% f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiF18,sovs,{Omi,intbk},{Wnig,Wnig},{})
-
-% f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiR18,sovs,{Omi,intbk},{Wnig,Wnig},{})
-
-f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiR18,sovs,{Omi,intbk},{Wnig,Wnig},{},[0,2])
-
-is_plot_topoplot = true;
-is_plot_video = true;
-f.run_spatiotempoClustPerm_dependent(f,output_dir, {pre_vs_post_conds{cond_i},intbk},{sovs{sov_i},sovs{sov_i}},[-0.1,0.448], is_plot_topoplot,is_plot_video)
-f.plot_erp_per_contrast_and_sov(f,output_dir,{pre_vs_post_conds{cond_i},intbk},{sovs{sov_i},sovs{sov_i}},{pre_vs_post_conds{cond_i},intbk},{sovs{sov_i},sovs{sov_i}},sovs{sov_i}.short_s)
-f.plot_erp_per_contrast_and_sov(f,output_dir,{pre_vs_post_conds{cond_i},intbk},{sovs{sov_i},sovs{sov_i}},{pre_vs_post_conds{cond_i},intbk},{Wnig,Wnig},sovs{sov_i}.short_s)
 
 
 %%
-for sov_i = 1:numel(sovs)
-    curr_subs = subs;
-    if strcmp(sovs{sov_i}.import_s, 'wake_night')
-        curr_subs(ismember(curr_subs, {'29','37'})) = [];
-% %     elseif strcmp(sovs{sov_i}.import_s, 'wake_morning')
-% %         curr_subs(ismember(curr_subs, {'09','14','24', '30', '37'})) = [];
-    elseif strcmp(sovs{sov_i}.import_s, 'N3')
-        curr_subs(ismember(curr_subs, {'27','29','37'})) = [];
-    elseif strcmp(sovs{sov_i}.import_s, 'N2')
-        curr_subs(ismember(curr_subs, {'29','37'})) = [];
-    elseif strcmp(sovs{sov_i}.import_s, 'REM')
-        curr_subs(ismember(curr_subs, {'27','29','37'})) = [];
-    end
-    rand_cond =LastOmiF;
-    imp = ft_importer(curr_subs,ft_cond_input_dir,ft_cond_output_dir); 
-    timelock = imp.get_cond_timelocked(imp,rand_cond,Wnig);
-    electrodes = timelock{1}.label;
-    time = timelock{1}.time;
-    f = funcs_(imp, electrodes,time);
-    f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiF,{sovs{sov_i}},{Omi,intbk},{Wnig,Wnig},{});
-    f.plot_erp_per_cond_across_sovs(f,output_dir,LastOmiR,{sovs{sov_i}},{Omi,intbk},{Wnig,Wnig},{});
-end
+sovs = {N2};
+output_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(output_dir);
+
+cfg = {};
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Tone';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+cfg.event_lines = {adaptor_event,omission_event};
+
+cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
+f = get_funcs_instant(subs,sovs, intblksmpAO,ft_cond_input_dir,ft_cond_output_dir);
+electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
 
 
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, noN2EventsAO},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, AOmi},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, noN2EventsAO}},'curr_sov_cont_clustersElect',output_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, AOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAO, AOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAOF, noN2EventsAOR}},'curr_sov_cont_clustersElect',output_dir,cfg)
 
-% curr_subs = subs;
-% curr_subs(ismember(curr_subs, {'27','29','37'})) = [];
-% rand_cond =LastOmiF;
-% imp = ft_importer(curr_subs,ft_cond_input_dir,ft_cond_output_dir); 
-% timelock = imp.get_cond_timelocked(imp,rand_cond,Wnig);
-% electrodes = timelock{1}.label;
-% time = timelock{1}.time;
-% f = funcs_(imp, electrodes,time);
-% contrasts = {{LastOmiF, LastOmiR}};
-% cont_i = 1;
-% for sov_i = 1:numel(sovs)
-%     is_plot_topoplot = true;
-%     is_plot_video = false;
-%     f.run_spatiotempoClustPerm_dependent(f,output_dir, contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},[-12,6], is_plot_topoplot,is_plot_video)
-%     f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},{LastOmiF, LastOmiR},{sovs{sov_i},sovs{sov_i}},sovs{sov_i}.short_s)
-%     f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},{Omi,intbk},{Wnig,Wnig},sovs{sov_i}.short_s)
-%     f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},{LastOmiF, LastOmiR},{Wnig,Wnig},sovs{sov_i}.short_s)
-% end
+cluster_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
+electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{AOmiF,AOmiR},{Wnig,Wnig});
+f.plot_erp_per_contrast_and_sov(f,output_dir,{noN2EventsAOF, noN2EventsAOR},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
 
- %% functions
+% 
+% noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission without ss&kc", false);
+% noN2KcompAO = defineExpStruct("noN2KcompAO", "noN2KcompAO", "Omission without kc", false);
+% noN2SsAO = defineExpStruct("noNSspAO", "noNoSsAO", "Omission without ss", false);
 
- function curr_sov_subs = sub_exclu_per_sov(subs, sovs,cond)
-    curr_sov_subs = subs;
-    for sov_i=1:numel(sovs)
-        if strcmp(sovs{sov_i}.import_s, 'wake_night')
-        elseif strcmp(sovs{sov_i}.import_s, 'N1')
-        elseif strcmp(sovs{sov_i}.import_s, 'wake_morning')
-            curr_sov_subs(ismember(curr_sov_subs, { '23'})) = [];
-        elseif strcmp(sovs{sov_i}.import_s, 'N2')
-        elseif strcmp(sovs{sov_i}.import_s, 'N3')
-        elseif strcmp(sovs{sov_i}.import_s, "tREM")
-            curr_sov_subs(ismember(curr_sov_subs, {'36'})) = [];
-        end
-    end
-end
+%%
+cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
+electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2KcompAO,N2}},electd_clust,"BlNokc" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2}},electd_clust,"BlNoss" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2EventsAO,N2}},electd_clust,"BlNoeve" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+%% functions
 
-function run_full_O_OF_OR_vs_intblk_in_range(subs,bl_cond, sovs,union_intersect_sovs,pre_vs_post_conds,contrasts,best_cluster_cont,best_cluster_contSovs, ...
-    test_latency,plot_latency,event_lines, ...
-    is_plot_topoplot,is_plot_video,ft_cond_input_dir,ft_cond_output_dir,output_dir)
+function run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust,output_dir,cfg)
+    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+    if ~isfield(cfg, 'is_plot_topoplot')    cfg.is_plot_topoplot = true; end
+    if ~isfield(cfg, 'is_plot_video')       cfg.is_plot_video = false; end
+    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
 
-    %%% within sovs
     for sov_i = 1:numel(sovs) 
-        cur_contrast_sovs = {sovs{sov_i},sovs{sov_i}};
-        for cond_i=1:numel(pre_vs_post_conds)
-            f = get_funcs_instant(subs,sovs, pre_vs_post_conds{cond_i},ft_cond_input_dir,ft_cond_output_dir);
-            curr_contrast_conds = {bl_cond,pre_vs_post_conds{cond_i}};
-
-            % spatio-temporal-cluster permutation. Contrast: pre-vs-post conds
-            f.run_spatiotempoClustPerm_dependent(f,output_dir, curr_contrast_conds,cur_contrast_sovs,test_latency,plot_latency, is_plot_topoplot,is_plot_video)
-            
-%             % plot contrast. Electrodes: stcp results
-%             elcdClust_withinCurrSov_condVsIntblk = f.get_electdClust(f,'simple_contrast',output_dir,curr_contrast_conds,cur_contrast_sovs);
-%             f.plot_erp_per_contrast_and_sov(f,output_dir,curr_contrast_conds,cur_contrast_sovs,elcdClust_withinCurrSov_condVsIntblk,sovs{sov_i}.short_s, ...
-%                 'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines)
-%             
-%             % plot contrast. Electrodes: given "best"
-%             elcdClust_bestCluster =  f.get_electdClust(f,'simple_contrast',output_dir,best_cluster_cont,best_cluster_contSovs);
-%             f.plot_erp_per_contrast_and_sov(f,output_dir,curr_contrast_conds,cur_contrast_sovs,elcdClust_bestCluster,sovs{sov_i}.short_s, ...
-%                 'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines)
-% 
-%             % plot all subjects in the "post" cond, Electrodes: given "best"
-%             f.plot_erp_per_cond_across_sovs(f,output_dir,pre_vs_post_conds{cond_i},{sovs{sov_i}},elcdClust_bestCluster ...
-%                 ,'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines)
-        end
-    
+        cur_contrast_sovs = {sovs{sov_i},sovs{sov_i}};    
         for cont_i=1:numel(contrasts)
-            f.run_spatiotempoClustPerm_dependent(f,output_dir, contrasts{cont_i},cur_contrast_sovs,test_latency,plot_latency, is_plot_topoplot,is_plot_video)
             
-%             curr_elcdClust =  f.get_electdClust(f,'simple_contrast',output_dir,best_cluster_cont,cur_contrast_sovs);
-%             
-%             f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,curr_elcdClust,sovs{sov_i}.short_s ...
-%                 ,'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines);
-%             
-%             f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,elcdClust_bestCluster,sovs{sov_i}.short_s...
-%                 ,'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines);
+            f.run_STCP_ERP_dependent(f,output_dir, contrasts{cont_i},cur_contrast_sovs, ...
+                cfg.test_latency,cfg.test_latency, cfg.is_plot_topoplot,cfg.is_plot_video)
+            
+            if (ischar(electd_clust) || isstring(electd_clust)) && strcmp(electd_clust, "curr_sov_cont_clustersElect")
+                electd_clust = f.get_electdClust(f,'simple_contrast',output_dir,contrasts{cont_i},cur_contrast_sovs);
+            end
+
+            f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,electd_clust ...
+                ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
         end
     end
-
-
-    %%% between sovs
-%     for cond_i=1:numel(pre_vs_post_conds)
-%         sovs_pairs = uniquePairs(sovs);
-%         for sp_i = 1:numel(sovs_pairs) 
-%             f = get_funcs_instant(subs,sovs, pre_vs_post_conds{cond_i},ft_cond_input_dir,ft_cond_output_dir);
-%             cur_contrast_sovs = {sovs_pairs{sp_i}{1},sovs_pairs{sp_i}{2}};
-%             curr_contrast_conds = {pre_vs_post_conds{cond_i},pre_vs_post_conds{cond_i}};
-% 
-%             f.run_spatiotempoClustPerm_dependent(f,output_dir, curr_contrast_conds,cur_contrast_sovs,test_latency,plot_latency, is_plot_topoplot,is_plot_video);
-%         end
-% 
-%         f = get_funcs_instant(subs,sovs, pre_vs_post_conds{cond_i},ft_cond_input_dir,ft_cond_output_dir);
-%         cond_contrast_for_sig = {bl_cond,pre_vs_post_conds{cond_i}};
-% 
-%         elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
-%         f.plot_erp_per_cond_across_sovs(f,output_dir,pre_vs_post_conds{cond_i},sovs,elcdClust_unionInter, ...
-%             'withinSov_contrast_forSigLine',cond_contrast_for_sig, ...
-%             'betweenSov_cond_forSigLine', pre_vs_post_conds{cond_i}, ...
-%             'test_latency', test_latency,'plot_latency',plot_latency, 'event_lines',event_lines);
-%     end
-
-
-    %%% unionWithinFrontBack_intersectBetweenSovs
-    for sov_i = 1:numel(sovs) 
-        cur_contrast_sovs = {sovs{sov_i},sovs{sov_i}};
-        for cond_i=1:numel(pre_vs_post_conds)
-            f = get_funcs_instant(subs,sovs, pre_vs_post_conds{cond_i},ft_cond_input_dir,ft_cond_output_dir);
-            curr_contrast_conds = {bl_cond,pre_vs_post_conds{cond_i}};
-
-            elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
-            f.plot_erp_per_contrast_and_sov(f,output_dir,curr_contrast_conds,cur_contrast_sovs,elcdClust_unionInter,sovs{sov_i}.short_s ...
-                    ,'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines);
-            f.plot_erp_per_cond_across_sovs(f,output_dir,pre_vs_post_conds{cond_i},{sovs{sov_i}},elcdClust_unionInter ...
-                ,'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines)
-        end
-        for cont_i=1:numel(contrasts)
-            elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
-            f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,elcdClust_unionInter,sovs{sov_i}.short_s ...
-                ,'test_latency', test_latency,'plot_latency',plot_latency,"event_lines",event_lines);
-        end
-    end
-    
-    %%% unionWithinFrontBack_intersectBetweenSovs % between sovs
-%     for cond_i=1:numel(pre_vs_post_conds)
-%         f = get_funcs_instant(subs,sovs, pre_vs_post_conds{cond_i},ft_cond_input_dir,ft_cond_output_dir);
-%         cond_contrast_for_sig = {bl_cond,pre_vs_post_conds{cond_i}};
-% 
-%         elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
-%         f.plot_erp_per_cond_across_sovs(f,output_dir,pre_vs_post_conds{cond_i},sovs,elcdClust_unionInter, ...
-%             'withinSov_contrast_forSigLine',cond_contrast_for_sig, ...
-%             'betweenSov_cond_forSigLine', pre_vs_post_conds{cond_i}, ...
-%             'test_latency', test_latency,'plot_latency',plot_latency, 'event_lines',event_lines);
-%     end
 end
+
+function run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,electd_clust,output_dir,cfg)
+    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+    if ~isfield(cfg, 'is_plot_topoplot')    cfg.is_plot_topoplot = true; end
+    if ~isfield(cfg, 'is_plot_video')       cfg.is_plot_video = false; end
+    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
+    
+    for conds_i=1:numel(conds)
+        sovs_pairs = uniquePairs(sovs);
+        for sp_i = 1:numel(sovs_pairs) 
+            cur_contrast_sovs = {sovs_pairs{sp_i}{1},sovs_pairs{sp_i}{2}};
+            curr_contrast_conds = {conds{conds_i},conds{conds_i}};
+
+            f.run_STCP_ERP_dependent(f,output_dir, curr_contrast_conds,cur_contrast_sovs, ...
+                cfg.test_latency,cfg.test_latency, cfg.is_plot_topoplot,cfg.is_plot_video);
+            
+            f.plot_erp_per_contrast_and_sov(f,output_dir,curr_contrast_conds,cur_contrast_sovs,electd_clust ...
+            ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines)
+        end
+    end
+end
+
+function plot_erp_withinSovCond_allSubs(f, sovs, conds, electd_clust, output_dir,cfg)
+    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
+    
+    for sov_i = 1:numel(sovs)
+        for cond_i=1:numel(conds)
+            f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{sovs{sov_i}},electd_clust ...
+                ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines)
+        end
+    end
+end
+
+function plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,electd_clust, output_dir,cfg)
+    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
+
+    for cont_i=1:numel(contrasts)
+        if contrasts{cont_i}{1}.isBaseline || contrasts{cont_i}{2}.isBaseline
+            if contrasts{cont_i}{1}.isBaseline
+                non_baselise_cond = 2;
+            else 
+                non_baselise_cond = 1;
+            end
+            f.plot_erp_per_cond_across_sovs(f,output_dir,contrasts{cont_i}{non_baselise_cond},sovs,electd_clust, ...
+                'withinSov_contrast_forSigLine',contrasts{cont_i}, ...
+                'betweenSov_cond_forSigLine', contrasts{cont_i}{non_baselise_cond}, ... 
+                'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency, 'event_lines',cfg.event_lines);
+        end
+    end
+end
+
+
 
 
 function f = get_funcs_instant(actual_subs,actual_sovs, examp_cond,ft_cond_input_dir,ft_cond_output_dir)
@@ -376,6 +366,29 @@ function Y = uniquePairs(X)
         for j = i+1:n
             % Create each unique pair and add to Y
             Y{end+1} = {X{i}, X{j}};
+        end
+    end
+end
+
+function expStruct = defineExpStruct(import_s, short_s, long_s, isBaseline)
+    expStruct = struct();
+    expStruct.import_s = import_s;
+    expStruct.short_s = short_s;
+    expStruct.long_s = long_s;
+    expStruct.isBaseline = isBaseline;
+end
+
+ function curr_sov_subs = sub_exclu_per_sov(subs, sovs,cond)
+    curr_sov_subs = subs;
+    for sov_i=1:numel(sovs)
+        if strcmp(sovs{sov_i}.import_s, 'wake_night')
+        elseif strcmp(sovs{sov_i}.import_s, 'N1')
+        elseif strcmp(sovs{sov_i}.import_s, 'wake_morning')
+            curr_sov_subs(ismember(curr_sov_subs, { '23'})) = [];
+        elseif strcmp(sovs{sov_i}.import_s, 'N2')
+        elseif strcmp(sovs{sov_i}.import_s, 'N3')
+        elseif strcmp(sovs{sov_i}.import_s, "tREM")
+            curr_sov_subs(ismember(curr_sov_subs, {'36'})) = [];
         end
     end
 end

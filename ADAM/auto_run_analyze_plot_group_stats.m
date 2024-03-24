@@ -1,12 +1,14 @@
-addpath 'C:\Users\User\Cloud-Drive\BigFiles\libs'
+addpath 'D:\matlab_libs'
+
 %% SINGLE SUB DIAGONAL decoding using random permutation
 
-plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resamp55_allSovs_subRandPerm';
-results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resamp55_allSovs_subRandPerm';
+plot_dir = 'C:\mvpa\balance_on\plots\resamp100_subRandPerm';
+results_dir = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100'; % gotta have regular firstlvl before "randperm" dir
 all_subsets = {'subset-wmorning', 'subset-wnight','subset-N1','subset-N2','subset-N3','subset-REM'};
-all_subsets = {'subset-N2'};
-all_contrasts = {'OF-vs-OR'};
+all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'};
+all_contrasts = {'AO-vs-intblksmpAO','AOF-vs-AOR'}; 
 acclim = [.465 .565];
+timelim = [0 580];
 
 % plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo';
 % results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo';
@@ -19,39 +21,32 @@ for subset_i=1:numel(all_subsets)
     curr_subset = all_subsets{subset_i};
     for contrast_i=1:numel(all_contrasts)
        curr_contrast = all_contrasts{contrast_i};
-       for isRightTail_i=1:2
-           if isRightTail_i==1
-                tail = 'right';
-            else
-                tail = 'both';
-            end
-            
-            contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {curr_contrast}, 'UniformOutput', false);
-            contrast_dir = sprintf('%s\\%s\\%s_%s',results_dir,curr_subset,curr_subset,curr_contrast);
-            mvpa_stats=get_avgSubPerm_decoding(contrast_dir,tail);
-            
-            save_file_name = sprintf('%s_%s_PerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,tail);
-            save_plot_and_close_fig(plot_dir,save_file_name)
-             %plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
+        contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {curr_contrast}, 'UniformOutput', false);
+        contrast_dir = sprintf('%s\\%s\\%s_%s',results_dir,curr_subset,curr_subset,curr_contrast);
+        mvpa_stats=get_avgSubPerm_decoding(contrast_dir,'both',timelim);     
+        save_file_name = sprintf('%s_%s_PerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,'both');
+        save_plot_and_close_fig(plot_dir,save_file_name);
 
-            plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-            save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,tail);
-            save_plot_and_close_fig(plot_dir,save_file_name)
-       end
-        save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',curr_subset,curr_contrast,tail);
+%          plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timelim)
 
-        plot_subPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset,plot_dir,save_file_name);
-
-        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset);
-        
+        %%% AvgPerSubDecodeComparePermu
+        plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
+        save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,'both');
         save_plot_and_close_fig(plot_dir,save_file_name)
+        
+        save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',curr_subset,curr_contrast,'both');
+        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset,plot_dir,save_file_name); 
+
+        %%% allPerSubDecodeComparePermu
+        save_file_name = sprintf('%s_%s_subDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,'both');
+        plot_subPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset,plot_dir,save_file_name);
     end
 end
 
 %% Average decoding - states of vigi, all at once
 
-plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo_allSovs';
-results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs';
+plot_dir = 'C:\mvpa\plots\PLOTS_resampNo_allSovs';
+results_dir = 'D:\OExpOut\ADAM\RESULTS_resampNo_allSovs';
 all_subsets = {'subset-O'};
 all_contrasts = {'wmorning-vs-wnight','wmorning-vs-N1','wmorning-vs-N2','wmorning-vs-N3','wmorning-vs-REM', ...
                 'wnight-vs-N1','wnight-vs-N2','wnight-vs-N3','wnight-vs-REM', ...
@@ -92,27 +87,18 @@ end
 
 
 %% Average decoding
-% 
-% plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo_allSovs_5fold';
-% results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs_5fold';
-% all_subsets = {'subset-wnight','subset-wmorning','subset-N1','subset-N2','subset-N3','subset-REM'};
-% all_contrasts = {'OF-vs-OR', 'OR-vs-OF'};
 
-% plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo_allSovs_5fold';
-% results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs_5fold';
-% all_subsets = {'subset-O'};
-% all_contrasts = {'wmorning-vs-wnight','wmorning-vs-N1','wmorning-vs-N2','wmorning-vs-N3','wmorning-vs-REM', ...
-%                 'wnight-vs-N1','wnight-vs-N2','wnight-vs-N3','wnight-vs-REM', ...
-%                 'N1-vs-N2','N1-vs-N3','N1-vs-REM',...
-%                 'N2-vs-N3','N2-vs-REM',...
-%                 'N3-vs-REM'};
+% results_dir  = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100';
+% plot_dir= 'C:\mvpa\balance_on\plots\resamp100';
+% all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'}; % ,'subset-N2','subset-N3','subset-REM'
+% all_contrasts = {'AOF-vs-AOR','AO-vs-intblksmpAO'}; % 
 
-% results_dir = "C:\adam-loo";
-% plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_loo_resampleNo';
-% all_subsets = {'subset-wn','subset-wm','subset-N1','subset-N2','subset-N3','subset-REM'};%,
-% all_contrasts = {'OF-vs-OR'};
+results_dir = "C:\loo";
+plot_dir =  'C:\mvpa\balance_on\plots\loo_resamp100';
+all_subsets = {'subset-wn','subset-N2','subset-N3','subset-REM'};%,
+all_contrasts = {'AOF-vs-AOR','AO-vs-intblksmpAO'};
 
-timerange_weights_plot = [400 448];
+timerange_weights_plot = [500 600];
 timerange_test = 0;      % 0 if no, [250 400] if yes   
 
 for isDiag_i=1:2
@@ -139,15 +125,15 @@ for isDiag_i=1:2
                 plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
                 save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',curr_subset,all_contrasts{contrast_i},isDiag,tail);
                 save_plot_and_close_fig(plot_dir,save_file_name)
-                %plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
+%                 plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
             end
-            if numel(all_contrasts) >1 % plot all in one png
-%                     contrasts_withsubset = cellfun(@(x) [subset_name, '_', x], all_contrasts, 'UniformOutput', false);
+%             if numel(all_contrasts) >1 % plot all in one png
+%                     contrasts_withsubset = cellfun(@(x) [all_subsets{subset_i}, '_', x], all_contrasts, 'UniformOutput', false);
 %                     plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
 %                     save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',subset_name,'all',isDiag,tail);
 %                     save_plot_and_close_fig(plot_dir,save_file_name)
-%                     %plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
-            end
+%                     plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
+%             end
         end
     end
 end
@@ -167,21 +153,22 @@ save_plot_and_close_fig(plot_dir,save_file_name)
 
 %% Functions
 
-function mvpa_stats=get_avgSubPerm_decoding(dir,tail)
+function mvpa_stats=get_avgSubPerm_decoding(dir,tail,timelim)
     cfg = [];                                % clear the config variable
     cfg.wanted_dir = dir;           % path to first level results 
     cfg.reduce_dims = 'diag';
     cfg.plotsubjects = true;
     cfg.mpcompcor_method = 'fdr';
+    cfg.timelim          = timelim;
     cfg.compute_randperm = true;
     cfg.tail = tail;
     mvpa_stats = adam_compute_group_MVPA(cfg);
 end
 
-function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_)
-    addpath('C:\Users\User\Cloud-Drive\BigFiles\libs');
+function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name)
     indi_over_time = mvpa_stats.indivClassOverTime;
-  
+    h=figure;
+    set(h,'visible','off');
     time = mvpa_stats.settings.times{1};
     shadedErrorBar2(time,mvpa_stats.indivClassOverTime,{@mean,@std},'patchSaturation',0.1)%,'lineprops','-b');
     hold on;
@@ -196,21 +183,38 @@ function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_)
     xlabel("time (s)");
     ylabel("AUC");
     set(gcf,'Position',[100 100 600 300])
+    save_plot_and_close_fig(plot_dir,save_file_name)
 end
 
 function plot_subPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name_prefix)
     indi_over_time = mvpa_stats.indivClassOverTime;
     pvals_indi_over_time = mvpa_stats.pvalsOverTime;
     time = mvpa_stats.settings.times{1};
+    
     for i=1:size(indi_over_time,1)
-        plot(time,indi_over_time(i,:),'Color',[0, 0, 0, 1]);
-        for j=1:numel(time)
-           if pvals_indi_over_time(i,j) <= 0.05
-               hold on;
-               plot(time(j), indi_over_time(i,j), '.','color','black','MarkerSize',13); 
-           end
+        h=figure;
+        set(h,'visible','off');
+        plot(time, indi_over_time(i,:),'Color',[0, 0, 0, 1]); % Plot the line
+        
+        significantIndices = find(pvals_indi_over_time(i,:) <= 0.05);
+        % Plot each significant dot
+        hold on;
+        plot(time(significantIndices), indi_over_time(i,significantIndices), '.','color','black','MarkerSize',13);
+        
+        % Identify and plot bold segments for adjacent significant dots
+        for j = 1:length(significantIndices)
+            if j < length(significantIndices) && significantIndices(j+1) == significantIndices(j) + 1
+                % Start of a bold segment
+                startIndex = j;
+                while j < length(significantIndices) && significantIndices(j+1) == significantIndices(j) + 1
+                    j = j + 1;
+                end
+                % End of a bold segment
+                endIndex = j;
+                plot(time(significantIndices(startIndex:endIndex)), indi_over_time(i,significantIndices(startIndex:endIndex)), 'k','LineWidth',2);
+            end
         end
-
+        
         xlim([time(1),time(end)]);
         if acclim ~=0
             ylim(acclim);
@@ -218,9 +222,9 @@ function plot_subPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name_
         title(sprintf("%s, subINDEX-%d",title_{1}, i));
         xlabel("time (s)");
         ylabel("AUC");
-        set(gcf,'Position',[100 100 600 300])
+        set(gcf,'Position',[100 100 600 300]);
         save_file_name = sprintf("%s_subINDEX-%d",save_file_name_prefix,i);
-        save_plot_and_close_fig(plot_dir,save_file_name)
+        save_plot_and_close_fig(plot_dir,save_file_name);
     end
 end
 
@@ -248,6 +252,7 @@ function plot_decoding(plot_order,mvpa_stats,acclim)
     cfg.singleplot = true;                       % all erps in a single plot
     cfg.acclim =acclim;                        % change the y-limits of the plot
     cfg.figure_size = [600,400];
+    cfg.plotsigline_method    = 'follow';
     %cfg.splinefreq = lp_smoothing; % just dont. Andres "Its dodgy"
     adam_plot_MVPA(cfg, mvpa_stats);             % actual plotting
 end
@@ -267,8 +272,8 @@ end
 
 
 function save_plot_and_close_fig(folder,file_name)
-    saveas(gcf, sprintf("%s\\%s.fig", folder, file_name));
-    saveas(gcf, sprintf("%s\\%s.svg", folder, file_name));
+%     saveas(gcf, sprintf("%s\\%s.fig", folder, file_name));
+%     saveas(gcf, sprintf("%s\\%s.svg", folder, file_name));
     saveas(gcf, sprintf("%s\\%s.png", folder, file_name));
     close(gcf);
 end

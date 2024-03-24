@@ -58,20 +58,20 @@ classdef funcs_
             timelockft_cond1 = f.imp.get_cond_timelocked(f.imp,cond1,sov_cond1);
             timelockft_cond2 = f.imp.get_cond_timelocked(f.imp,cond2,sov_cond2);
             
-            metadata = funcs_.STCP_dependentT(f,timelockft_cond1, timelockft_cond2,timerange_test,timerange_plot,curr_output_filename,is_plot_topoplot,is_plot_video);
+            metadata = funcs_.STCP_ERP_dependentT(f,timelockft_cond1, timelockft_cond2,timerange_test,timerange_plot,curr_output_filename,is_plot_topoplot,is_plot_video);
             if ~isempty(metadata)
                 save(curr_output_filename, "metadata")
             end
         end
 
-        function plot_erp_per_contrast_and_sov(f,out_dir,conds,conds_sovs,elctrds_clusts,colormap_cond,varargin)   
+        function plot_erp_per_contrast_and_sov(f,out_dir,conds,conds_sovs,elctrds_clusts,varargin)   
             p = inputParser;
             addRequired(p, 'f'); addRequired(p, 'out_dir'); addRequired(p, 'conds'); addRequired(p, 'conds_sovs'); 
-            addRequired(p, 'elctrds_clusts'); addRequired(p, 'colormap_cond');
+            addRequired(p, 'elctrds_clusts');
             addOptional(p, 'plot_latency', {});
             addOptional(p, 'test_latency', {});
             addOptional(p, 'event_lines', {});
-            parse(p,f,out_dir,conds,conds_sovs,elctrds_clusts,colormap_cond,varargin{:});
+            parse(p,f,out_dir,conds,conds_sovs,elctrds_clusts,varargin{:});
             r = p.Results;
                 
             ylim_ = [-2 2];
@@ -83,7 +83,7 @@ classdef funcs_
                 r.test_latency = [f.time(1),f.time(end)];
             end
 
-            curr_colormap = funcs_.get_colormap_for_sov(colormap_cond,numel(conds)); %todo        
+            curr_colormap = funcs_.get_colormap_for_sovs(conds_sovs,conds);       
             subs = f.imp.get_subs(f.imp); 
             fields_elctrds_clusts = fieldnames(elctrds_clusts);
             for ctp_i=1:numel(fields_elctrds_clusts)
@@ -94,7 +94,6 @@ classdef funcs_
                 curr_output_filename = sprintf('%s\\ERP_conds-%s+%s_condsSov-%s+%s_clust-%s', ...
                 out_dir,conds{1}.short_s,conds{2}.short_s,conds_sovs{1}.short_s,conds_sovs{2}.short_s, clust_name);
                 if isfile(sprintf("%s.fig",curr_output_filename)) continue; end
-
                 
                 stat = funcs_.cluster_permu_erp(f,conds,conds_sovs,clust_electd,r.test_latency);
     
@@ -107,7 +106,9 @@ classdef funcs_
                 
                 % get mean activity per sub and cond
                 % allSubs_conds_AvgActivity average the activity over all electrods and time
-                allSubs_conds_AvgActivity = zeros(size(subs,2),size(f.time,2),size(conds,2)); 
+                 
+                length_plottime = numel(r.plot_latency(1): 0.004 : r.plot_latency(2)) - 1;
+                allSubs_conds_AvgActivity = zeros(size(subs,2),length_plottime,size(conds,2)); 
                 for cond_sov_j = 1:size(conds,2)
                     curr_cond_timelock = f.imp.get_cond_timelocked(f.imp,conds{cond_sov_j},conds_sovs{cond_sov_j}); 
                     for sub_i = 1:size(subs,2)
@@ -129,6 +130,102 @@ classdef funcs_
             end
         end
 
+        function plot_erp_per_condsSovPairs(f,out_dir,condSovPairs,elctrds_clusts,plot_name,varargin)   
+            p = inputParser;
+            addRequired(p, 'f'); addRequired(p, 'out_dir'); addRequired(p, 'condSovPairs'); 
+            addRequired(p, 'plot_name');  addRequired(p, 'elctrds_clusts');
+            addOptional(p, 'plot_latency', {});
+            addOptional(p, 'test_latency', {});
+            addOptional(p, 'event_lines', {});
+            parse(p,f,out_dir,condSovPairs,elctrds_clusts,plot_name,varargin{:});
+            r = p.Results;
+
+            if isempty(r.plot_latency)
+                r.plot_latency = [f.time(1),f.time(end)];
+            end
+            if isempty(r.test_latency)
+                r.test_latency = [f.time(1),f.time(end)];
+            end
+
+            ylim_ = [-2 2];
+
+
+            subs = f.imp.get_subs(f.imp);
+
+            % get colormap
+            conds = cell(1, numel(condSovPairs));
+            conds_sovs = cell(1, numel(condSovPairs));
+            for i = 1:numel(condSovPairs)
+                conds{i} = condSovPairs{i}{1}; % Extract the cond struct
+                conds_sovs{i} = condSovPairs{i}{2};  % Extract the sov struct
+            end
+            curr_colormap = funcs_.get_colormap_for_sovs(conds_sovs,conds); 
+            
+            fields_elctrds_clusts = fieldnames(elctrds_clusts);
+            for ctp_i=1:numel(fields_elctrds_clusts)
+                if strcmp(fields_elctrds_clusts{ctp_i},'elec_gen_info') continue; end
+                clust_electd = elctrds_clusts.(fields_elctrds_clusts{ctp_i}).('elect');
+                clust_name = elctrds_clusts.(fields_elctrds_clusts{ctp_i}).('short_s');
+
+                curr_output_filename = sprintf('%s\\ERP_name-%s_clust-%s',out_dir,plot_name,clust_name);
+                if isfile(sprintf("%s.fig",curr_output_filename)) continue; end
+    
+                % get avg data to plot
+                allSubs_sovs_AvgActivity = zeros(size(subs,2),size(f.time,2),numel(condSovPairs)); 
+                for uniq_i=1:numel(condSovPairs)
+                    curr_cond_timelock = f.imp.get_cond_timelocked(f.imp,condSovPairs{uniq_i}{1},condSovPairs{uniq_i}{2}); 
+                    for sub_i = 1:size(subs,2)
+                        curr_sub_bl_struct =  curr_cond_timelock{sub_i};
+                        allSubs_sovs_AvgActivity(sub_i,:,uniq_i) = mean(curr_sub_bl_struct.avg(clust_electd,:),1);
+                    end
+                end
+
+                unique_pairs_combo = [];
+                for i = 1:numel(condSovPairs)-1
+                    for j = i+1:numel(condSovPairs)
+                        unique_pairs_combo = [unique_pairs_combo; i j]; % Append the pair to the matrix
+                    end
+                end
+
+                
+                % get siglines data
+                sig_timerange = {};
+                sig_timerange_colormaps = {};
+                for uniq_i=1:size(unique_pairs_combo,1)
+                    curr_condsov1 = condSovPairs{unique_pairs_combo(uniq_i,1)};
+                    curr_condsov2 = condSovPairs{unique_pairs_combo(uniq_i,2)};
+                    stat = funcs_.cluster_permu_erp(f,{curr_condsov1{1},curr_condsov2{1}}, ...
+                                                        {curr_condsov1{2},curr_condsov2{2}},clust_electd,r.test_latency);
+                    % plot sig points
+                    if ~all(stat.mask ==0)
+                        sig_timerange{end + 1} = stat.mask .*stat.time;
+                    else
+                        sig_timerange{end + 1} = {};
+                    end
+
+                    curr_colormap_sov1 = curr_colormap(unique_pairs_combo(uniq_i,1),:);
+                    curr_colormap_sov2 = curr_colormap(unique_pairs_combo(uniq_i,2),:);
+                    sig_timerange_colormaps{end + 1} = {curr_colormap_sov1,curr_colormap_sov2};
+                end
+                
+                title_ = sprintf('ERP, %s, %d subjects', plot_name,size(subs,2)); 
+                subtitle_ = sprintf("Electrode's Cluster: %s", clust_name);   
+
+                condSovPairsStrings = {};
+                for pairs_i = 1:numel(condSovPairs)
+                    condSovPairsStrings{end +1} = sprintf('%s: %s',condSovPairs{pairs_i}{2}.long_s, condSovPairs{pairs_i}{1}.long_s);
+                end
+                
+                funcs_.plot_erps(f.time,condSovPairsStrings,allSubs_sovs_AvgActivity ...
+                    ,curr_output_filename, curr_colormap, ...
+                    'sig_timeranges',sig_timerange, 'sig_timeranges_colormap',sig_timerange_colormaps ...
+                    ,'title_',title_,'subtitle_',subtitle_,'ylim_',ylim_ ...
+                    ,'clust_electd',{elctrds_clusts.('elec_gen_info'),clust_electd} ...
+                    , 'plot_latency', r.plot_latency, 'event_lines',r.event_lines)
+            end
+        end
+
+        
         % is sovs number of elements is 1, it plots all the subjects line.
         % Else, it plots the standard error
         function plot_erp_per_cond_across_sovs(f,out_dir,cond,sovs,elctrds_clusts,varargin)
@@ -150,7 +247,7 @@ classdef funcs_
 
             sovs_colormap = zeros([numel(sovs),3]);
             for sov_i=1:numel(sovs)
-                cols = funcs_.get_colormap_for_sov(sovs{sov_i}.short_s,2);
+                cols = funcs_.get_colormap_from_dic(sovs{sov_i}.short_s,2);
                 sovs_colormap(sov_i,:) = cols(2,:);
             end
             
@@ -190,7 +287,7 @@ classdef funcs_
                         else
                             sig_timerange{end + 1} = {};
                         end
-                        curr_colormap = funcs_.get_colormap_for_sov(sovs{sov_i}.short_s,2);
+                        curr_colormap = funcs_.get_colormap_from_dic(sovs{sov_i}.short_s,2);
                         sig_timerange_colormaps{end + 1} = {curr_colormap(1,:),curr_colormap(end,:)};
                     end
                 end
@@ -204,11 +301,11 @@ classdef funcs_
                         else
                             sig_timerange{end + 1} = {};
                         end
-                        curr_colormap_sov1 = funcs_.get_colormap_for_sov(sovs_pairs{sp_i}{1}.short_s,2);
-                        curr_colormap_sov2 = funcs_.get_colormap_for_sov(sovs_pairs{sp_i}{2}.short_s,2);
+                        curr_colormap_sov1 = funcs_.get_colormap_from_dic(sovs_pairs{sp_i}{1}.short_s,2);
+                        curr_colormap_sov2 = funcs_.get_colormap_from_dic(sovs_pairs{sp_i}{2}.short_s,2);
                         sig_timerange_colormaps{end + 1} = {curr_colormap_sov1(2,:),curr_colormap_sov2(2,:)};
                     end
-                end                  
+                end
                 
 
                 title_ = sprintf('ERP, Condition-%s, %d subjects', cond.short_s,size(subs,2)); 
@@ -315,7 +412,7 @@ classdef funcs_
             electd_clusts = struct();
             if strcmp(type,'simple_contrast')
                 try
-                    clusters_res = load(sprintf("%s\\STCP_conds-%s+%s_condsSovs-%s+%s_subAvg", ...
+                    clusters_res = load(sprintf("%s\\STCP-ERP_conds-%s+%s_condsSovs-%s+%s_subAvg", ...
                         clust_dir,conds{1}.short_s,conds{2}.short_s,sovs{1}.short_s,sovs{2}.short_s));
                 catch ME
                     if isequal(ME.identifier,"MATLAB:load:couldNotReadFile")
@@ -341,7 +438,7 @@ classdef funcs_
                     % get pos or neg clusters
                     curr_posneg_clusts_toplot = {}; 
                     for clust_ind=1:size(clusters_posneg,2)
-                        if clusters_posneg{clust_ind} > 0.05 continue;  end
+                        if clusters_posneg{clust_ind} > 0.1 continue;  end
                         % get time-electrode mask for current cluster
                         curr_clust_mask = clust_mask;
                         curr_clust_mask(curr_clust_mask~=clust_ind) = 0;
@@ -465,15 +562,16 @@ classdef funcs_
             % ft_timelockstatistics
             cfg                  = [];
             cfg.method           = 'montecarlo';
+            cfg.alpha       = 0.05;
+            cfg.tail        = 0; % two-sided test
+            cfg.correcttail = 'prob';  % cfg.correcttail = correct p-values or alpha-values when doing a two-sided test, 'alpha','prob' or 'no' (default = 'no')
             cfg.statistic        = 'indepsamplesT';
             cfg.correctm         = 'cluster';
             
-            cfg.clusteralpha     = 0.2;  
+            cfg.clusteralpha     = 0.05;  
             cfg.clusterstatistic = 'maxsum';   
-            cfg.minnbchan        = 1;     
-            cfg.tail             = 0;         
+            cfg.minnbchan        = 1;          
             cfg.clustertail      = 0;
-            cfg.alpha            = 0.25;
             cfg.numrandomization = 10000;
             cfg.neighbours    = neighbours; 
             cfg.latency     = latency;
@@ -510,10 +608,12 @@ classdef funcs_
             cfg.neighbours  = neighbours; % defined as above
             cfg.avgovertime = 'no';
             cfg.parameter   = 'avg';
-            cfg.method      = 'montecarlo';
+            cfg.method      = 'montecarlo'; 
+            cfg.alpha       = 0.05;
+            cfg.tail        = 0; % two-sided test
+            cfg.correcttail = 'prob'; % cfg.correcttail = correct p-values or alpha-values when doing a two-sided test, 'alpha','prob' or 'no' (default = 'no')
             cfg.statistic   = 'ft_statfun_depsamplesT';
             cfg.correctm    = 'cluster';
-            cfg.correcttail = 'prob';
             cfg.minnbchan        = 1;      % minimal number of neighbouring channels
             
             cfg.design(1,1:2*Nsub)  = [ones(1,Nsub) 2*ones(1,Nsub)];
@@ -522,52 +622,68 @@ classdef funcs_
             cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
             
             stat = ft_timelockstatistics(cfg,cond1_struct{:}, cond2_struct{:});
+
+            cfg = [];
+            cfg.channel   = 'all';
+            cfg.latency   = test_latency;
+            cfg.parameter = 'avg';
+            gradavg_cond1        = ft_timelockgrandaverage(cfg, cond1_struct{:});
+            gradavg_cond2         = ft_timelockgrandaverage(cfg, cond2_struct{:});
+            cfg = [];
+            cfg.operation = 'subtract';
+            cfg.parameter = 'avg';
+            subt_conds12    = ft_math(cfg, gradavg_cond1, gradavg_cond2);
+            stat.subt_conds12 = subt_conds12.avg;
+
+%             cfg = [];
+%             cfg.xlim = toi;
+%             cfg.zlim = [-1 1];
+%             cfg.comment  ='xlim';
+%             cfg.commentpos = 'middletop';
+%             cfg.colormap = 'parula';
+%             cfg.style              = 'straight';      %     colormap only. Defualt - colormap and conture lines
+%             cfg.marker             = 'off';
+%             cfg.layout = ft_read_sens('GSN-HydroCel-129.sfp');
+%             cfg  = ft_topoplotER(cfg,"hi",GA_FICvsFC);
+%             
             %save(sprintf("%s",mat_filename), '-struct', 'stat');
             metadata.stat =  stat;
 
             is_cluster_exists = false;
             if isfield(stat, "posclusters")
                 pos_prob = [stat.posclusters.('prob')];
-                if  ~isempty(pos_prob) && pos_prob(1)<=0.2
+                if  ~isempty(pos_prob) && pos_prob(1)<=0.05
                     is_cluster_exists = true;
                 end
             end
             if isfield(stat, "negclusters")
                 neg_prob = [stat.negclusters.('prob')];
-                if  ~isempty(neg_prob) && neg_prob(1)<=0.2
+                if  ~isempty(neg_prob) && neg_prob(1)<=0.05
                     is_cluster_exists = true;
                 end
             end
             
-            % plot
-            try             
-                if is_plot_topoplot
-                    filename = erase(mat_filename,".mat");
-                    summary_filename = sprintf("%s_summary",filename);
-                    sample_rate = 250;
-                    rec_fps = 1/sample_rate;
-                    if is_cluster_exists
-                        if is_plot_video
-                            vid_maximum_fps = 1/60;
-                            timediff = floor(vid_maximum_fps/rec_fps) *rec_fps;
-                            toi = plot_timerange(1): timediff :plot_timerange(end);
-                            funcs_.cluster_plot_video(stat,toi,filename);
-                        end
-        
-                        timediff = ceil(((plot_timerange(end) - plot_timerange(1))/16) / rec_fps) * rec_fps;
+            % plot        
+            if is_plot_topoplot
+                filename = erase(mat_filename,".mat");
+                summary_filename = sprintf("%s_summary",filename);
+                sample_rate = 250;
+                rec_fps = 1/sample_rate;
+                if is_cluster_exists
+                    if is_plot_video
+                        vid_maximum_fps = 1/60;
+                        timediff = floor(vid_maximum_fps/rec_fps) *rec_fps;
                         toi = plot_timerange(1): timediff :plot_timerange(end);
-                        funcs_.cluster_plot(stat,toi,summary_filename);
-                    else
-                        timediff = ((plot_timerange(end) - plot_timerange(1))/16);
-                        toi = plot_timerange(1): timediff :plot_timerange(end);
-                        funcs_.topo_plot(stat,toi,summary_filename);
+                        funcs_.cluster_plot_video(stat,toi,filename);
                     end
-                end
-            catch ME
-                if strcmp(ME.message,"no clusters present with a p-value lower than the specified alpha, nothing to plot")
-                    sprintf("contrast: [%s, %s]: %s",cond1_struct.short_s,cond2_struct.short_s,ME.message)
+    
+                    timediff = ceil(((plot_timerange(end) - plot_timerange(1))/16) / rec_fps) * rec_fps;
+                    toi = plot_timerange(1): timediff :plot_timerange(end);
+                    funcs_.cluster_plot(stat,toi,summary_filename);
                 else
-                    throw(ME)
+                    timediff = ((plot_timerange(end) - plot_timerange(1))/16);
+                    toi = plot_timerange(1): timediff :plot_timerange(end);
+                    funcs_.topo_plot(stat,toi,summary_filename);
                 end
             end
         end
@@ -582,15 +698,16 @@ classdef funcs_
             cfg.latency          =test_latency;
             cfg.frequency        = freqrange_test;
             cfg.avgoverfreq = 'yes' ;
-            cfg.method           = 'montecarlo';
+            cfg.method      = 'montecarlo';
+            cfg.alpha       = 0.05;
+            cfg.tail        = 0; % two-sided test
+            cfg.correcttail = 'prob'; % cfg.correcttail = correct p-values or alpha-values when doing a two-sided test, 'alpha','prob' or 'no' (default = 'no')
             cfg.statistic        = 'ft_statfun_depsamplesT';
             cfg.correctm         = 'cluster';
             cfg.clusteralpha     = 0.05;
             cfg.clusterstatistic = 'maxsum';
             cfg.minnbchan        = 2;
-            cfg.tail             = 0;
             cfg.clustertail      = 0;
-            cfg.alpha            = 0.025;
             cfg.numrandomization = 10000;
             cfg.neighbours  = neighbours;
             
@@ -616,13 +733,13 @@ classdef funcs_
             is_cluster_exists = false;
             if isfield(stat, "posclusters")
                 pos_prob = [stat.posclusters.('prob')];
-                if  ~isempty(pos_prob) && pos_prob(1)<=0.2
+                if  ~isempty(pos_prob) && pos_prob(1)<=0.1
                     is_cluster_exists = true;
                 end
             end
             if isfield(stat, "negclusters")
                 neg_prob = [stat.negclusters.('prob')];
-                if  ~isempty(neg_prob) && neg_prob(1)<=0.2
+                if  ~isempty(neg_prob) && neg_prob(1)<=0.1
                     is_cluster_exists = true;
                 end
             end
@@ -679,9 +796,11 @@ classdef funcs_
             cfg.avgovertime = 'no';
             cfg.parameter   = 'avg';
             cfg.method      = 'montecarlo';
+            cfg.alpha       = 0.05;
+            cfg.tail        = 0; % two-sided test
+            cfg.correcttail = 'prob'; % cfg.correcttail = correct p-values or alpha-values when doing a two-sided test, 'alpha','prob' or 'no' (default = 'no')
             cfg.statistic   = 'ft_statfun_depsamplesT';
             cfg.numrandomization = 10000;
-            cfg.alpha       = 0.05;
             cfg.correctm = 'cluster'; %'no';            
             Nsub = size(subs,2);
             cfg.design(1,1:2*Nsub)  = [ones(1,Nsub) 2*ones(1,Nsub)];
@@ -695,14 +814,15 @@ classdef funcs_
         function cfg = cluster_plot(stat,toi,filename)
             % make a plot
             cfg = [];
-            cfg.zlim = [-5 5];
-            cfg.alpha = 0.2; % This is the max alpha to be plotted. (0.3 is the hights value possible)
+            cfg.zlim = [-1 1];
+            cfg.alpha = 0.05; % This is the max alpha to be plotted. (0.3 is the hights value possible)
             cfg.saveaspng = filename;
             cfg.subplotsize = [4,4]; % better keep it that way, becuase this is the default grid of ft_topoplot
             cfg.visible = 'no';
+            cfg.parameter   = 'subt_conds12';
             cfg.toi =toi;
-            %cfg.highlightsymbolseries   =[0.01 0.05 0.1 0.2 0.3]; %1x5 vector, highlight marker symbol series (default ['*', 'x', '+', 'o', '.'] for p < [0.01 0.05 0.1 0.2 0.3]
-            cfg.highlightsizeseries     = [3 3 3 3 3];
+            cfg.highlightsymbolseries   =  ['.', '.', '.', '.', '.'];
+            cfg.highlightsizeseries     = [4 4 4 4 4];
             cfg.highlightcolorpos       = [0.3 0 0];
             cfg.highlightcolorneg       = [0 0 0.3];
             cfg.style              = 'straight';      %     colormap only. Defualt - colormap and conture lines
@@ -719,7 +839,7 @@ classdef funcs_
             tempImagesName = sprintf("%s\\%s",tempImagesFolder,filename);
             cfg = [];
             cfg.zlim = [-5 5];
-            cfg.alpha = 0.2; % This is the max alpha to be plotted. (0.3 is the hights value possible)
+            cfg.alpha = 0.1; % This is the max alpha to be plotted. (0.3 is the hights value possible)
             cfg.saveaspng = tempImagesName;
             cfg.visible = 'no';
             cfg.toi =toi;
@@ -751,8 +871,8 @@ classdef funcs_
         function cfg = topo_plot(preVsPoststim_res,toi,filename)
             cfg = [];
             cfg.xlim = toi;
-            cfg.parameter = 'stat';
-            cfg.zlim = [-5 5];
+            cfg.parameter = 'subt_conds12';
+            cfg.zlim = [-1 1];
             cfg.comment  ='xlim';
             cfg.commentpos = 'middletop';
             cfg.colormap = 'parula';
@@ -761,27 +881,50 @@ classdef funcs_
             cfg  = ft_topoplotER(cfg,filename,preVsPoststim_res); %to enable saving you need to delete:"saveif ~ft_nargout don't return anything clear cfg end", and add "saveas(gcf,png_filename);" at the end and png_filename to the argument list
         end
     
-        function custom_colormap = get_colormap_for_sovs(sovs)
-            % Initialize the colormap cell array
-            custom_colormap = zeros(numel(sovs),3);
-        
-            % Loop over each sleep stage in the input cell array
+%         function custom_colormap = get_colormap_for_sovs(sovs, conds)
+%             custom_colormap = zeros(numel(sovs),3);
+% 
+%             for i = 1:numel(sovs)
+%                 if conds{i}.isBaseline
+%                     custom_colormap(i,:) = funcs_.get_colormap_from_dic('baseline', 1);
+%                 else
+%                     custom_colormap(i,:) = funcs_.get_colormap_from_dic(sovs{i}.short_s, 1);
+%                 end
+%             end
+%         end
+
+        function custom_colormap = get_colormap_for_sovs(sovs, conds)
+            filtered_sovs = sovs(cellfun(@(x) x.isBaseline == 0, sovs)); % Filter sovs where isBaseline is equal to 0
+            long_s_values = cellfun(@(x) x.long_s, filtered_sovs, 'UniformOutput', false); % Extract long_s values from the filtered list
+            long_s_values_flat = cellfun(@(x) x{1}, long_s_values, 'UniformOutput', false);
+            [unique_long_s, ~, idx] = unique(long_s_values_flat);
+            counts = accumarray(idx, 1);
+            sov_table = table(unique_long_s, counts, zeros(size(unique_long_s)), 'VariableNames', {'long_s', 'count', 'used'});
+            
+            custom_colormap = zeros(numel(sovs), 3);
             for i = 1:numel(sovs)
-                % Get the colormap for the current sleep stage with one shade
-                custom_colormap(i,:) = get_colormap_for_sov(sovs{i}, 1);
+                if conds{i}.isBaseline
+                    custom_colormap(i,:) = funcs_.get_colormap_from_dic('baseline', 1);
+                else
+                    current_long_s = sovs{i}.long_s;
+                    row = find(strcmp(sov_table.long_s, current_long_s));
+                    sov_table.used(row) = sov_table.used(row) + 1;
+                    sov_colormap = funcs_.get_colormap_from_dic(sovs{i}.short_s, sov_table.count(row));
+                    custom_colormap(i,:) = sov_colormap(sov_table.used(row),:);
+                end
             end
         end
         
-        function custom_colormap = get_colormap_for_sov(sov, num_shades)
+        function custom_colormap = get_colormap_from_dic(key, num_shades)
             % Define the color dictionary
             color_dict = containers.Map(...
-                {'wm', 'wn', 'N2', 'N3', 'REM', 'N1', 'intbk','tREM','pREM'}, ...
-                {[0.5, 0.8, 1], [0, 0, 1], [1, 0.8, 0], [0, 1, 0], [1, 0, 0], [1, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 0]} ...
+                {'wm', 'wn', 'N2', 'N3', 'REM', 'N1', 'baseline','tREM','pREM'}, ...
+                {[0.5, 0.8, 1], [0, 0, 1], [1, 1, 0], [0, 1, 0], [1, 0, 0], [1, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 0]} ...
             );
         
             % Get the RGB color from the dictionary
-            if isKey(color_dict, sov)
-                color_ = color_dict(sov);
+            if isKey(color_dict, key)
+                color_ = color_dict(key);
                 custom_colormap = funcs_.create_custom_colormap(color_, num_shades);
             else
                 error('Invalid sleep stage. Supported sleep stages are: wm, wn, N2, N3, REM, N1,intbk');
@@ -789,18 +932,19 @@ classdef funcs_
         end
         
         function custom_colormap = create_custom_colormap(color_, num_shades)
-            % Create a colormap with the specified number of shades
+            num_shades = num_shades+1;  % to skip first color black
             custom_colormap = zeros(num_shades, 3);
             
-            % Linearly interpolate each color component (R, G, B) independently
             for i = 1:3
                 custom_colormap(:, i) = linspace(0, color_(i), num_shades);
             end
+
+            custom_colormap(1, :) = []; % to skip first color black
         end
         
-        function plot_erps(time_,variables,data,output_filename, var_colormap,varargin)
+        function plot_erps(time_,variables_s,data,output_filename, var_colormap,varargin)
             p = inputParser;
-            addRequired(p, 'time_'); addRequired(p, 'variables'); addRequired(p, 'data'); 
+            addRequired(p, 'time_'); addRequired(p, 'variables_s'); addRequired(p, 'data'); 
             addRequired(p, 'output_filename'); addRequired(p, 'var_colormap');
 
             addOptional(p, 'ylim_', []); addOptional(p, 'clust_electd', []); addOptional(p, 'subtitle_',""); addOptional(p, 'title_', "");
@@ -808,10 +952,10 @@ classdef funcs_
             addOptional(p, 'is_plot_ste', true); addOptional(p, 'is_plot_subs', false);
             addOptional(p, 'plot_latency',  [time_(1),time_(end)]); addOptional(p, 'event_lines',  {});
 
-            parse(p, time_,variables,data,output_filename, var_colormap,varargin{:});
+            parse(p, time_,variables_s,data,output_filename, var_colormap,varargin{:});
             r = p.Results;
             
-            if size(variables,2)==1
+            if size(variables_s,2)==1 || (isstring(r.variables_s{1}) && numel(r.variables_s)==1)
                 r.is_plot_ste = false;
                 r.is_plot_subs = true;
             end
@@ -819,8 +963,13 @@ classdef funcs_
         
             % plot variables lines
             one_div_sqrt_samp_size = 1/sqrt(size(r.data,1));
-            for val_i=1:numel(r.variables)
-                curr_var_val_name = num2str(r.variables{val_i}.long_s);
+            for val_i=1:numel(r.variables_s)
+                if isstring(r.variables_s{val_i}) || ischar(r.variables_s{val_i})
+                    curr_var_val_name =r.variables_s{val_i};
+                else
+                    curr_var_val_name = num2str(r.variables_s{val_i}.long_s);
+                end
+                
                 % r.var_colormap need to keep being N x 3, N=#vars.
                 if(r.is_plot_subs)
                     x = squeeze(r.data(:,:,val_i));
@@ -862,11 +1011,11 @@ classdef funcs_
             
             title(r.title_);
             subtitle(r.subtitle_);
-            if numel(r.variables)<=6
+            if numel(r.variables_s)<=6
                 legend("Location","northwest","FontSize",10);
             end
-            xlabel('Time (ms)')
-            ylabel('µV')
+            xlabel('time (s)','FontSize',15)
+            ylabel('amplitude (µV)','FontSize',15)
             if r.plot_latency(2)>= 5
                 set(gcf,'Position',[0 0 1300 400])
             end
@@ -878,13 +1027,13 @@ classdef funcs_
                     event_color = r.event_lines{event_i}.('event_color');
                     event_text = r.event_lines{event_i}.('event_text');
                     plot([event_time, event_time], r.ylim_,'Color',event_color, 'LineWidth', 1,'DisplayName','','HandleVisibility', 'off');
-                    text((r.plot_latency(2)-r.plot_latency(1))/150, 0+(0.5*r.ylim_(2)), event_text,'Color',event_color, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle','FontSize',5,'LineStyle','--');
+                    text(event_time+(r.plot_latency(2)-r.plot_latency(1))/150, 0+(0.5*r.ylim_(2)), event_text,'Color',event_color, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle','FontSize',10,'LineStyle','--');
                 end
             end
             
             % plot electrodes topography
             if ~isempty(r.clust_electd)
-                axes('Position',[0.15 0.15 .2 .2])
+                axes('Position',[0.2 0.15 .2 .2])
                 box on
                 cfg = [];
                 cfg.feedback    = 'no';

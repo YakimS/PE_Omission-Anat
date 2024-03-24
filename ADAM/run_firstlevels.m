@@ -1,12 +1,13 @@
 
-input_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\DATA';
-%%  regualr + random perm (not leave-one-out)
-
-subs = { '08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','38'}; 
-subs = { '09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','38'}; 
-main_output_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resamp55_allSovs_subRandPerm';
-sovs = {'N3','REM','wnight','wmorning','N1','N2'};
-conds_string = {'OF','OR','T','A','O'};
+input_dir = 'C:\mvpa\preprocessed\N2_noSleepEvents'; 
+main_output_dir = 'C:\mvpa\balance_on\FirstLevel';
+loo_output_dir = 'C:\loo'; % this should be as short as possible! otherwise the file path will be too long
+subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+contrasts = {{'noEveAOF','noEveAOR'},{'noEveAO','intblksmpAO'}};
+between_sovs_conds = {'noEveAO'};
+sovs = {'wnight','N2','N3','REM'};
+sovs = {'N2'};
+conds_string = {'noEveAOF','noEveAOR','noEveAO','intblksmpAOF','intblksmpAOR','intblksmpAO'};
 
 
 %%%%%%%%%%%%%%%%%%%%%%% my design %%%%%%%%%%%%%%%%%%%%%%
@@ -14,27 +15,26 @@ conds_string = {'OF','OR','T','A','O'};
 %                                 factor "ses"
 %                             wake_morning    wake_night        N1       N2      N3        REM
 % 
-% factor          OF              1               2             19       20      21         22             
-% "trialtype"     OR              3               4             23       24      25         26               
-%                 T               5               6             27       28      29         30                           
-%                 A               7               8             31       32      33         34                            
-%                 O               17              18            51       52      53         54   
-
+% factor          AOF             1               2             3        4       5          6             
+% "trialtype"     AOR             7               8             9        10      11         12  
+%                 AO              13              14            15       16      17         18
+%                 intblksmpAOF    19              20            21       22      23         24
+%                 intblksmpAOR    25              26            27       28      29         30
+%                 intblksmpAO     31              32            33       34      35         36   
 data_table = [
-    1, 2, 19, 20, 21, 22;
-    3, 4, 23, 24, 25, 26;
-    5, 6, 27, 28, 29, 30;
-    7, 8, 31, 32, 33, 34;
-%     9, 10, 35, 36, 37, 38;
-%     11, 12, 39, 40, 41, 42;
-%     13, 14, 43, 44, 45, 46;
-%     15, 16, 47, 48, 49, 50;
-    17, 18, 51, 52, 53, 54];
+    1,  4, 5, 6;
+    7,  10, 11, 12;
+    13, 16, 17, 18;
+    19, 22, 23, 24;
+    25, 28, 29, 30;
+    31, 34, 35, 36];
 
+
+data_table = [4;10;16;22;28;34];
 symbol_factorArray = array2table(data_table, 'RowNames',conds_string , 'VariableNames', sovs);
 
-
-% GENERAL ANALYSIS CONFIGURATION SETTINGS
+%%  regualr + random perm (not leave-one-out)
+output_dir = sprintf("%s\\RESULTS_resamp100_subRandPerm",main_output_dir);
 cfg = [];                                  
 cfg.datadir = input_dir;                  
 cfg.model = 'BDM';                         % backward decoding ('BDM') or forward encoding ('FEM')
@@ -43,57 +43,57 @@ cfg.nfolds = 5;                            % for test 3
 cfg.class_method = 'AUC';             	   
 cfg.crossclass = 'no';                    % whether to compute temporal generalization
 cfg.channelpool = 'ALL_NOSELECTION';       
-cfg.resample = '55';                         % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
+cfg.resample = 100;                         % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
 cfg.save_confidence = 'yes';
 cfg.randompermutations = 30;%200;            % USE ONLY if you want to have within subject decoding significant line
 
-contrasts = struct('name', {}, 'cond1', {}, 'cond2', {});
-
+contrasts_structs = struct('name', {}, 'cond1', {}, 'cond2', {});
 
 %%% Define contrasts
-% OF vs OR, within sov
-for sov_i=1:numel(sovs)
-    sov_symbols = table2array(symbol_factorArray(:, sovs{sov_i}))';
-    trialtype_OR = table2array(symbol_factorArray('OR', :));
-    trialtype_OF = table2array(symbol_factorArray('OF', :));
-%     contrasts(end+1) = struct(  'name',sprintf( 'subset-%s_OR-vs-OF',sovs{sov_i}), ...
-%                             'cond1', cond_string(trialtype_OR,sov_symbols), ...
-%                             'cond2', cond_string(trialtype_OF,sov_symbols));
-
-    contrasts(end+1) = struct(  'name',sprintf( 'subset-%s_OF-vs-OR',sovs{sov_i}), ...
-                        'cond1', cond_string(trialtype_OF,sov_symbols), ...
-                        'cond2', cond_string(trialtype_OR,sov_symbols));
+% contrasts, within sov
+for cont_i=1:numel(contrasts)
+    for sov_i=1:numel(sovs)
+        sov_symbols = table2array(symbol_factorArray(:, sovs{sov_i}))';
+        trialtype_cond1 = table2array(symbol_factorArray(contrasts{cont_i}{1}, :));
+        trialtype_cond2 = table2array(symbol_factorArray(contrasts{cont_i}{2}, :));
+    
+        contrasts_structs(end+1) = struct(  'name',sprintf( 'subset-%s_%s-vs-%s',sovs{sov_i},contrasts{cont_i}{1},contrasts{cont_i}{2}), ...
+                            'cond1', cond_string(trialtype_cond2,sov_symbols), ...
+                            'cond2', cond_string(trialtype_cond1,sov_symbols));
+    end
 end
 
-% sov vs. sov, within O
+%%% sov vs. sov, within condition
 % unique_pairs_sovs = nchoosek(sovs, 2);
-% for i = 1:size(unique_pairs_sovs, 1)
-%     pair = unique_pairs_sovs(i, :);
-%     sov_1_str = pair{1};
-%     sov_2_str = pair{2};
-% 
-%     sov_1_symbols = table2array(symbol_factorArray(:, sov_1_str))';
-%     sov_2_symbols = table2array(symbol_factorArray(:, sov_2_str))';
-%     trialtype_O = table2array(symbol_factorArray('O', :));
-% 
-%     contrasts(end+1) = struct(  'name', sprintf('subset-O_%s-vs-%s',sov_1_str,sov_2_str), ...
-%                                 'cond1',  cond_string(trialtype_O,sov_1_symbols), ...
-%                                 'cond2', cond_string(trialtype_O,sov_2_symbols));
+% for bsc_i=1:numel(between_sovs_conds)
+%     for i = 1:size(unique_pairs_sovs, 1)
+%         pair = unique_pairs_sovs(i, :);
+%         sov_1_str = pair{1};
+%         sov_2_str = pair{2};
+%     
+%         sov_1_symbols = table2array(symbol_factorArray(:, sov_1_str))';
+%         sov_2_symbols = table2array(symbol_factorArray(:, sov_2_str))';
+%         trialtype_O = table2array(symbol_factorArray(between_sovs_conds{bsc_i}, :));
+%     
+%         contrasts_structs(end+1) = struct(  'name', sprintf('subset-%s_%s-vs-%s',between_sovs_conds{bsc_i},sov_1_str,sov_2_str), ...
+%                                     'cond1',  cond_string(trialtype_O,sov_1_symbols), ...
+%                                     'cond2', cond_string(trialtype_O,sov_2_symbols));
+%     end
 % end
-%%
-% run
-delete(gcp('nocreate'))
-tic
-ticBytes(gcp);
-parfor (cont_i=1:numel(contrasts) ,4)
+
+%%%%%%%%%%%%%%%    run    %%%%%%%%%%%%%%%%%
+% delete(gcp('nocreate'))
 % tic
-% for cont_i=1:numel(contrasts)
+% ticBytes(gcp);
+% parfor (cont_i=1:numel(contrasts) ,4)
+tic
+for cont_i=1:numel(contrasts_structs)
     for sub_i=1:numel(subs)
         sub_input_filename = sprintf("s_%s_allSovs.mat",subs{sub_i});
-        splitted = split(contrasts(cont_i).name, "_");
+        splitted = split(contrasts_structs(cont_i).name, "_");
         subset_name = splitted{1};
         contrast_name = splitted{2};
-        output_path = sprintf('%s\\%s\\%s_%s',main_output_dir,subset_name,subset_name,contrast_name);
+        output_path = sprintf('%s\\%s\\%s_%s',output_dir,subset_name,subset_name,contrast_name);
 
         % if the datafile existes, continue
         files = dir(sprintf("%s\\ALL_NOSELECTION",output_path));
@@ -102,52 +102,14 @@ parfor (cont_i=1:numel(contrasts) ,4)
             continue;
         end
 
-        run_adam_MVPA_firstlevel(sub_input_filename, contrasts(cont_i).cond1, contrasts(cont_i).cond2, output_path,cfg);
+        run_adam_MVPA_firstlevel(sub_input_filename, contrasts_structs(cont_i).cond1, contrasts_structs(cont_i).cond2, output_path,cfg);
     end
 end
-tocBytes(gcp)
+% tocBytes(gcp)
 toc
 %%  regualr (not leave-one-out)
-subs = { '08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','38'}; 
-main_output_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo_allSovs';
-sovs = {'wnight','wmorning','N1','N2','N3','REM'};
-conds_string = {'OF','OR','T','A','O'};
+output_dir = sprintf("%s\\RESULTS_resamp100_N2noEve",main_output_dir);
 
-
-%%%%%%%%%%%%%%%%%%%%%%% my design %%%%%%%%%%%%%%%%%%%%%%
-%                               
-%                                 factor "ses"
-%                             wake_morning    wake_night        N1       N2      N3        REM
-% 
-% factor          OF              1               2             19       20      21         22             
-% "trialtype"     OR              3               4             23       24      25         26               
-%                 T               5               6             27       28      29         30                           
-%                 A               7               8             31       32      33         34                            
-%                 O               17              18            51       52      53         54   
-
-data_table = [
-    1, 2, 19, 20, 21, 22;
-    3, 4, 23, 24, 25, 26;
-    5, 6, 27, 28, 29, 30;
-    7, 8, 31, 32, 33, 34;
-%     9, 10, 35, 36, 37, 38;
-%     11, 12, 39, 40, 41, 42;
-%     13, 14, 43, 44, 45, 46;
-%     15, 16, 47, 48, 49, 50;
-    17, 18, 51, 52, 53, 54];
-
-% For testing
-% subs = {'08','09','10','11'};
-% sovs = {'wmorning','wnight'};
-% conds_string = {'OF','OR'};
-% 
-% data_table = [
-%     1, 2;
-%     3, 4];
-symbol_factorArray = array2table(data_table, 'RowNames',conds_string , 'VariableNames', sovs);
-
-
-% GENERAL ANALYSIS CONFIGURATION SETTINGS
 cfg = [];                                  
 cfg.datadir = input_dir;                  
 cfg.model = 'BDM';                         % backward decoding ('BDM') or forward encoding ('FEM')
@@ -156,54 +118,57 @@ cfg.nfolds = 10;                            % for test 3
 cfg.class_method = 'AUC';             	   
 cfg.crossclass = 'yes';                    % whether to compute temporal generalization
 cfg.channelpool = 'ALL_NOSELECTION';       
-cfg.resample = 'no';                         % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
+cfg.resample = 100;                         % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
 cfg.save_confidence = 'yes';
-contrasts = struct('name', {}, 'cond1', {}, 'cond2', {});
+contrasts_structs = struct('name', {}, 'cond1', {}, 'cond2', {});
 
 %%% Define contrasts
-% OF vs OR, within sov
-for sov_i=1:numel(sovs)
-    sov_symbols = table2array(symbol_factorArray(:, sovs{sov_i}))';
-    trialtype_OR = table2array(symbol_factorArray('OR', :));
-    trialtype_OF = table2array(symbol_factorArray('OF', :));
-    contrasts(end+1) = struct(  'name',sprintf( 'subset-%s_OR-vs-OF',sovs{sov_i}), ...
-                            'cond1', cond_string(trialtype_OR,sov_symbols), ...
-                            'cond2', cond_string(trialtype_OF,sov_symbols));
-
-   contrasts(end+1) = struct(  'name',sprintf( 'subset-%s_OF-vs-OR',sovs{sov_i}), ...
-                        'cond1', cond_string(trialtype_OF,sov_symbols), ...
-                        'cond2', cond_string(trialtype_OR,sov_symbols));
+% contrasts, within sov
+for cont_i=1:numel(contrasts)
+    for sov_i=1:numel(sovs)
+        sov_symbols = table2array(symbol_factorArray(:, sovs{sov_i}))';
+        trialtype_cond1 = table2array(symbol_factorArray(contrasts{cont_i}{1}, :));
+        trialtype_cond2 = table2array(symbol_factorArray(contrasts{cont_i}{2}, :));
+    
+       contrasts_structs(end+1) = struct(  'name',sprintf( 'subset-%s_%s-vs-%s',sovs{sov_i},contrasts{cont_i}{1},contrasts{cont_i}{2}), ...
+                            'cond1', cond_string(trialtype_cond2,sov_symbols), ...
+                            'cond2', cond_string(trialtype_cond1,sov_symbols));
+    end
 end
 
-% sov vs. sov, within O
+
+% sov vs. sov, within condition
 % unique_pairs_sovs = nchoosek(sovs, 2);
-% for i = 1:size(unique_pairs_sovs, 1)
-%     pair = unique_pairs_sovs(i, :);
-%     sov_1_str = pair{1};
-%     sov_2_str = pair{2};
-% 
-%     sov_1_symbols = table2array(symbol_factorArray(:, sov_1_str))';
-%     sov_2_symbols = table2array(symbol_factorArray(:, sov_2_str))';
-%     trialtype_O = table2array(symbol_factorArray('O', :));
-% 
-%     contrasts(end+1) = struct(  'name', sprintf('subset-O_%s-vs-%s',sov_1_str,sov_2_str), ...
-%                                 'cond1',  cond_string(trialtype_O,sov_1_symbols), ...
-%                                 'cond2', cond_string(trialtype_O,sov_2_symbols));
+% for bsc_i=1:numel(between_sovs_conds)
+%     for i = 1:size(unique_pairs_sovs, 1)
+%         pair = unique_pairs_sovs(i, :);
+%         sov_1_str = pair{1};
+%         sov_2_str = pair{2};
+%     
+%         sov_1_symbols = table2array(symbol_factorArray(:, sov_1_str))';
+%         sov_2_symbols = table2array(symbol_factorArray(:, sov_2_str))';
+%         trialtype_O = table2array(symbol_factorArray(between_sovs_conds{bsc_i}, :));
+%     
+%         contrasts_structs(end+1) = struct(  'name', sprintf('subset-%s_%s-vs-%s',between_sovs_conds{bsc_i},sov_1_str,sov_2_str), ...
+%                                     'cond1',  cond_string(trialtype_O,sov_1_symbols), ...
+%                                     'cond2', cond_string(trialtype_O,sov_2_symbols));
+%     end
 % end
-%%
-% run
-delete(gcp('nocreate'))
-tic
-ticBytes(gcp);
-parfor (cont_i=1:numel(contrasts) ,4)
+
+
+%%%%%%%%%%%%%%%    run    %%%%%%%%%%%%%%%%%
+% delete(gcp('nocreate'))
 % tic
-% for cont_i=1:numel(contrasts)
+% ticBytes(gcp);
+% parfor (cont_i=1:numel(contrasts) ,4)
+% tic
+for cont_i=1:numel(contrasts_structs)
     for sub_i=1:numel(subs)
         sub_input_filename = sprintf("s_%s_allSovs.mat",subs{sub_i});
-        splitted = split(contrasts(cont_i).name, "_");
+        splitted = split(contrasts_structs(cont_i).name, "_");
         subset_name = splitted{1};
         contrast_name = splitted{2};
-        output_path = sprintf('%s\\%s\\%s_%s',main_output_dir,subset_name,subset_name,contrast_name);
+        output_path = sprintf('%s\\%s\\%s_%s',output_dir,subset_name,subset_name,contrast_name);
 
         % if the datafile existes, continue
         files = dir(sprintf("%s\\ALL_NOSELECTION",output_path));
@@ -212,19 +177,14 @@ parfor (cont_i=1:numel(contrasts) ,4)
             continue;
         end
 
-        run_adam_MVPA_firstlevel(sub_input_filename, contrasts(cont_i).cond1, contrasts(cont_i).cond2, output_path,cfg);
+        run_adam_MVPA_firstlevel(sub_input_filename, contrasts_structs(cont_i).cond1, contrasts_structs(cont_i).cond2, output_path,cfg);
     end
 end
-tocBytes(gcp)
-toc
+% tocBytes(gcp)
+% toc
 
 %% run leave-one-out
 
-sovs = {'wm','wn','N1','N2','N3','REM'};%
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','38'};
-interim_results_dir = 'C:\adam-loo'; % this should be as short as possible! otherwise the file path will be too long
-
-% GENERAL ANALYSIS CONFIGURATION SETTINGS
 cfg = [];                       % clear the config variable
 cfg.datadir = input_dir;
 cfg.model = 'BDM';              % backward decoding ('BDM') or forward encoding ('FEM')
@@ -235,29 +195,34 @@ cfg.crossclass = 'yes';
 cfg.balance_events = 'yes';     % for within-class balancing
 cfg.balance_classes = 'yes';    % for cross-class balancing
 cfg.channelpool = 'ALL_NOSELECTION';
-cfg.resample = 'no'; 
+cfg.resample = 100;             % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
 cfg.save_confidence = 'yes';
 
-for sov_i=1:numel(sovs)
-    curr_sov = sovs{sov_i};
-    sov_input_filename = sprintf("loo_%s.mat",curr_sov);
-    for sub_i=1:numel(subs)
-        curr_sub = subs{sub_i};
-
-        subs_numbers = str2double(subs);
-        indices_to_include = ~ismember(subs_numbers, str2double(curr_sub));
-        class1.train = subs_numbers(indices_to_include) + 50;  % OF
-        class2.train = subs_numbers(indices_to_include);  % OR
-        class1.test = str2num(curr_sub) + 50; % OF
-        class2.test = str2num(curr_sub); % OR
-        cfg.class_spec{1} = cond_string(class1.train ,';', class1.test);
-        cfg.class_spec{2} = cond_string(class2.train ,';', class2.test);
-
-        subset_name = sprintf('subset-%s',curr_sov);
-        contrast_name = 'OF-vs-OR';
-        output_path = sprintf('%s\\%s\\%s_%s',interim_results_dir,subset_name,subset_name,contrast_name);
-
-        run_adam_MVPA_firstlevel_loo(sov_input_filename, output_path,cfg);
+for cont_i=1:numel(contrasts)
+    for sov_i=1:numel(sovs)
+        curr_sov = sovs{sov_i};
+        if strcmp(curr_sov,'wnight')
+            curr_sov = 'wn';
+        end
+        sov_input_filename = sprintf("loo_%s.mat",curr_sov);
+        for sub_i=1:numel(subs)
+            curr_sub = subs{sub_i};
+    
+            subs_numbers = str2double(subs);
+            indices_to_include = ~ismember(subs_numbers, str2double(curr_sub));
+            class1.train = subs_numbers(indices_to_include) + 50;  % OF
+            class2.train = subs_numbers(indices_to_include);  % OR
+            class1.test = str2num(curr_sub) + 50; % OF
+            class2.test = str2num(curr_sub); % OR
+            cfg.class_spec{1} = cond_string(class1.train ,';', class1.test);
+            cfg.class_spec{2} = cond_string(class2.train ,';', class2.test);
+    
+            subset_name = sprintf('subset-%s',curr_sov);
+            contrast_name = sprintf('%s-vs-%s',contrasts{cont_i}{1},contrasts{cont_i}{2});
+            output_path = sprintf('%s\\%s\\%s_%s',loo_output_dir,subset_name,subset_name,contrast_name);
+    
+            run_adam_MVPA_firstlevel_loo(sov_input_filename, output_path,cfg);
+        end
     end
 end
 %%

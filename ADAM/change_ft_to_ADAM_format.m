@@ -1,41 +1,45 @@
 restoredefaultpath
-addpath C:\Users\User\Cloud-Drive\BigFiles\libs\fieldtrip-20230223
+addpath D:\matlab_libs\fieldtrip-20230223
 ft_defaults
-addpath 'C:\Users\User\Cloud-Drive\BigFiles\libs\eeglab2023.0'
+addpath 'D:\matlab_libs\eeglab2023.0'
 eeglab nogui;
 
 %%
-referenced_elaboEvents_dir = 'C:\Users\User\OneDrive - huji.ac.il\AnatArzData\Data\rerefrenced\elaborated_events+outliers';
-ft_input_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\import\ft_per_cond';
-output_adamformat_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\DATA';
-preproc_stage = 'referenced';
+ft_input_dir = 'D:\OExpOut\processed_data\ft_subSovCond';
+output_adamformat_dir = 'C:\mvpa\preprocessed\N2_noSleepEvents';
 
 %% Regular. No Leave-ove-out design
 
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
 sovs = {'wake_morning','wake_night','N1','N2','N3','REM'};
-conds_string = {'OF','OR','T','A','O'};
+sovs = {'wake_night','N2','N3','REM'};
+sovs = {'N2'};
+conds_string = {'noN2EventsAOF','noN2EventsAOR','noN2EventsAO','intblksmpAOF','intblksmpAOR','intblksmpAO'};
+latency = [0.480 1.160];
+
 
 %%%%%%%%%%%%%%%%%%%%%%% my design %%%%%%%%%%%%%%%%%%%%%%
 %                               
 %                                 factor "ses"
-%                             wake_morning    wake_night        N1       N2      N3        REM
+%                                    wake_morning    wake_night        N1       N2      N3        REM
 % 
-% factor          OF              1               2             19       20      21         22             
-% "trialtype"     OR              3               4             23       24      25         26               
-%                 T               5               6             27       28      29         30                           
-%                 A               7               8             31       32      33         34                            
-%                 O               17              18            51       52      53         54   
+% factor          noN2KcompAOF             1               2             3        4       5          6             
+% "trialtype"     noN2KcompAOR             7               8             9        10      11         12  
+%                 noN2KcompAO              13              14            15       16      17         18
+%                 intblksmpAOF              19              20            21       22      23         24
+%                 intblksmpAOR              25              26            27       28      29         30
+%                 intblksmpAO               31              32            33       34      35         36   
+%                   
 data_table = [
-    1, 2, 19, 20, 21, 22;
-    3, 4, 23, 24, 25, 26;
-    5, 6, 27, 28, 29, 30;
-    7, 8, 31, 32, 33, 34;
-%     9, 10, 35, 36, 37, 38;
-%     11, 12, 39, 40, 41, 42;
-%     13, 14, 43, 44, 45, 46;
-%     15, 16, 47, 48, 49, 50;
-    17, 18, 51, 52, 53, 54];
+    1,  4, 5, 6;
+    7,  10, 11, 12;
+    13, 16, 17, 18;
+    19, 22, 23, 24;
+    25, 28, 29, 30;
+    31, 34, 35, 36];
+
+data_table = [4;10;16;22;28;34];
+
 symbol_factorArray = array2table(data_table, 'RowNames',conds_string , 'VariableNames', sovs);
 
 for sub_ind=1:size(subs,2)
@@ -45,29 +49,20 @@ for sub_ind=1:size(subs,2)
     iter = 1;
     subs_conds_ft = cell(1,numel(conds_string)*numel(sovs));
     for sov_i=1:numel(sovs)
-        if strcmp(sovs{sov_i}, 'wake_night') || strcmp(sovs{sov_i}, 'wake_morning')
-            curr_file_ses = sovs{sov_i};
-        else
-            curr_file_ses = 'sleep';
-        end
-
-        if (strcmp(sovs{sov_i},'wake_night') && strcmp(subs{sub_ind},'37')) || ...
-             (strcmp(sovs{sov_i},'N1') && strcmp(subs{sub_ind},'33') && strcmp(conds_string{cond_ind},"OFsenSmall6"))|| ...
-             (strcmp(sovs{sov_i},'N1') && strcmp(subs{sub_ind},'36') && strcmp(conds_string{cond_ind},"OFsenSmall6"))
-            continue;
-        end
-        [elabo_events] = get_events(subs{sub_ind},curr_file_ses,preproc_stage,referenced_elaboEvents_dir);           
         for cond_ind = 1:size(conds_string,2)
-            if strcmp(sovs{sov_i},'REM')
-                current_sleep_stage_times = (strcmp({elabo_events.('sleep_stage')},"Rt") | strcmp({elabo_events.('sleep_stage')},"Rp"));
-            else
-                current_sleep_stage_times =strcmp({elabo_events.('sleep_stage')},sovs{sov_i});
-            end
-                
             ft_mat_path = sprintf('%s\\s_%s_%s_%s.mat',ft_input_dir,subs{sub_ind},sovs{sov_i},conds_string{cond_ind});
             ft_mat = load(ft_mat_path);
             ft_mat = ft_mat.ft_data;
             ft_mat.trialinfo = ones(size(ft_mat.trial,2),1)*get_symbol_design(conds_string{cond_ind},sovs{sov_i},symbol_factorArray);
+
+            % trim time by "latency" limits
+            cfg  =[];
+            cfg.toilim =latency;
+            index = find(abs( ft_mat.time{1} - latency(1)) < 1e-6);
+            ft_mat = ft_redefinetrial(cfg, ft_mat);
+            cfg = [];
+            cfg.offset = -(index-1);
+            ft_mat = ft_redefinetrial(cfg, ft_mat);
 
             subs_conds_ft{iter} = ft_mat;
             iter =iter+1;
@@ -83,6 +78,8 @@ for sub_ind=1:size(subs,2)
         merged_data = ft_appenddata(cfg, merged_data, subs_conds_ft{s});
     end
     merged_data.('fsample') = 250;
+    merged_data.('elec') = subs_conds_ft{1}.elec; %otherwise, elec gets discarded, which cause problems
+    
     parsave(sprintf("%s\\%s",output_adamformat_dir,mat_file_output_name),merged_data);
 end
 
@@ -92,17 +89,17 @@ end
 %                                 factor "block_type"
 %                                OF                OR 
 % 
-% factor          8              108              208               
-% "subnum"        9              109              209               
-%                 10             110              210                            
-%                 11             111              211
-%                 13             113              213    
+% factor          8              58              8               
+% "subnum"        9              59              9               
+%                 10             60              10                            
+%                 11             61              11
+%                 13             63              13    
 
 
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','38'};
-sovs = {'wake_morning','wake_night','N1','N2','N3','REM'};
-preproc_stage = 'referenced';
-conds_string = {'OF','OR'};
+subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+sovs = {'wake_night','N2','N3','REM'};
+sovs = {'N2'};
+conds_string = {'noN2EventsAOF','noN2EventsAOR'};
 sub_nums = str2double(subs);
 OF_vals = 50 + sub_nums;
 OR_vals = sub_nums;
@@ -110,18 +107,19 @@ data_table_LOO = [OF_vals', OR_vals'];
 disp('data_table:');
 disp(data_table_LOO);
 symbol_factorArray_LOO = array2table(data_table_LOO, 'RowNames',subs , 'VariableNames', conds_string);
+latency = [0.480 1.160];
 
 
 for sov_i=1:size(sovs,2)
     curr_sov = sovs{sov_i};
     if strcmp(curr_sov,'wake_morning')
-        curr_sov_filename = 'wmorning';
+        curr_sov_filename = 'wm';
     elseif strcmp(curr_sov,'wake_night')
-        curr_sov_filename = 'wnight';
+        curr_sov_filename = 'wn';
     else
         curr_sov_filename = curr_sov;
     end
-    mat_file_output_name =   sprintf('loo_blocktype_sov-%s.mat',curr_sov_filename);
+    mat_file_output_name =   sprintf('loo_%s.mat',curr_sov_filename);
     if isOutputFile(mat_file_output_name, output_adamformat_dir)  continue; end 
 
     iter = 1;
@@ -132,15 +130,19 @@ for sov_i=1:size(sovs,2)
             curr_blocktype = symbol_factorArray_LOO.Properties.VariableNames{col};
             curr_symbol = symbol_factorArray_LOO{row, col};
 
-            if (strcmp(curr_sov,'wake_night') && strcmp(curr_sub,'37'))
-                continue;
-            end
-
-
             ft_mat_path = sprintf('%s\\s_%s_%s_%s.mat',ft_input_dir,curr_sub,curr_sov,curr_blocktype);
             ft_mat = load(ft_mat_path);
             ft_mat = ft_mat.ft_data;
             ft_mat.trialinfo = ones(size(ft_mat.trial,2),1) * curr_symbol;
+
+            % trim time by "latency" limits
+            cfg  =[];
+            cfg.toilim =latency;
+            index = find(abs( ft_mat.time{1} - latency(1)) < 1e-6);
+            ft_mat = ft_redefinetrial(cfg, ft_mat);
+            cfg = [];
+            cfg.offset = -(index-1);
+            ft_mat = ft_redefinetrial(cfg, ft_mat);
 
             subs_conds_ft{iter} = ft_mat;
             iter =iter+1;
@@ -158,6 +160,7 @@ for sov_i=1:size(sovs,2)
         merged_data = ft_appenddata(cfg, merged_data, subs_conds_ft{s});
     end
     merged_data.('fsample') = 250;
+    merged_data.('elec') = subs_conds_ft{1}.elec; %otherwise, elec gets discarded, which cause problems
     parsave(sprintf("%s\\%s",output_adamformat_dir,mat_file_output_name),merged_data);
 end
 
@@ -169,17 +172,11 @@ end
 function isAlreadyExist = isOutputFile(output_file,output_dir)
     fullpath = sprintf("%s\\%s",output_dir, output_file);
     if isfile(fullpath)
-        string(strcat(output_file, ' already exists in path:',  fullpath))
+        fprintf("%s  already exists in path: %s\n", output_file,fullpath)
         isAlreadyExist = true;
     else
         isAlreadyExist = false;
     end
-end
-
-function [elabo_events] = get_events(sub,ses,preproc_stage,elaboEvents_dir)
-    event_mat_filename = sprintf('%s//s_%s_%s_%s_elaboEvents+outliers.mat',elaboEvents_dir,sub,ses,preproc_stage);
-    elabo_events = load(event_mat_filename);
-    elabo_events = elabo_events.events;
 end
 
 function symbol = get_symbol_design(condition,sov, symbol_design)
