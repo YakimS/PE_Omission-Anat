@@ -11,29 +11,29 @@ Wmor = defineExpStruct("wake_morning", "wm", "Wake Post", false);
 
 % [-0.1, 0.58] - locked to A before
 AblOmi = defineExpStruct("AblO", "AblO", "Omission", false);
-AblOmiF = defineExpStruct("AblOF", "AblOF", "Omission Fixed", false);
-AblOmiR = defineExpStruct("AblOR", "AblOR", "Omission Random", false);
-intblksmpAblO = defineExpStruct("intblksmpAblO", "intblksmpAblO", "Interblock", true);
-intblksmpAblOF = defineExpStruct("intblksmpAblOF", "intblksmpAblOF", "Interblock", true);
-intblksmpAblOR = defineExpStruct("intblksmpAblOR", "intblksmpAblOR", "Interblock", true);
+AblOmiF = defineExpStruct("AblOF", "AblOF", "Predictable Omission", false);
+AblOmiR = defineExpStruct("AblOR", "AblOR", "Unpredictable Omission", false);
+intblksmpAblO = defineExpStruct("intblksmpAblO", "intblksmpAblO", "Baseline", true);
+intblksmpAblOF = defineExpStruct("intblksmpAblOF", "intblksmpAblOF", "Baseline", true);
+intblksmpAblOR = defineExpStruct("intblksmpAblOR", "intblksmpAblOR", "Baseline", true);
 
 noN2EventsAblOmi = defineExpStruct("noN2EventsAblO", "noN2EventsAblO", "Omission without ss&kc", false);
 
 % [-0.1, 1.16]
 AOmi = defineExpStruct("AO", "AO", "Omission", false);
-AOmiR = defineExpStruct("AOR", "AOR", "Omission Random", false);
-AOmiF = defineExpStruct("AOF", "AOF", "Omission Fixed", false);
-intblksmpAO = defineExpStruct("intblksmpAO", "intblksmpAO", "Interblock", true);
-intblksmpAOR = defineExpStruct("intblksmpAOR", "intblksmpAOR", "Interblock", true);
-intblksmpAOF = defineExpStruct("intblksmpAOF", "intblksmpAOF", "Interblock", true);
+AOmiR = defineExpStruct("AOR", "AOR", "Unpredictable Omission", false);
+AOmiF = defineExpStruct("AOF", "AOF", "Predictable Omission", false);
+intblksmpAO = defineExpStruct("intblksmpAO", "intblksmpAO", "Baseline", true);
+intblksmpAOR = defineExpStruct("intblksmpAOR", "intblksmpAOR", "Baseline", true);
+intblksmpAOF = defineExpStruct("intblksmpAOF", "intblksmpAOF", "Baseline", true);
 
-noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission without ss&kc", false);
-noN2EventsAOF = defineExpStruct("noN2EventsAOF", "noN2EventsAOF", "Omission fixed without ss&kc", false);
-noN2EventsAOR = defineExpStruct("noN2EventsAOR", "noN2EventsAOR", "Omission random without ss&kc", false);
-noN2KcompAO = defineExpStruct("noN2KcompAO", "noN2KcompAO", "Omission without kc", false);
-noN2KcompAOF = defineExpStruct("noN2KcompAOF", "noN2KcompAOF", "Omission fixed without kc", false);
-noN2KcompAOR = defineExpStruct("noN2KcompAOR", "noN2KcompAOR", "Omission random without kc", false);
-noN2SsAO = defineExpStruct("noN2SsAO", "noN2SsAO", "Omission without ss", false);
+noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission w/o ss&kc", false);
+noN2EventsAOF = defineExpStruct("noN2EventsAOF", "noN2EventsAOF", "Omission fixed w/o ss&kc", false);
+noN2EventsAOR = defineExpStruct("noN2EventsAOR", "noN2EventsAOR", "Omission random w/o ss&kc", false);
+noN2KcompAO = defineExpStruct("noN2KcompAO", "noN2KcompAO", "Omission w/o kc", false);
+noN2KcompAOF = defineExpStruct("noN2KcompAOF", "noN2KcompAOF", "Predictable Omission w/o kc", false);
+noN2KcompAOR = defineExpStruct("noN2KcompAOR", "noN2KcompAOR", "Unpredictable Omission w/o kc", false);
+noN2SsAO = defineExpStruct("noN2SsAO", "noN2SsAO", "Omission w/o ss", false);
 
 
 % % [-12, 6]
@@ -80,17 +80,10 @@ addpath(genpath('C:\Users\User\OneDrive\Documents\githubProjects'))
 
 %% RUN  (AO,AOF,AOR vs Aintbk) & (AOF vs. AOR) with a specific range [-0.1,1.16]
 output_dir = sprintf("%s\\AdaptorOmission",output_main_dir); mkdir(output_dir);
-
 sovs = {Wnig,N2,N3,REM};
-within_sov_conds = {AOmi,AOmiR,AOmiF};
-union_intersect_sovs = {Wnig,N2,N3,REM};
 contrasts = {{intblksmpAO,AOmi}, {AOmiF,AOmiR}};
-best_cluster_cont = {AOmiF,AOmiR};
-best_cluster_contSovs = {Wnig,Wnig};
-test_latency = [0.58,1.16];
-plot_latency= [-0.1,1.16];
-is_plot_topoplot = true;
-is_plot_video = false;
+conds = {AOmi,AOmiF,AOmiR};
+f = get_funcs_instant(subs,sovs, conds{1},ft_cond_input_dir,ft_cond_output_dir);
 
 adaptor_event = struct();
 adaptor_event.("event_time") = 0;
@@ -102,9 +95,30 @@ omission_event.("event_color") = [.2, .2 ,.2];
 omission_event.("event_text") = 'Omission';
 event_lines = {adaptor_event,omission_event};
 
-run_full_O_OF_OR_vs_intblk_in_range(subs, sovs,union_intersect_sovs,within_sov_conds,contrasts,best_cluster_cont,best_cluster_contSovs,test_latency,plot_latency, ...
-                                    event_lines,is_plot_topoplot,is_plot_video,ft_cond_input_dir,ft_cond_output_dir,output_dir)
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
 
+curr_cont_elec =  "curr_sov_cont_clustersElect";
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,cfg)
+
+curr_electd_clust =  f.get_electdClust(f,'simple_contrast',output_dir,{intblksmpAO,AOmi},{Wnig,Wnig});
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO,AOmi},{N3,N3},curr_electd_clust ...
+                ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+
+best_cluster_cont = {AOmiF,AOmiR};
+best_cluster_contSovs = {Wnig,Wnig};
+elcdClust_bestCluster =  f.get_electdClust(f,'simple_contrast',output_dir,best_cluster_cont,best_cluster_contSovs);
+% union_intersect_sovs = {Wnig,N2,N3,REM};
+% elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
+
+% run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,elcdClust_bestCluster,output_dir,cfg)
+% plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, output_dir,cfg)
+% run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,elcdClust_bestCluster,output_dir,cfg)
+% plot_erp_withinSovCond_allSubs(f, sovs, conds, elcdClust_bestCluster, output_dir,cfg)
 %% RUN  (AblO,AblOF,AblOR vs intblksmpAO) & (AblOF vs. AblOR) with a specific range [-0.1,0.58]
 
 output_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir); mkdir(output_dir);
@@ -260,11 +274,30 @@ f.plot_erp_per_contrast_and_sov(f,output_dir,{noN2EventsAOF, noN2EventsAOR},{N2,
 % noN2SsAO = defineExpStruct("noNSspAO", "noNoSsAO", "Omission without ss", false);
 
 %%
+sovs = {N2};
+output_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(output_dir);
+f = get_funcs_instant(subs,sovs, intblksmpAO,ft_cond_input_dir,ft_cond_output_dir);
+
+cfg = {};
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Tone';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+cfg.event_lines = {adaptor_event,omission_event};
+
 cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
 f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2KcompAO,N2}},electd_clust,"BlNokc" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
 f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2}},electd_clust,"BlNoss" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
 f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2EventsAO,N2}},electd_clust,"BlNoeve" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},electd_clust,"BlWAndWOAllEveTypes" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
 %% functions
 
 function run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust,output_dir,cfg)
@@ -282,10 +315,12 @@ function run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust
                 cfg.test_latency,cfg.test_latency, cfg.is_plot_topoplot,cfg.is_plot_video)
             
             if (ischar(electd_clust) || isstring(electd_clust)) && strcmp(electd_clust, "curr_sov_cont_clustersElect")
-                electd_clust = f.get_electdClust(f,'simple_contrast',output_dir,contrasts{cont_i},cur_contrast_sovs);
+                curr_electd_clust = f.get_electdClust(f,'simple_contrast',output_dir,contrasts{cont_i},cur_contrast_sovs);
+            else
+                curr_electd_clust = electd_clust;
             end
 
-            f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,electd_clust ...
+            f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,curr_electd_clust ...
                 ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
         end
     end

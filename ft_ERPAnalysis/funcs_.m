@@ -74,7 +74,7 @@ classdef funcs_
             parse(p,f,out_dir,conds,conds_sovs,elctrds_clusts,varargin{:});
             r = p.Results;
                 
-            ylim_ = [-2 2];
+            ylim_ = [-1 2];
 
             if isempty(r.plot_latency)
                 r.plot_latency = [f.time(1),f.time(end)];
@@ -147,7 +147,7 @@ classdef funcs_
                 r.test_latency = [f.time(1),f.time(end)];
             end
 
-            ylim_ = [-2 2];
+            ylim_ = [-1.2 2];
 
 
             subs = f.imp.get_subs(f.imp);
@@ -213,7 +213,7 @@ classdef funcs_
 
                 condSovPairsStrings = {};
                 for pairs_i = 1:numel(condSovPairs)
-                    condSovPairsStrings{end +1} = sprintf('%s: %s',condSovPairs{pairs_i}{2}.long_s, condSovPairs{pairs_i}{1}.long_s);
+                    condSovPairsStrings{end +1} = sprintf('%s',condSovPairs{pairs_i}{1}.long_s);
                 end
                 
                 funcs_.plot_erps(f.time,condSovPairsStrings,allSubs_sovs_AvgActivity ...
@@ -240,7 +240,7 @@ classdef funcs_
             parse(p,f,out_dir,cond,sovs,elctrds_clusts,varargin{:});
             r = p.Results;
 
-            ylim_ = [-2 2];
+            ylim_ = [-1.2 2];
 
 
             subs = f.imp.get_subs(f.imp);
@@ -894,7 +894,7 @@ classdef funcs_
 %         end
 
         function custom_colormap = get_colormap_for_sovs(sovs, conds)
-            filtered_sovs = sovs(cellfun(@(x) x.isBaseline == 0, sovs)); % Filter sovs where isBaseline is equal to 0
+            filtered_sovs = sovs(cellfun(@(x) x.isBaseline == 0, conds)); % Filter sovs where isBaseline is equal to 0
             long_s_values = cellfun(@(x) x.long_s, filtered_sovs, 'UniformOutput', false); % Extract long_s values from the filtered list
             long_s_values_flat = cellfun(@(x) x{1}, long_s_values, 'UniformOutput', false);
             [unique_long_s, ~, idx] = unique(long_s_values_flat);
@@ -919,7 +919,7 @@ classdef funcs_
             % Define the color dictionary
             color_dict = containers.Map(...
                 {'wm', 'wn', 'N2', 'N3', 'REM', 'N1', 'baseline','tREM','pREM'}, ...
-                {[0.5, 0.8, 1], [0, 0, 1], [1, 1, 0], [0, 1, 0], [1, 0, 0], [1, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 0]} ...
+                {[0.5, 0.8, 1], [0, 0, 1], [1, 0.7, 0], [0, 1, 0], [1, 0, 0], [1, 0, 1], [0.5, 0.5 ,0.5], [1, 0, 0], [1, 0, 0]} ...
             );
         
             % Get the RGB color from the dictionary
@@ -977,13 +977,14 @@ classdef funcs_
                 end
                 if(r.is_plot_ste)
                     x = squeeze(r.data(:,:,val_i));
-                    shadedErrorBar2(r.time_,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',r.var_colormap(val_i,:),'DisplayName',curr_var_val_name},'patchSaturation',0.1); hold on;
+                    
+                    shadedErrorBar2(r.time_,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',r.var_colormap(val_i,:),'DisplayName',curr_var_val_name,'LineWidth', 1.5},'patchSaturation',0.1); hold on;
                 else
                     mean_subs = squeeze(mean(r.data(:,:,val_i),1));
                     if(r.is_plot_subs)
-                        plot(r.time_,mean_subs,'Color','black','DisplayName',curr_var_val_name); hold on;
+                        plot(r.time_,mean_subs,'Color','black','DisplayName',curr_var_val_name,'LineWidth', 1.5); hold on;
                     else
-                        plot(r.time_,mean_subs,'Color',r.var_colormap(val_i,:),'DisplayName',curr_var_val_name); hold on;
+                        plot(r.time_,mean_subs,'Color',r.var_colormap(val_i,:),'DisplayName',curr_var_val_name,'LineWidth', 1.5); hold on;
                     end
                 end               
             end
@@ -1011,11 +1012,9 @@ classdef funcs_
             
             title(r.title_);
             subtitle(r.subtitle_);
-            if numel(r.variables_s)<=6
-                legend("Location","northwest","FontSize",10);
-            end
-            xlabel('time (s)','FontSize',15)
-            ylabel('amplitude (µV)','FontSize',15)
+            legend("Location","northeast","FontSize",12);
+            xlabel('Time (s)','FontSize',15)
+            ylabel('Amplitude (µV)','FontSize',15)
             if r.plot_latency(2)>= 5
                 set(gcf,'Position',[0 0 1300 400])
             end
