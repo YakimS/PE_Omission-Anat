@@ -1,21 +1,29 @@
 
 % sovs
-N1 = struct(); N1.import_s = "N1"; N1.short_s = "N1"; N1.long_s = "N1";
-N2 = struct(); N2.import_s = "N2"; N2.short_s = "N2"; N2.long_s = "N2";
-N3 = struct(); N3.import_s = "N3"; N3.short_s = "N3"; N3.long_s = "N3";
-REM = struct(); REM.import_s = "REM"; REM.short_s = "REM"; REM.long_s = "REM";
-tREM = struct(); tREM.import_s = "tREM"; tREM.short_s = "tREM"; tREM.long_s = "tREM";
-pREM = struct(); pREM.import_s = "pREM"; pREM.short_s = "pREM"; pREM.long_s = "pREM";
-Wnig = struct(); Wnig.import_s = "wake_night"; Wnig.short_s = "wn"; Wnig.long_s = "Wake Pre";
-Wmor = struct(); Wmor.import_s = "wake_morning"; Wmor.short_s = "wm"; Wmor.long_s = "Wake Post";
+N1 = defineExpStruct("N1", "N1", "N1", false);
+N2 = defineExpStruct("N2", "N2", "N2", false);
+N3 = defineExpStruct("N3", "N3", "N3", false);
+REM = defineExpStruct("REM", "REM", "REM", false);
+tREM = defineExpStruct("tREM", "tREM", "tREM", false);
+pREM = defineExpStruct("pREM", "pREM", "pREM", false);
+Wnig = defineExpStruct("wake_night", "wn", "Wake Pre", false);
+Wmor = defineExpStruct("wake_morning", "wm", "Wake Post", false);
 
-% [-0.1, 0.448]
-Omi = struct(); Omi.import_s = "O"; Omi.short_s = "O"; Omi.long_s = "Omission";
-OmiR = struct(); OmiR.import_s = "OR"; OmiR.short_s = "OR"; OmiR.long_s = "Omission Random";
-OmiF = struct(); OmiF.import_s = "OF"; OmiF.short_s = "OF"; OmiF.long_s = "Omission Fixed";
-intbk = struct(); intbk.import_s = "intbk"; intbk.short_s = "intbk"; intbk.long_s = "Interblock (Avg)";
-intbkMid = struct(); intbkMid.import_s = "intbkMid"; intbkMid.short_s = "intbkMid"; intbkMid.long_s = "Interblock middle (Avg)"; % 0.5s - 4.5s of the interblock cut to 0.5s
+% [-0.1, 1.16]
+AOmi = defineExpStruct("AO", "AO", "Omission", false);
+AOmiR = defineExpStruct("AOR", "AOR", "Unpredictable Omission", false);
+AOmiF = defineExpStruct("AOF", "AOF", "Predictable Omission", false);
+intblksmpAO = defineExpStruct("intblksmpAO", "intblksmpAO", "Baseline", true);
+intblksmpAOR = defineExpStruct("intblksmpAOR", "intblksmpAOR", "Baseline", true);
+intblksmpAOF = defineExpStruct("intblksmpAOF", "intblksmpAOF", "Baseline", true);
 
+noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission w/o ss&kc", false);
+noN2EventsAOF = defineExpStruct("noN2EventsAOF", "noN2EventsAOF", "Omission fixed w/o ss&kc", false);
+noN2EventsAOR = defineExpStruct("noN2EventsAOR", "noN2EventsAOR", "Omission random w/o ss&kc", false);
+noN2KcompAO = defineExpStruct("noN2KcompAO", "noN2KcompAO", "Omission w/o kc", false);
+noN2KcompAOF = defineExpStruct("noN2KcompAOF", "noN2KcompAOF", "Predictable Omission w/o kc", false);
+noN2KcompAOR = defineExpStruct("noN2KcompAOR", "noN2KcompAOR", "Unpredictable Omission w/o kc", false);
+noN2SsAO = defineExpStruct("noN2SsAO", "noN2SsAO", "Omission w/o ss", false);
 
 %%%%%%%%
 output_main_dir = "D:\OExpOut\spatioTemp";
@@ -42,7 +50,7 @@ mkdir(output_dir);
 %%
 
 sovs = {Wnig,N2,N3,REM};
-examp_cond = Omi;
+examp_cond = AOmi;
 
 curr_sov_subs = sub_exclu_per_sov(subs, sovs,examp_cond);
 imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir); 
@@ -54,9 +62,9 @@ f = funcs_(imp, electrodes,time);
 % wn_O_timelock = imp.timlocked.wn_O;
 % wn_intb_timelock = imp.get_cond_timelocked(imp,intbkMid,sovs{1});
 
-wn_O_raw = imp.get_rawFt_cond(imp,Omi,Wnig);
-wn_intb_raw = imp.get_rawFt_cond(imp,intbkMid,Wnig);
-n3_intb_raw = imp.get_rawFt_cond(imp,intbkMid,N3);
+wn_O_raw = imp.get_rawFt_cond(imp,AOmi,Wnig);
+wn_intb_raw = imp.get_rawFt_cond(imp,intblksmpAO,Wnig);
+n3_intb_raw = imp.get_rawFt_cond(imp,intblksmpAO,N3);
 
 
 %% time-freq decomposition
@@ -137,8 +145,8 @@ cfg.keeptrials = 'no';
 cfg.method     = 'wavelet';
 cfg.width      = 0.5;
 cfg.foi        = 1.5:0.5:30;
-cfg.toi          = -0.1:0.004:0.448;  
-% cfg.pad     = 'nextpow2';
+cfg.toi          = -0.1:0.004:1.16;  
+cfg.pad     = 'nextpow2';
 
 wn_intb_tfr_nokeep = {};
 wn_O_tfr_nokeep = {};
@@ -148,12 +156,12 @@ for i=1:numel(wn_intb_raw)
     n3_intb_tfr_nokeep{end+1} = ft_freqanalysis(cfg,  n3_intb_raw{i});
     wn_O_tfr_nokeep{end+1} = ft_freqanalysis(cfg,  wn_O_raw{i});
 end
-
-% cfg = [];
-% cfg.keeptrials='yes';
-% wn_intb_tfr_nokeep_grandAvg = ft_freqgrandaverage(cfg,wn_intb_tfr_nokeep{:});
-% wn_O_tfr_nokeep_grandAvg = ft_freqgrandaverage(cfg,wn_O_tfr_nokeep{:});
-% n3_intb_tfr_nokeep_grandAvg = ft_freqgrandaverage(cfg,n3_intb_tfr_nokeep{:});
+%%
+cfg = [];
+cfg.keeptrials='yes';
+wn_intb_tfr_nokeep_grandAvg = ft_freqgrandaverage(cfg,wn_intb_tfr_nokeep{:});
+wn_O_tfr_nokeep_grandAvg = ft_freqgrandaverage(cfg,wn_O_tfr_nokeep{:});
+n3_intb_tfr_nokeep_grandAvg = ft_freqgrandaverage(cfg,n3_intb_tfr_nokeep{:});
 
 %%
 
@@ -166,7 +174,7 @@ cfg.method     = 'hilbert';
 cfg.detrend = 'yes'; % https://www.fieldtriptoolbox.org/faq/why_does_my_tfr_look_strange_part_ii/   
 cfg.width      = 0.5; %?
 cfg.foi        = 1.5:0.5:30;
-cfg.toi          = -0.1:0.004:0.448;  
+cfg.toi          = -0.1:0.004:1.16;  
 cfg.edgartnan     = 'no'; %?
 cfg.pad     = 'nextpow2';
 % cfg.order = 4;
@@ -195,9 +203,9 @@ cfg.channel      = 'all';
 cfg.method     = 'hilbert';
 % cfg.width      = 0.5; %?
 cfg.foi        = 1.5:0.5:30;
-cfg.toi          = -0.1:0.004:0.448;  
+cfg.toi          = -0.1:0.004:1.16;  
 cfg.edgartnan     = 'yes'; %?
-% cfg.pad     = 'nextpow2';
+cfg.pad     = 'nextpow2';
 % cfg.order = 4;
 
 wn_intb_tfr_hilb_keep = {};
@@ -220,13 +228,13 @@ n3_intb_hilb_keep_grandAvg = ft_freqgrandaverage(cfg,n3_intb_tfr_hilb_keep{:});
 %%% specto each elect
 cfg = [];
 cfg.baseline     = [-0.1 0];
-cfg.baselinetype = 'absolute';
-cfg.zlim         = [-0.1,0.1];
+cfg.baselinetype = 'relative';
+% cfg.zlim         = [-0.1,0.1];
 cfg.showlabels   = 'yes';
 cfg.colorbar      = 'yes';
 cfg.layout       = ft_read_sens('GSN-HydroCel-129.sfp');
 figure
-ft_multiplotTFR(cfg, n3_intb_tfr_hilb{4});
+ft_multiplotTFR(cfg, wn_O_tfr_nokeep{2});
 
 %%% 
 % cfg = [];
@@ -258,7 +266,7 @@ ft_multiplotTFR(cfg, n3_intb_tfr_hilb{4});
 %%
 cfg = [];
 % cfg.channel          = {'EEG'};
-cfg.latency          = [0 0.448];
+cfg.latency          = [0 1.16];
 cfg.frequency        = [13 30];
 cfg.avgoverfreq = 'yes' ;
 cfg.method           = 'montecarlo';
@@ -299,7 +307,7 @@ cfg.layout =  ft_read_sens('GSN-HydroCel-129.sfp');
 ft_clusterplot(cfg, stat);
 %%
 cfg = [];
-cfg.xlim  = -0.1:0.04:0.448;
+cfg.xlim  = -0.1:0.04:1.16;
 % cfg.ylim = [25 30];
 cfg.parameter = 'stat'; 
 cfg.zlim = [-5 5];
@@ -322,23 +330,22 @@ TFR_diff_MEG = ft_math(cfg, n3_intb_tfr_hilb{1}, wn_intb_tfr_hilb{1});
 cfg = [];
 cfg.baseline     = [-0.1 0];
 cfg.baselinetype = 'absolute';
-cfg.xlim         = [0 0.448];         % time
+cfg.xlim         = [0 1.16];         % time
 % cfg.zlim         = [-200 200];              % z
 cfg.ylim         = [10 15];             % freq
 cfg.marker       = 'on';
 cfg.layout       = ft_read_sens('GSN-HydroCel-129.sfp');
 cfg.colorbar     = 'yes';
 figure
-ft_topoplotTFR(cfg, wn_intb_tfr_hilb{13});
-
+ft_topoplotTFR(cfg, wn_intb_tfr_hilb_keep{4});
 
 cfg = [];
-cfg.xlim         = [0.3 0.448]; % time
+cfg.xlim         = [0.3 1.16]; % time
 cfg.zlim         = [-0.4 0.4];  % 
 cfg.ylim         = [15 25];     % frq
 % cfg.marker       = 'on';
-cfg.layout =  ft_read_sens('GSN-HydroCel-129.sfp');
 cfg.channel      = 'Cz';
+cfg.layout =  ft_read_sens('GSN-HydroCel-129.sfp');
 
 % figure;
 ft_topoplotTFR(cfg, TFR_diff_MEG);
@@ -360,4 +367,12 @@ ft_topoplotTFR(cfg, TFR_diff_MEG);
             curr_sov_subs(ismember(curr_sov_subs, {'36'})) = [];
         end
     end
+ end
+
+ function expStruct = defineExpStruct(import_s, short_s, long_s, isBaseline)
+    expStruct = struct();
+    expStruct.import_s = import_s;
+    expStruct.short_s = short_s;
+    expStruct.long_s = long_s;
+    expStruct.isBaseline = isBaseline;
 end

@@ -3,6 +3,7 @@ classdef ft_importer < handle
       subs
       input_dir
       output_dir
+      epoch_time
       
       ftRaw
       timlocked
@@ -10,19 +11,24 @@ classdef ft_importer < handle
       neighbours
       tfrHilbert
       tfrWavelets
+      tfrMT
+      tfrMT_zscored
     end
     methods(Static)
         % constructor
-        function o = ft_importer(subs, input_dir,output_dir)
+        function o = ft_importer(subs, input_dir,output_dir,epoch_time)
             o.subs = subs;
             o.input_dir = input_dir;
             o.output_dir = output_dir;
+            o.epoch_time = epoch_time;
 
             o.ftRaw = {};
             o.timlocked = {};
             o.grandAvg = {};
             o.tfrHilbert = {};
             o.tfrWavelets = {};
+            o.tfrMT = {};
+            o.tfrMT_zscored = {};
         end
 
         % get/set
@@ -36,7 +42,9 @@ classdef ft_importer < handle
         function s = get_output_dir(o)
             s = o.output_dir;
         end
-
+        function s = get_epoch_time(o)
+            s = o.epoch_time;
+        end
         function neighbours = get_neighbours(o)
             if isempty(o.neighbours)
                 cfg = [];
@@ -198,7 +206,7 @@ classdef ft_importer < handle
                 allsubs_cond_tfrHilbert = cell(1, size(o.subs,2));
                 for sub_i=1:size(o.subs,2)
                     filename = sprintf("tfrHilbert_sov-%s_cond-%s_sub-%s.mat",sov.short_s,cond.short_s,o.subs{sub_i});
-                    file_path = sprintf("%s\\%s",o.output_dir,filename);
+                    file_path = sprintf("%s\\tfr_hilbert\\%s",o.output_dir,filename);
                     try
                         loaded = load(file_path);
                         allsubs_cond_tfrHilbert{sub_i} = loaded.tfrHilbert_subcond;
@@ -212,22 +220,22 @@ classdef ft_importer < handle
                         cfg.feedback = 'no';
                         conds_ftraw = o.get_rawFt_cond(o,cond,sov);
 
-                        freq_bin = 1.5:0.5:40;
-                        sub_hilb_zsc = struct();
-                        sub_hilb_zsc.('label') = conds_ftraw{sub_i}.label;
-                        sub_hilb_zsc.('dimrod') = 'chan_freq_time';
-                        sub_hilb_zsc.('freq') = freq_bin;
-                        sub_hilb_zsc.('time') = conds_ftraw{sub_i}.time{1};
-                        sub_hilb_zsc.('elec') = conds_ftraw{sub_i}.elec;
-                        freq_bin_for_hilb = freq_bin;
-                        freq_bin_for_hilb(end+1) = freq_bin_for_hilb(end) + (freq_bin_for_hilb(end) - freq_bin_for_hilb(end-1));
-                        hilb_zsc = o.hilbert_zscore(conds_ftraw{sub_i},freq_bin_for_hilb,1:numel(conds_ftraw{sub_i}.label));
-                        sub_hilb_zsc.('powspctrm') = permute(squeeze(mean(hilb_zsc,4)),[2,1,3]);
-                        allsubs_cond_tfrHilbert{sub_i} = sub_hilb_zsc;
+% % %                         freq_bin = 1.5:0.5:40;
+% % %                         sub_hilb_zsc = struct();
+% % %                         sub_hilb_zsc.('label') = conds_ftraw{sub_i}.label;
+% % %                         sub_hilb_zsc.('dimord') = 'chan_freq_time';
+% % %                         sub_hilb_zsc.('freq') = freq_bin;
+% % %                         sub_hilb_zsc.('time') = conds_ftraw{sub_i}.time{1};
+% % %                         sub_hilb_zsc.('elec') = conds_ftraw{sub_i}.elec;
+% % %                         freq_bin_for_hilb = freq_bin;
+% % %                         freq_bin_for_hilb(end+1) = freq_bin_for_hilb(end) + (freq_bin_for_hilb(end) - freq_bin_for_hilb(end-1));
+% % %                         hilb_zsc = o.hilbert_zscore(conds_ftraw{sub_i},freq_bin_for_hilb,1:numel(conds_ftraw{sub_i}.label));
+% % %                         sub_hilb_zsc.('powspctrm') = permute(squeeze(mean(hilb_zsc,4)),[2,1,3]);
+% % %                         allsubs_cond_tfrHilbert{sub_i} = sub_hilb_zsc;
 
 %                         subs_hilb_trans = struct();
 %                         subs_hilb_trans.('label') = conds_ftraw{sub_i}.label;
-%                         subs_hilb_trans.('dimrod') = 'chan_freq_time';
+%                         subs_hilb_trans.('dimord') = 'chan_freq_time';
 %                         subs_hilb_trans.('freq') = 1.5:0.5:30.5;
 %                         subs_hilb_trans.('time') = conds_ftraw{sub_i}.time{1};
 %                         subs_hilb_trans.('elec') = conds_ftraw{sub_i}.elec;
@@ -256,19 +264,17 @@ classdef ft_importer < handle
 %                         allsubs_cond_tfrHilbert{sub_i} =subs_hilb_trans;
 
 %%%%                    Hilbert - ft func
-%                         cfg = [];
-%                         cfg.keeptrials = 'no';
-%                         cfg.channel      = 'all';
-%                         cfg.method     = 'hilbert';
-%                         cfg.detrend = 'yes'; % https://www.fieldtriptoolbox.org/faq/why_does_my_tfr_look_strange_part_ii/   
-%                         cfg.foi        = 1.5:0.5:40;
-%                         cfg.toi          = -0.1:0.004:0.448;  
-%                         cfg.edgartnan     = 'yes'; % similar to "hilbert" func in anat's data
-%                         % cfg.pad     = 'nextpow2';
-%                         % cfg.order = 4;
-%                         %  cfg.width      = 0.5; %?
-%                         allsubs_cond_tfrHilbert{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
-
+                        cfg = [];
+                        cfg.channel      = 'all';
+                        cfg.method     = 'hilbert';
+                        cfg.polyremoval  = 0;%cfg.detrend = 'yes'; % https://www.fieldtriptoolbox.org/faq/why_does_my_tfr_look_strange_part_ii/   
+                        cfg.foi          = 0.5:0.5:30;   
+                        cfg.toi          = 'all';    
+                        cfg.width      = 0.4; 
+                        cfg.bpfilttype = 'fir'; % otherwise, it uses IIR filter, which is suboptimal and create imbalance in the parameter space that cuases errors and warnings https://youtu.be/jy7IxIXUAJk?si=KVfHc-WAHa151SDx&t=1003
+                        allsubs_cond_tfrHilbert{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
+                        
+                        
                         allsubs_cond_tfrHilbert{sub_i}.cfg.('trials_avg') = numel(conds_ftraw{sub_i}.trial);
                         if allsubs_cond_tfrHilbert{sub_i}.cfg.('trials_avg') == 1
                             fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
@@ -282,6 +288,144 @@ classdef ft_importer < handle
                 o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrHilbert;
             end
             cond_TFR_hiblert = o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s));
+        end
+
+        function cond_TFR_MT_zscored=get_cond_TFR_mt_zscored(o,cond,sov)
+            if ~isfield(o.tfrMT_zscored,sprintf("%s_%s",sov.short_s,cond.short_s))
+                allsubs_cond_tfrMT_zscored = cell(1, size(o.subs,2));
+                for sub_i=1:size(o.subs,2)
+                    filename = sprintf("tfrMTzscored_sov-%s_cond-%s_sub-%s.mat",sov.short_s,cond.short_s,o.subs{sub_i});
+                    file_path = sprintf("%s\\tfr_mt\\zscored\\%s",o.output_dir,filename);
+                    try
+                        loaded = load(file_path);
+                        allsubs_cond_tfrMT_zscored{sub_i} = loaded.tfrMTzscored_subcond;
+                        if allsubs_cond_tfrMT_zscored{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s\n',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                    catch ME
+                        fprintf("Running: %s\n",filename);
+                        cfg = [];
+                        cfg.feedback = 'no';
+                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+
+                        cfg              = [];
+                        cfg.output       = 'pow';
+                        cfg.channel      = 'all';
+                        cfg.method       = 'mtmconvol';
+                        cfg.taper        = 'hanning';
+                        cfg.foi          = 0.5:0.5:70; 
+                        cfg.t_ftimwin    = 3 ./ cfg.foi;   
+                        cfg.toi          = 'all';
+                        cfg.polyremoval  = 0;
+                        allsubs_cond_tfrMT_zscored{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
+                        
+                        foi = 0.5:0.5:70;
+                        num_trials = length(conds_ftraw{sub_i}.trial);
+                        batch_size = 50;
+                        num_batches = ceil(num_trials / batch_size);
+                        running_sum = [];
+                        trial_count = 0;
+                        for batch_i = 1:num_batches
+                            trial_start = (batch_i - 1) * batch_size + 1;
+                            trial_end = min(batch_i * batch_size, num_trials);
+                            cfg = [];
+                            cfg.output = 'pow';
+                            cfg.channel = 'all';
+                            cfg.method = 'mtmconvol';
+                            cfg.taper = 'hanning';
+                            cfg.foi = foi; 
+                            cfg.t_ftimwin = 3 ./ cfg.foi;   
+                            cfg.toi = 'all';
+                            cfg.polyremoval = 0;
+                            cfg.keeptrials = 'yes';
+                            cfg.trials = trial_start:trial_end;
+                            curr_sub_tfrMT = ft_freqanalysis(cfg, conds_ftraw{sub_i});
+                        
+                            temp_zscore_powspct = zeros(size(curr_sub_tfrMT.powspctrm)); % [trial, elec, freq, time]
+                            for trial_i = 1:size(curr_sub_tfrMT.powspctrm,1)
+                                curr_trial = squeeze(curr_sub_tfrMT.powspctrm(trial_i,:,:,:));
+                                meanData = nanmean(curr_trial, 3);
+                                stdData = nanstd(curr_trial, 0, 3);
+                                for elec_i = 1:size(curr_trial, 1)
+                                    for freq_i = 1:size(curr_trial, 2)
+                                        temp_zscore_powspct(trial_i, elec_i, freq_i, :) = (curr_trial(elec_i, freq_i, :) - meanData(elec_i, freq_i)) / stdData(elec_i, freq_i);
+                                    end
+                                end
+                            end
+                            % Sum the current batch's z-scores
+                            if isempty(running_sum)
+                                running_sum = squeeze(nanmean(temp_zscore_powspct, 1));
+                            else
+                                running_sum = running_sum + squeeze(nanmean(temp_zscore_powspct, 1));
+                            end
+                            trial_count = trial_count + size(temp_zscore_powspct, 1);
+                        end
+                        % Compute the final  z-score across trials average
+                        sub_zscore_powspct = running_sum / num_batches;
+
+                        allsubs_cond_tfrMT_zscored{sub_i}.powspctrm_zscore = sub_zscore_powspct;
+
+                        allsubs_cond_tfrMT_zscored{sub_i}.cfg.('trials_avg') = num_trials;
+                        if allsubs_cond_tfrMT_zscored{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                        
+                        %save
+                        tfrMTzscored_subcond = allsubs_cond_tfrMT_zscored{sub_i};
+                        save(file_path,"tfrMTzscored_subcond", '-v7.3')
+                    end
+                end
+                o.tfrMT_zscored.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrMT_zscored;
+            end
+            cond_TFR_MT_zscored = o.tfrMT_zscored.(sprintf("%s_%s",sov.short_s,cond.short_s));
+        end
+
+        function cond_TFR_MT=get_cond_TFR_mt(o,cond,sov)
+            if ~isfield(o.tfrMT,sprintf("%s_%s",sov.short_s,cond.short_s))
+                allsubs_cond_tfrMT = cell(1, size(o.subs,2));
+                for sub_i=1:size(o.subs,2)
+                    filename = sprintf("tfrMT_sov-%s_cond-%s_sub-%s.mat",sov.short_s,cond.short_s,o.subs{sub_i});
+                    file_path = sprintf("%s\\tfr_mt\\%s",o.output_dir,filename);
+                    try
+                        loaded = load(file_path);
+                        allsubs_cond_tfrMT{sub_i} = loaded.tfrMT_subcond;
+                        if allsubs_cond_tfrMT{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s\n',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                    catch ME
+                        fprintf("Running: %s\n",filename);
+                        cfg = [];
+                        cfg.feedback = 'no';
+                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+
+%%%                    Multitaper - ft func
+                        cfg              = [];
+                        cfg.output       = 'pow';
+                        cfg.channel      = 'all';
+                        cfg.method       = 'mtmconvol';
+                        cfg.taper        = 'hanning';
+                        cfg.foi          = 0.5:0.5:70; 
+                        cfg.t_ftimwin    = 3 ./ cfg.foi;   
+                        cfg.toi          = 'all';
+                        cfg.polyremoval  = 0;
+                        allsubs_cond_tfrMT{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
+
+                        allsubs_cond_tfrMT{sub_i}.cfg.('trials_avg') = numel(conds_ftraw{sub_i}.trial);
+                        if allsubs_cond_tfrMT{sub_i}.cfg.('trials_avg') == 1
+                            fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
+                            error('one trail in this cond for this sub. Highly unrecommended')
+                        end
+                        %save
+                        tfrMT_subcond = allsubs_cond_tfrMT{sub_i};
+                        save(file_path,"tfrMT_subcond")
+                    end
+                end
+                o.tfrMT.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrMT;
+            end
+            cond_TFR_MT = o.tfrMT.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
 
         function cond_TFR_wavelets=get_cond_TFR_wavelets(o,cond,sov)
