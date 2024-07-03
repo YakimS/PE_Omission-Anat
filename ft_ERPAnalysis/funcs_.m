@@ -101,7 +101,12 @@ classdef funcs_
 
         %%%%%%%%%%%%%%%%%%%% ERP: spatio-temporal cluster permutation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        function run_STCP_ERP_dependent(f,output_dir, contrast_conds,contrast_sovs,timerange_test,timerange_plot, is_plot_topoplot,is_plot_video)
+        function run_STCP_ERP_dependent(f,output_dir, contrast_conds,contrast_sovs, cfg)
+            if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+            if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+            if ~isfield(cfg, 'is_plot_topoplot')    cfg.is_plot_topoplot = true; end
+            if ~isfield(cfg, 'is_plot_video')       cfg.is_plot_video = false; end
+
             cond1 = contrast_conds{1};
             cond2 = contrast_conds{2};
             sov_cond1 = contrast_sovs{1};
@@ -114,28 +119,21 @@ classdef funcs_
             timelockft_cond1 = f.imp.get_cond_timelocked(f.imp,cond1,sov_cond1);
             timelockft_cond2 = f.imp.get_cond_timelocked(f.imp,cond2,sov_cond2);
             
-            metadata = funcs_.STCP_ERP_dependentT(f,timelockft_cond1, timelockft_cond2,timerange_test,timerange_plot,curr_output_filename,is_plot_topoplot,is_plot_video);
+            metadata = funcs_.STCP_ERP_dependentT(f,timelockft_cond1, timelockft_cond2,cfg.test_latency,cfg.plot_latency,curr_output_filename,cfg.is_plot_topoplot,cfg.is_plot_video);
             if ~isempty(metadata)
                 save(curr_output_filename, "metadata")
             end
         end
 
-        function plot_erp_per_contrast_and_sov(f,out_dir,conds,conds_sovs,elctrds_clusts,varargin)   
-            p = inputParser;
-            addRequired(p, 'f'); addRequired(p, 'out_dir'); addRequired(p, 'conds'); addRequired(p, 'conds_sovs'); 
-            addRequired(p, 'elctrds_clusts');
-            addOptional(p, 'plot_latency', {});
-            addOptional(p, 'test_latency', {});
-            addOptional(p, 'event_lines', {});
-            addOptional(p, 'plot_bp_filter', 'no');
-            addOptional(p, 'is_plot_subs', false);
-            parse(p,f,out_dir,conds,conds_sovs,elctrds_clusts,varargin{:});
-            r = p.Results;
-                
-            ylim_ = [-3 3];
-
-            if isempty(r.plot_latency)      r.plot_latency = [f.time(1),f.time(end)];    end
-            if isempty(r.test_latency)      r.test_latency = [f.time(1),f.time(end)];    end
+        function plot_erp_per_contrast_and_sov(f,out_dir,conds,conds_sovs,elctrds_clusts,cfg)   
+            if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+            if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+            if ~isfield(cfg, 'is_plot_topoplot')    cfg.is_plot_topoplot = true; end
+            if ~isfield(cfg, 'is_plot_video')       cfg.is_plot_video = false; end
+            if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
+            if ~isfield(cfg, 'plot_bp_filter')      cfg.plot_bp_filter = 'no'; end
+            if ~isfield(cfg, 'is_plot_subs')        cfg.is_plot_subs = false; end
+            if ~isfield(cfg, 'ylim_')               cfg.ylim_ = [-3 3]; end
 
             curr_colormap = funcs_.get_colormap_for_sovs(conds_sovs,conds);       
             subs = f.imp.get_subs(f.imp); 
@@ -154,13 +152,13 @@ classdef funcs_
                 out_dir,conds{1}.short_s,conds{2}.short_s,conds_sovs{1}.short_s,conds_sovs{2}.short_s, clust_name);
                 if isfile(sprintf("%s.fig",curr_output_filename)) continue; end
                 
-                stat = funcs_.cluster_permu_erp(f,conds,conds_sovs,clust_electd,r.test_latency);
+                stat = funcs_.cluster_permu_erp(f,conds,conds_sovs,clust_electd,cfg.test_latency);
     
                 % plot sig points
                 if ~all(stat.mask ==0)
-                    sig_timerange = stat.mask .*stat.time;
+                    sig_timeranges = stat.mask .*stat.time;
                 else
-                    sig_timerange = 0;
+                    sig_timeranges = 0;
                 end
                 
                 % get mean activity per sub and cond
@@ -181,39 +179,23 @@ classdef funcs_
                     trials_stats_string = sprintf("%s Avg:%.1f Std:%.1f Min:%d Max:%d \n",trials_stats_string, mean(sub_trials_count), std(sub_trials_count), min(sub_trials_count),max(sub_trials_count));
                 end               
     
-                title_ = sprintf('ERP, %s(%s) vs %s(%s), %d subjects', ...
-                    conds{1}.short_s,conds_sovs{1}.short_s,conds{2}.short_s,conds_sovs{2}.short_s, size(subs,2));            
-                subtitle_ = sprintf("Elect Clust: %s. Pval=%.2f", clust_name ,clust_pval);
+                cfg.title_ = sprintf('ERP, %s(%s) vs %s(%s), %d subjects', conds{1}.short_s,conds_sovs{1}.short_s,conds{2}.short_s,conds_sovs{2}.short_s, size(subs,2));            
+                cfg.subtitle_ = sprintf("Elect Clust: %s. Pval=%.2f", clust_name ,clust_pval);
+                cfg.sig_timeranges = {sig_timeranges};
+                cfg.sig_timeranges_colormaps = {{curr_colormap(1,:),curr_colormap(end,:)}};
+                cfg.elctrds_clusts = {elctrds_clusts.('elec_gen_info'),clust_electd};
+                cfg.bottom_string = trials_stats_string;
 
-                funcs_.plot_erps(f.time,conds,allSubs_conds_AvgActivity ...
-                ,curr_output_filename, curr_colormap, ...
-                'sig_timeranges',{sig_timerange},'sig_timeranges_colormap',{{curr_colormap(1,:),curr_colormap(end,:)}}, ...
-                'title_',title_,'subtitle_',subtitle_,'bottom_string',trials_stats_string,'ylim_',ylim_ ...
-                ,'clust_electd',{elctrds_clusts.('elec_gen_info'),clust_electd} ...
-                , 'plot_latency', r.plot_latency, 'event_lines',r.event_lines, 'plot_bp_filter', r.plot_bp_filter)
+                funcs_.plot_erps(f.time,conds,allSubs_conds_AvgActivity,curr_output_filename, curr_colormap, cfg)
             end
         end
 
-        function plot_erp_per_condsSovPairs(f,out_dir,condSovPairs,elctrds_clusts,plot_name,varargin)   
-            p = inputParser;
-            addRequired(p, 'f'); addRequired(p, 'out_dir'); addRequired(p, 'condSovPairs'); 
-            addRequired(p, 'plot_name');  addRequired(p, 'elctrds_clusts');
-            addOptional(p, 'plot_latency', {});
-            addOptional(p, 'test_latency', {});
-            addOptional(p, 'plot_bp_filter', 'no');
-            addOptional(p, 'event_lines', {});
-            parse(p,f,out_dir,condSovPairs,elctrds_clusts,plot_name,varargin{:});
-            r = p.Results;
-
-            if isempty(r.plot_latency)
-                r.plot_latency = [f.time(1),f.time(end)];
-            end
-            if isempty(r.test_latency)
-                r.test_latency = [f.time(1),f.time(end)];
-            end
-
-            ylim_ = [-1.2 2];
-
+        function plot_erp_per_condsSovPairs(f,out_dir,condSovPairs,elctrds_clusts,plot_name,cfg)   
+            if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
+            if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
+            if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
+            if ~isfield(cfg, 'plot_bp_filter')      cfg.plot_bp_filter = 'no'; end
+            if ~isfield(cfg, 'ylim_')               cfg.ylim_ = [-1.2 2]; end
 
             subs = f.imp.get_subs(f.imp);
 
@@ -239,14 +221,14 @@ classdef funcs_
                 % get avg data to plot
                 trials_stats_string = "";
                 allSubs_sovs_AvgActivity = zeros(size(subs,2),size(f.time,2),numel(condSovPairs)); 
-                for uniq_i=1:numel(condSovPairs)
-                    trials_stats_string = sprintf("%scond: %s, sov:%s _ ",trials_stats_string, condSovPairs{uniq_i}{1}.short_s,condSovPairs{uniq_i}{2}.short_s);
-                    curr_cond_timelock = f.imp.get_cond_timelocked(f.imp,condSovPairs{uniq_i}{1},condSovPairs{uniq_i}{2}); 
+                for csp_i=1:numel(condSovPairs)
+                    trials_stats_string = sprintf("%scond: %s, sov:%s _ ",trials_stats_string, condSovPairs{csp_i}{1}.short_s,condSovPairs{csp_i}{2}.short_s);
+                    curr_cond_timelock = f.imp.get_cond_timelocked(f.imp,condSovPairs{csp_i}{1},condSovPairs{csp_i}{2}); 
                     sub_trials_count = [];
                     for sub_i = 1:size(subs,2)
                         curr_sub_bl_struct =  curr_cond_timelock{sub_i};
                         sub_trials_count(end+1) = curr_sub_bl_struct.cfg.trials_timelocked_avg;
-                        allSubs_sovs_AvgActivity(sub_i,:,uniq_i) = mean(curr_sub_bl_struct.avg(clust_electd,:),1);
+                        allSubs_sovs_AvgActivity(sub_i,:,csp_i) = mean(curr_sub_bl_struct.avg(clust_electd,:),1);
                     end
                     trials_stats_string = sprintf("%s Avg:%.1f Std:%.1f Min:%d Max:%d \n",trials_stats_string, mean(sub_trials_count), std(sub_trials_count), min(sub_trials_count),max(sub_trials_count));
                 end
@@ -258,62 +240,56 @@ classdef funcs_
                     end
                 end
 
-                
                 % get siglines data
-                sig_timerange = {};
-                sig_timerange_colormaps = {};
-                for uniq_i=1:size(unique_pairs_combo,1)
-                    curr_condsov1 = condSovPairs{unique_pairs_combo(uniq_i,1)};
-                    curr_condsov2 = condSovPairs{unique_pairs_combo(uniq_i,2)};
+                sig_timeranges = {};
+                sig_timeranges_colormaps = {};
+                for csp_i=1:size(unique_pairs_combo,1)
+                    curr_condsov1 = condSovPairs{unique_pairs_combo(csp_i,1)};
+                    curr_condsov2 = condSovPairs{unique_pairs_combo(csp_i,2)};
                     stat = funcs_.cluster_permu_erp(f,{curr_condsov1{1},curr_condsov2{1}}, ...
-                                                        {curr_condsov1{2},curr_condsov2{2}},clust_electd,r.test_latency);
+                                                        {curr_condsov1{2},curr_condsov2{2}},clust_electd,cfg.test_latency);
                     % plot sig points
                     if ~all(stat.mask ==0)
-                        sig_timerange{end + 1} = stat.mask .*stat.time;
+                        sig_timeranges{end + 1} = stat.mask .*stat.time;
                     else
-                        sig_timerange{end + 1} = {};
+                        sig_timeranges{end + 1} = {};
                     end
 
-                    curr_colormap_sov1 = curr_colormap(unique_pairs_combo(uniq_i,1),:);
-                    curr_colormap_sov2 = curr_colormap(unique_pairs_combo(uniq_i,2),:);
-                    sig_timerange_colormaps{end + 1} = {curr_colormap_sov1,curr_colormap_sov2};
+                    curr_colormap_sov1 = curr_colormap(unique_pairs_combo(csp_i,1),:);
+                    curr_colormap_sov2 = curr_colormap(unique_pairs_combo(csp_i,2),:);
+                    sig_timeranges_colormaps{end + 1} = {curr_colormap_sov1,curr_colormap_sov2};
                 end
                 
-                title_ = sprintf('ERP, %s, %d subjects', plot_name,size(subs,2)); 
-                subtitle_ = sprintf("Elect Clust: %s. Pval=%.2f", clust_name ,clust_pval);
-
                 condSovPairsStrings = {};
                 for pairs_i = 1:numel(condSovPairs)
                     condSovPairsStrings{end +1} = sprintf('%s',condSovPairs{pairs_i}{1}.long_s);
                 end
                 
-                funcs_.plot_erps(f.time,condSovPairsStrings,allSubs_sovs_AvgActivity ...
-                    ,curr_output_filename, curr_colormap, ...
-                    'sig_timeranges',sig_timerange, 'sig_timeranges_colormap',sig_timerange_colormaps ...
-                    ,'title_',title_,'subtitle_',subtitle_,'bottom_string',trials_stats_string,'ylim_',ylim_ ...
-                    ,'clust_electd',{elctrds_clusts.('elec_gen_info'),clust_electd} ...
-                    , 'plot_latency', r.plot_latency, 'event_lines',r.event_lines,"plot_bp_filter",r.plot_bp_filter)
+                cfg.title_ = sprintf('ERP, %s, %d subjects', plot_name,size(subs,2)); 
+                cfg.subtitle_ = sprintf("Elect Clust: %s. Pval=%.2f", clust_name ,clust_pval);
+                cfg.elctrds_clusts = {elctrds_clusts.('elec_gen_info'),clust_electd};
+                cfg.sig_timeranges = sig_timeranges;
+                cfg.sig_timeranges_colormaps = sig_timeranges_colormaps;
+                cfg.bottom_string = trials_stats_string;
+
+                funcs_.plot_erps(f.time,condSovPairsStrings,allSubs_sovs_AvgActivity, curr_output_filename, curr_colormap, cfg)
             end
         end
        
         % is sovs number of elements is 1, it plots all the subjects line.
         % Else, it plots the standard error
-        function plot_erp_per_cond_across_sovs(f,out_dir,cond,sovs,elctrds_clusts,varargin)
-            p = inputParser;
-            addRequired(p, 'f'); addRequired(p, 'out_dir'); addRequired(p, 'conds'); addRequired(p, 'conds_sovs'); 
-            addRequired(p, 'elctrds_clusts');
-            addOptional(p, 'plot_latency', [f.time(1),f.time(end)]);
-            addOptional(p, 'test_latency', [f.time(1),f.time(end)]);
-            addOptional(p, 'event_lines', {});   
-            addOptional(p, 'betweenSov_cond_forSigLine', {});  
-            addOptional(p, 'withinSov_contrast_forSigLine', {});
-            addOptional(p, 'is_plot_subs', false);
-            addOptional(p, 'plot_bp_filter', 'no');
-            addOptional(p, 'is_plot_ste', true);
-            parse(p,f,out_dir,cond,sovs,elctrds_clusts,varargin{:});
-            r = p.Results;
+        function plot_erp_per_cond_across_sovs(f,out_dir,cond,sovs,elctrds_clusts,cfg)
+            if ~isfield(cfg, 'test_latency')                    cfg.test_latency = [0, f.time(end)]; end
+            if ~isfield(cfg, 'plot_latency')                    cfg.plot_latency = [f.time(1), f.time(end)]; end
+            if ~isfield(cfg, 'event_lines')                     cfg.event_lines = {}; end 
+            if ~isfield(cfg, 'is_plot_subs')                    cfg.is_plot_subs = false; end  
+            if ~isfield(cfg, 'is_plot_ste')                     cfg.is_plot_ste = true; end  
+            if ~isfield(cfg, 'plot_bp_filter')                  cfg.plot_bp_filter = 'no'; end
+            if ~isfield(cfg, 'betweenSov_cond_forSigLine')      cfg.betweenSov_cond_forSigLine = {}; end
+            if ~isfield(cfg, 'withinSov_contrast_forSigLine')   cfg.withinSov_contrast_forSigLine = {}; end
+            if ~isfield(cfg, 'plot_bp_filter')                  cfg.plot_bp_filter = 'no'; end
+            if ~isfield(cfg, 'ylim_')                           cfg.ylim_ =  [-1.2 2]; end
 
-            ylim_ = [-1.2 2];
 
             subs = f.imp.get_subs(f.imp);
 
@@ -360,47 +336,44 @@ classdef funcs_
                 
                 
                 % get siglines data
-                sig_timerange = {};
-                sig_timerange_colormaps = {};
-                if ~isempty(r.withinSov_contrast_forSigLine)
+                sig_timeranges = {};
+                sig_timeranges_colormaps = {};
+                if ~isempty(cfg.withinSov_contrast_forSigLine)
                     for sov_i=1:numel(sovs)
-                        stat = funcs_.cluster_permu_erp(f,r.withinSov_contrast_forSigLine,{sovs{sov_i},sovs{sov_i}},clust_electd,r.test_latency);
+                        stat = funcs_.cluster_permu_erp(f,cfg.withinSov_contrast_forSigLine,{sovs{sov_i},sovs{sov_i}},clust_electd,r.test_latency);
                         % plot sig points
                         if ~all(stat.mask ==0)
-                            sig_timerange{end + 1} = stat.mask .*stat.time;
+                            sig_timeranges{end + 1} = stat.mask .*stat.time;
                         else
-                            sig_timerange{end + 1} = {};
+                            sig_timeranges{end + 1} = {};
                         end
                         curr_colormap = funcs_.get_colormap_from_dic(sovs{sov_i}.short_s,2);
-                        sig_timerange_colormaps{end + 1} = {curr_colormap(1,:),curr_colormap(end,:)};
+                        sig_timeranges_colormaps{end + 1} = {curr_colormap(1,:),curr_colormap(end,:)};
                     end
                 end
-                if ~isempty(r.betweenSov_cond_forSigLine)
+                if ~isempty(cfg.betweenSov_cond_forSigLine)
                     sovs_pairs = uniquePairs(sovs);
                     for sp_i=1:numel(sovs_pairs)
-                        stat = funcs_.cluster_permu_erp(f,{r.betweenSov_cond_forSigLine,r.betweenSov_cond_forSigLine},sovs_pairs{sp_i},clust_electd,r.test_latency);
+                        stat = funcs_.cluster_permu_erp(f,{cfg.betweenSov_cond_forSigLine,cfg.betweenSov_cond_forSigLine},sovs_pairs{sp_i},clust_electd,cfg.test_latency);
                         % plot sig points
                         if ~all(stat.mask ==0)
-                            sig_timerange{end + 1} = stat.mask .*stat.time;
+                            sig_timeranges{end + 1} = stat.mask .*stat.time;
                         else
-                            sig_timerange{end + 1} = {};
+                            sig_timeranges{end + 1} = {};
                         end
                         curr_colormap_sov1 = funcs_.get_colormap_from_dic(sovs_pairs{sp_i}{1}.short_s,2);
                         curr_colormap_sov2 = funcs_.get_colormap_from_dic(sovs_pairs{sp_i}{2}.short_s,2);
-                        sig_timerange_colormaps{end + 1} = {curr_colormap_sov1(2,:),curr_colormap_sov2(2,:)};
+                        sig_timeranges_colormaps{end + 1} = {curr_colormap_sov1(2,:),curr_colormap_sov2(2,:)};
                     end
                 end
                 
-                title_ = sprintf('ERP, Condition-%s, %d subjects', cond.short_s,size(subs,2)); 
-                subtitle_ = sprintf("Elect Clust: %s. Pval=%.2f", clust_name ,clust_pval);                    
-                
-                funcs_.plot_erps(f.time,sovs,allSubs_sovs_AvgActivity ...
-                    ,curr_output_filename, sovs_colormap, ...
-                    'sig_timeranges',sig_timerange, 'sig_timeranges_colormap',sig_timerange_colormaps ...
-                    ,'title_',title_,'subtitle_',subtitle_,'bottom_string',trials_stats_string,'ylim_',ylim_ ...
-                    ,'clust_electd',{elctrds_clusts.('elec_gen_info'),clust_electd} ...
-                    , 'plot_latency', r.plot_latency, 'event_lines',r.event_lines, ...
-                    'is_plot_subs',r.is_plot_subs,'is_plot_ste',r.is_plot_ste,'plot_bp_filter', r.plot_bp_filter)
+                cfg.title_ = sprintf('ERP, Condition-%s, %d subjects', cond.short_s,size(subs,2)); 
+                cfg.subtitle_ = sprintf("Elect Clust: %s. Pval=%.2f", clust_name ,clust_pval);  
+                cfg.elctrds_clusts = {elctrds_clusts.('elec_gen_info'),clust_electd};
+                cfg.sig_timeranges = sig_timeranges;
+                cfg.sig_timerange_colormaps = sig_timeranges_colormaps;
+                cfg.bottom_string = trials_stats_string;
+                funcs_.plot_erps(f.time, sovs,allSubs_sovs_AvgActivity, curr_output_filename, sovs_colormap, cfg)
             end
         end
 
@@ -603,7 +576,7 @@ classdef funcs_
         end
         
         % Electrods Cluster between conditions. per timepoint all subjects
-        function metadata = STCP_ERP_dependentT(f,cond1_struct, cond2_struct,test_latency,plot_timerange, mat_filename,is_plot_topoplot,is_plot_video)
+        function metadata = STCP_ERP_dependentT(f,cond1_struct, cond2_struct,test_latency,plot_timerange, mat_filename)
             subs = f.imp.get_subs(f.imp);
             neighbours = f.imp.get_neighbours(f.imp);
 
@@ -672,13 +645,13 @@ classdef funcs_
             end
             
             % plot        
-            if is_plot_topoplot
+            if cfg.is_plot_topoplot
                 filename = erase(mat_filename,".mat");
                 summary_filename = sprintf("%s_summary",filename);
                 sample_rate = 250;
                 rec_fps = 1/sample_rate;
                 if is_cluster_exists
-                    if is_plot_video
+                    if cfg.is_plot_video
                         vid_maximum_fps = 1/60;
                         timediff = floor(vid_maximum_fps/rec_fps) *rec_fps;
                         toi = plot_timerange(1): timediff :plot_timerange(end);
@@ -1044,8 +1017,7 @@ classdef funcs_
             stat = ft_timelockstatistics(cfg, all_conds_timelocked_currClustElecd{1}{:}, all_conds_timelocked_currClustElecd{2}{:});   % don't forget the {:}!
         end
 
-        % plotting
-        
+        % plotting 
         function cfg = cluster_plot(stat,cfg)
             if ~isfield(cfg, 'saveaspng')           error('cfg must include saveaspng field with filename'); end
             if ~isfield(cfg, 'parameter')           error('cfg must include parameter field with parameter'); end 
@@ -1178,44 +1150,44 @@ classdef funcs_
             custom_colormap(1, :) = []; % to skip first color black
         end
         
-        function plot_erps(time_,variables_s,data,output_filename, var_colormap,varargin)
-            p = inputParser;
-            addRequired(p, 'time_'); addRequired(p, 'variables_s'); addRequired(p, 'data'); 
-            addRequired(p, 'output_filename'); addRequired(p, 'var_colormap');
+        function plot_erps(time_,variables_s,data,output_filename, var_colormap,cfg)
+            if ~isfield(cfg, 'is_plot_subs')                cfg.is_plot_subs = false; end  
+            if ~isfield(cfg, 'is_plot_ste')                 cfg.is_plot_ste = true; end 
+            if ~isfield(cfg, 'plot_bp_filter')              cfg.plot_bp_filter = 'no'; end
+            if ~isfield(cfg, 'ylim_')                       cfg.ylim_ =  [-1.2 2]; end
+            if ~isfield(cfg, 'plot_latency')                cfg.plot_latency = [f.time(1), f.time(end)]; end
+            if ~isfield(cfg, 'event_lines')                 cfg.event_lines = {}; end 
 
-            addOptional(p, 'ylim_', []); addOptional(p, 'clust_electd', []); addOptional(p, 'subtitle_',""); addOptional(p, 'title_', "");
-            addOptional(p, 'sig_timeranges',{}); addOptional(p, 'sig_timeranges_colormap',{}); 
-            addOptional(p, 'bottom_string',{});
-            addOptional(p, 'is_plot_ste', true); addOptional(p, 'is_plot_subs', false);
-            addOptional(p,'plot_bp_filter','no')
-            addOptional(p, 'plot_latency',  [time_(1),time_(end)]); addOptional(p, 'event_lines',  {});
-
-            parse(p, time_,variables_s,data,output_filename, var_colormap,varargin{:});
-            r = p.Results;
+            if ~isfield(cfg, 'elctrds_clusts')              cfg.elctrds_clusts = []; end 
+            if ~isfield(cfg, 'subtitle_')                   cfg.subtitle_ = ""; end 
+            if ~isfield(cfg, 'title_')                      cfg.title_ = {}; end 
+            if ~isfield(cfg, 'bottom_string')               cfg.bottom_string = ""; end 
+            if ~isfield(cfg, 'sig_timeranges')              cfg.sig_timeranges = {}; end 
+            if ~isfield(cfg, 'sig_timeranges_colormaps')     cfg.sig_timeranges_colormaps = {}; end 
             
-            if  ~r.is_plot_ste && ...
-                (size(variables_s,2)==1 || (isstring(r.variables_s{1}) && numel(r.variables_s)==1))
-                r.is_plot_ste = false;
-                r.is_plot_subs = true;
+            if  ~cfg.is_plot_ste && ...
+                (size(variables_s,2)==1 || (isstring(variables_s{1}) && numel(variables_s)==1))
+                cfg.is_plot_ste = false;
+                cfg.is_plot_subs = true;
             end
 
             fig = figure('Visible', 'off','Position', [0, 0, 1000, 800], 'Color', 'white');
 
             subplot('Position', [0.1, 0.35, 0.8, 0.6]);
             % plot variables lines
-            one_div_sqrt_samp_size = 1/sqrt(size(r.data,1));
-            for val_i=1:numel(r.variables_s)
-                if isstring(r.variables_s{val_i}) || ischar(r.variables_s{val_i})
-                    curr_var_val_name =r.variables_s{val_i};
+            one_div_sqrt_samp_size = 1/sqrt(size(data,1));
+            for val_i=1:numel(variables_s)
+                if isstring(variables_s{val_i}) || ischar(variables_s{val_i})
+                    curr_var_val_name =variables_s{val_i};
                 else
-                    curr_var_val_name = num2str(r.variables_s{val_i}.long_s);
+                    curr_var_val_name = num2str(variables_s{val_i}.long_s);
                 end
 
-                curr_plot_data = r.data(:,:,val_i);
-                if ~strcmp(r.plot_bp_filter, 'no')
+                curr_plot_data = data(:,:,val_i);
+                if ~strcmp(cfg.plot_bp_filter, 'no')
                     bpFilt = designfilt('bandpassfir', 'FilterOrder', 100, ...
-                                       'CutoffFrequency1',r.plot_bp_filter(1), ...
-                                       'CutoffFrequency2', r.plot_bp_filter(2), ...
+                                       'CutoffFrequency1',cfg.plot_bp_filter(1), ...
+                                       'CutoffFrequency2', cfg.plot_bp_filter(2), ...
                                         'SampleRate', 250);
                     for i = 1:size(data, 1)
                         curr_plot_data(i, :) = filtfilt(bpFilt, curr_plot_data(i, :));
@@ -1224,35 +1196,35 @@ classdef funcs_
 
                 
                 % r.var_colormap need to keep being N x 3, N=#vars.
-                if(r.is_plot_subs)
+                if(cfg.is_plot_subs)
                     x = squeeze(curr_plot_data);
-                    plot(r.time_,x,'color',[r.var_colormap(val_i,:) 0.3], 'HandleVisibility', 'off'); hold on;
+                    plot(time_,x,'color',[var_colormap(val_i,:) 0.3], 'HandleVisibility', 'off'); hold on;
                 end
-                if(r.is_plot_ste)
+                if(cfg.is_plot_ste)
                     x = squeeze(curr_plot_data);
                     
-                    shadedErrorBar2(r.time_,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',r.var_colormap(val_i,:),'DisplayName',curr_var_val_name,'LineWidth', 1.5},'patchSaturation',0.1); hold on;
+                    shadedErrorBar2(time_,x,{@mean, @(x) one_div_sqrt_samp_size*std(x)},'lineprops',{'Color',var_colormap(val_i,:),'DisplayName',curr_var_val_name,'LineWidth', 1.5},'patchSaturation',0.1); hold on;
                 else
                     mean_subs = squeeze(mean(curr_plot_data,1));
-                    if(r.is_plot_subs)
-                        plot(r.time_,mean_subs,'Color','black','DisplayName',curr_var_val_name,'LineWidth', 1.5); hold on;
+                    if(cfg.is_plot_subs)
+                        plot(time_,mean_subs,'Color','black','DisplayName',curr_var_val_name,'LineWidth', 1.5); hold on;
                     else
-                        plot(r.time_,mean_subs,'Color',r.var_colormap(val_i,:),'DisplayName',curr_var_val_name,'LineWidth', 1.5); hold on;
+                        plot(time_,mean_subs,'Color',var_colormap(val_i,:),'DisplayName',curr_var_val_name,'LineWidth', 1.5); hold on;
                     end
                 end               
             end
 
-            if(r.is_plot_subs)
-                r.ylim_ = r.ylim_ * 1.5;
+            if(cfg.is_plot_subs)
+                cfg.ylim_ = cfg.ylim_ * 1.5;
             end
 
             % plot sig line
-            for i=1:numel(r.sig_timeranges)
-                if ~isempty(r.sig_timeranges{i})
-                    sig_seqs = findNonZeroSequences(r.sig_timeranges{i});
+            for i=1:numel(cfg.sig_timeranges)
+                if ~isempty(cfg.sig_timeranges{i})
+                    sig_seqs = findNonZeroSequences(cfg.sig_timeranges{i});
                     for j=1:numel(sig_seqs)
-                        sig_line_height =   r.ylim_(1) + ((r.ylim_(2) - r.ylim_(1)) / 7) - ((i-1) * 0.05);
-                        curr_colormap = r.sig_timeranges_colormap{i};
+                        sig_line_height =   cfg.ylim_(1) + ((cfg.ylim_(2) - cfg.ylim_(1)) / 7) - ((i-1) * 0.05);
+                        curr_colormap = cfg.sig_timeranges_colormaps{i};
                         plot(sig_seqs{j},sig_line_height*ones(numel(sig_seqs{j})),'Color',curr_colormap{1},'DisplayName','','HandleVisibility', 'off',LineWidth=1.5);
                         hold on;
                         plot(sig_seqs{j},sig_line_height*ones(numel(sig_seqs{j})),'Color',curr_colormap{2},'DisplayName','','HandleVisibility', 'off',LineWidth=1.5,LineStyle='--');
@@ -1261,7 +1233,7 @@ classdef funcs_
                 end
             end
            
-            axis([r.plot_latency(1) r.plot_latency(end) r.ylim_(1) r.ylim_(2)]) 
+            axis([cfg.plot_latency(1) cfg.plot_latency(end) cfg.ylim_(1) cfg.ylim_(2)]) 
             
             legend("Location","northeast","FontSize",12);
             xlabel('Time (s)','FontSize',15)
@@ -1277,24 +1249,24 @@ classdef funcs_
 %             end
 
             % plot event type vertical line
-            if ~isempty(r.event_lines)
-                for event_i=1:numel(r.event_lines)
-                    event_time = r.event_lines{event_i}.('event_time');
-                    event_color = r.event_lines{event_i}.('event_color');
-                    event_text = r.event_lines{event_i}.('event_text');
-                    plot([event_time, event_time], r.ylim_,'Color',event_color, 'LineWidth', 1,'DisplayName','','HandleVisibility', 'off');
-                    text(event_time+(r.plot_latency(2)-r.plot_latency(1))/150, 0+(0.5*r.ylim_(2)), event_text,'Color',event_color, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle','FontSize',10,'LineStyle','--');
+            if ~isempty(cfg.event_lines)
+                for event_i=1:numel(cfg.event_lines)
+                    event_time = cfg.event_lines{event_i}.('event_time');
+                    event_color = cfg.event_lines{event_i}.('event_color');
+                    event_text = cfg.event_lines{event_i}.('event_text');
+                    plot([event_time, event_time], cfg.ylim_,'Color',event_color, 'LineWidth', 1,'DisplayName','','HandleVisibility', 'off');
+                    text(event_time+(cfg.plot_latency(2)-cfg.plot_latency(1))/150, 0+(0.5*cfg.ylim_(2)), event_text,'Color',event_color, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle','FontSize',10,'LineStyle','--');
                 end
             end
             
             % plot electrodes topography
-            if ~isempty(r.clust_electd)
+            if ~isempty(cfg.elctrds_clusts)
                 axes('Position',[.02 .02 .25 .25])
-                cfg = [];
-                cfg.feedback    = 'no';
-                cfg.elec= r.clust_electd{1};
-                layout = ft_prepare_layout(cfg);
-                ft_plot_layout(layout,'label','no','box','no','chanindx',r.clust_electd{2},'pointsize',22);
+                cfg_ftplot = [];
+                cfg_ftplot.feedback    = 'no';
+                cfg_ftplot.elec= cfg.elctrds_clusts{1};
+                layout = ft_prepare_layout(cfg_ftplot);
+                ft_plot_layout(layout,'label','no','box','no','chanindx',cfg.elctrds_clusts{2},'pointsize',22);
                 hold on;
             end
 
@@ -1302,18 +1274,18 @@ classdef funcs_
             % plot text details
             try
                 fig_text_info = sprintf("%s\n\n ___Electrode cluster details___\n%s\n\n___Trials stats___\n%s", ...
-                        r.title_, r.subtitle_,r.bottom_string);
-                if ~strcmp(r.plot_bp_filter, 'no')
-                    fig_text_info = sprintf("%s\n\nBandpass: %.1f,%.1f",fig_text_info,r.plot_bp_filter(1),r.plot_bp_filter(2));
+                        cfg.title_, cfg.subtitle_,cfg.bottom_string);
+                if ~strcmp(cfg.plot_bp_filter, 'no')
+                    fig_text_info = sprintf("%s\n\nBandpass: %.1f,%.1f",fig_text_info,cfg.plot_bp_filter(1),cfg.plot_bp_filter(2));
                 end
                 annotation('textbox', [0.3, 0, 0.95, 0.25],'String', fig_text_info, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', 'EdgeColor', 'none','Interpreter','none', 'FontSize', 8);
             catch
                 % Do nothing if the warning is triggered
             end
 
-            saveas(gcf,sprintf("%s.png",r.output_filename));
+            saveas(gcf,sprintf("%s.png",output_filename));
 %             saveas(gcf,sprintf("%s.svg",r.output_filename));
-            saveas(gcf,sprintf("%s.fig",r.output_filename));
+            saveas(gcf,sprintf("%s.fig",output_filename));
             close;
         end
 

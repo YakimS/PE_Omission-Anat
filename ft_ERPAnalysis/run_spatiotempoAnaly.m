@@ -158,35 +158,43 @@ maxPval = 0.05;
 % 
 % AdaptorOmission_output_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
 % curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig});
-% f.plot_erp_per_contrast_and_sov(f,output_dir,{AOmi,AOmi},{N3,N3},curr_electd_clust ...
-%                 ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines, ...
-%                 'is_plot_subs', true,'plot_bp_filter',cfg.plot_bp_filter);
+% f.plot_erp_per_contrast_and_sov(f,output_dir,{AOmi,AOmi},{N3,N3},curr_electd_clust, cfg);
 
 % %%% Per cond
 output_dir = sprintf("%s\\furanat\\singleERP_O,OR,OF_elec-eachSovClust",output_main_dir); mkdir(output_dir);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},0.05);
-plot_erp_withinSovCond_allSubs(f, {Wnig}, conds, curr_electd_clust, output_dir,cfg)
+for cond_i=1:numel(conds)
+    f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{Wnig},curr_electd_clust, cfg)
+end
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},0.05);
-plot_erp_withinSovCond_allSubs(f, {N2}, conds, curr_electd_clust, output_dir,cfg);
+for cond_i=1:numel(conds)
+    f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{N2},curr_electd_clust, cfg)
+end
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{REM,REM},0.05);
-plot_erp_withinSovCond_allSubs(f, {REM}, conds, curr_electd_clust, output_dir,cfg);
+for cond_i=1:numel(conds)
+    f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{REM},curr_electd_clust, cfg)
+end
 %%
 output_dir = sprintf("%s\\furanat\\ERP-contrast\\OF vs OR vs Baseline",output_main_dir); mkdir(output_dir);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,Wnig}, {AOmiF,Wnig},{AOmiR,Wnig}},curr_electd_clust,"intbOFOR-wn" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N3}, {AOmiF,N3},{AOmiR,N3}},curr_electd_clust,"intbOFOR-N3" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,Wnig}, {AOmiF,Wnig},{AOmiR,Wnig}},curr_electd_clust,"intbOFOR-wn" , cfg);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N3}, {AOmiF,N3},{AOmiR,N3}},curr_electd_clust,"intbOFOR-N3" ,cfg);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmiF,N2},{AOmiR,N2}},curr_electd_clust,"intbOFOR-N2" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmiF,N2},{AOmiR,N2}},curr_electd_clust,"intbOFOR-N2" , cfg);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents" ,cfg);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{REM,REM},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,REM}, {AOmiF,REM},{AOmiR,REM}},curr_electd_clust,"intbOFOR-REM" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,REM}, {AOmiF,REM},{AOmiR,REM}},curr_electd_clust,"intbOFOR-REM" ,cfg);
 %%
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',sprintf("%s\\furanat\\N2_noSSKC",output_main_dir),{intblksmpAblO,AblOmi},{N2,N2},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents-ClusterAblOmi" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents-ClusterAblOmi" , cfg);
 %
 output_dir = sprintf("%s\\furanat\\singleERP_O,OR,OF_elec-wnCluster",output_main_dir); mkdir(output_dir);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
-plot_erp_withinSovCond_allSubs(f, sovs, conds, curr_electd_clust, output_dir,cfg)
+for sov_i=1:numel(sovs)
+    for cond_i=1:numel(conds)
+        f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},sovs{sov_i},curr_electd_clust, cfg)
+    end
+end
 
 % %%% N2 stuff 
 output_dir = sprintf("%s\\furanat\\N2_noSSKC",output_main_dir); mkdir(output_dir);
@@ -194,11 +202,11 @@ curr_electd_clust = "curr_sov_cont_clustersElect";
 run_withinSov_betweenCond_stcp_analysis(f, {N2}, {{intblksmpAblO,AblOmi}},curr_electd_clust,output_dir,maxPval,cfg)
 
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',output_dir,{intblksmpAblO,AblOmi},{N2,N2},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" , cfg);
 
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},maxPval);
 run_withinSov_betweenCond_stcp_analysis(f, {N2}, {{intblksmpAblO,AblOmi}},curr_electd_clust,output_dir,maxPval,cfg)
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" ,cfg);
  
 %%% contrasts
 output_dir = sprintf("%s\\furanat\\REM",output_main_dir); mkdir(output_dir);
@@ -246,7 +254,11 @@ curr_cont_elec = clusts_struct;
 run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,0.05,cfg)
 
 conds = {lastAT,lastAOF};
-plot_erp_withinSovCond_allSubs(f, sovs, conds, clusts_struct, output_dir,cfg)
+for sov_i=1:numel(sovs)
+    for cond_i=1:numel(conds)
+        f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{sovs{sov_i}},clusts_struct, cfg)
+    end
+end
 
 % timerange_plot =[-0.1,5.996];
 % timerange_test =[0.58,4];
@@ -296,8 +308,7 @@ maxPval = 0.05;
 % run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,maxPval,cfg)
 % 
 % curr_electd_clust =  f.get_electdClust(f,'simple_contrast',adaptor_omission_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
-% f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO,AOmi},{N3,N3},curr_electd_clust ...
-%                 ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,"plot_bp_filter",cfg.plot_bp_filter);
+% f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO,AOmi},{N3,N3},curr_electd_clust,cfg);
 
 output_dir = sprintf("%s\\furanat\\ERP-contrast\\OF vs OR",output_main_dir); mkdir(output_dir);
 best_cluster_cont = {AOmiF,AOmiR};
@@ -311,7 +322,11 @@ output_dir = sprintf("%s\\furanat\\ERP-contrast\\O vs Baseline",output_main_dir)
 plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, output_dir,cfg)
 
 % run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,elcdClust_bestCluster,output_dir,cfg)
-% plot_erp_withinSovCond_allSubs(f, sovs, conds, elcdClust_bestCluster, output_dir,cfg)
+% for sov_i=1:numel(sovs)
+%     for cond_i=1:numel(conds)
+%         f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},sovs{sov_i},elcdClust_bestCluster, cfg)
+%     end
+% end
 
 %% RUN TFR Cluster-permu 
 output_dir = sprintf("%s\\TFR_topo\\zscored",output_main_dir); mkdir(output_dir); %
@@ -435,8 +450,8 @@ cfg.event_lines = {omission_event};
 
 f = get_funcs_instant(subs,sovs, intblksmpAblO,ft_cond_input_dir,ft_cond_output_dir);
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, noN2EventsAblOmi},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, AblOmi},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, noN2EventsAblOmi},{N2,N2},electd_clust ,cfg);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, AblOmi},{N2,N2},electd_clust ,cfg);
 
 run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAblO, noN2EventsAblOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
 
@@ -464,8 +479,8 @@ f = get_funcs_instant(subs,sovs, intblksmpAO,ft_cond_input_dir,ft_cond_output_di
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
 
 
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, noN2EventsAO},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, AOmi},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, noN2EventsAO},{N2,N2},electd_clust ,cfg);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, AOmi},{N2,N2},electd_clust ,cfg);
 run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, noN2EventsAO}},'curr_sov_cont_clustersElect',output_dir,cfg)
 run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, AOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
 run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAO, AOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
@@ -473,7 +488,7 @@ run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAOF, noN2EventsAOR}
 
 cluster_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{AOmiF,AOmiR},{Wnig,Wnig});
-f.plot_erp_per_contrast_and_sov(f,output_dir,{noN2EventsAOF, noN2EventsAOR},{N2,N2},electd_clust ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_contrast_and_sov(f,output_dir,{noN2EventsAOF, noN2EventsAOR},{N2,N2},electd_clust ,cfg);
 
 % 
 % noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission without ss&kc", false);
@@ -500,27 +515,18 @@ cfg.event_lines = {adaptor_event,omission_event};
 
 cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2KcompAO,N2}},electd_clust,"BlNokc" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2}},electd_clust,"BlNoss" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2EventsAO,N2}},electd_clust,"BlNoeve" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2KcompAO,N2}},electd_clust,"BlNokc" , cfg);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2}},electd_clust,"BlNoss" ,cfg);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2EventsAO,N2}},electd_clust,"BlNoeve" , cfg);
 
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},electd_clust,"BlWAndWOAllEveTypes" ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines);
+f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},electd_clust,"BlWAndWOAllEveTypes" , cfg);
 %% functions
 
 function run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust,output_dir,maxPval,cfg)
-    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
-    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
-    if ~isfield(cfg, 'is_plot_topoplot')    cfg.is_plot_topoplot = true; end
-    if ~isfield(cfg, 'is_plot_video')       cfg.is_plot_video = false; end
-    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
-    if ~isfield(cfg, 'plot_bp_filter')      cfg.plot_bp_filter = 'no'; end
-
     for sov_i = 1:numel(sovs) 
         cur_contrast_sovs = {sovs{sov_i},sovs{sov_i}};    
         for cont_i=1:numel(contrasts)
-            
-            f.run_STCP_ERP_dependent(f,output_dir, contrasts{cont_i},cur_contrast_sovs, ...
-                cfg.test_latency,cfg.test_latency, cfg.is_plot_topoplot,cfg.is_plot_video)
+            f.run_STCP_ERP_dependent(f,output_dir, contrasts{cont_i},cur_contrast_sovs, cfg)
             
             if (ischar(electd_clust) || isstring(electd_clust)) && strcmp(electd_clust, "curr_sov_cont_clustersElect")
                 curr_electd_clust = f.get_electdClust(f,'simple_contrast',output_dir,contrasts{cont_i},cur_contrast_sovs,maxPval);
@@ -528,19 +534,12 @@ function run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust
                 curr_electd_clust = electd_clust;
             end
 
-            f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,curr_electd_clust ...
-                ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,'plot_bp_filter',cfg.plot_bp_filter);
+            f.plot_erp_per_contrast_and_sov(f,output_dir,contrasts{cont_i},cur_contrast_sovs,curr_electd_clust, cfg);
         end
     end
 end
 
-function run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,electd_clust,output_dir,cfg)
-    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
-    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
-    if ~isfield(cfg, 'is_plot_topoplot')    cfg.is_plot_topoplot = true; end
-    if ~isfield(cfg, 'is_plot_video')       cfg.is_plot_video = false; end
-    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
-    
+function run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,electd_clust,output_dir,cfg)   
     for conds_i=1:numel(conds)
         sovs_pairs = uniquePairs(sovs);
         for sp_i = 1:numel(sovs_pairs) 
@@ -550,34 +549,12 @@ function run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,electd_clust,out
             f.run_STCP_ERP_dependent(f,output_dir, curr_contrast_conds,cur_contrast_sovs, ...
                 cfg.test_latency,cfg.test_latency, cfg.is_plot_topoplot,cfg.is_plot_video);
             
-            f.plot_erp_per_contrast_and_sov(f,output_dir,curr_contrast_conds,cur_contrast_sovs,electd_clust ...
-            ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines)
-        end
-    end
-end
-
-function plot_erp_withinSovCond_allSubs(f, sovs, conds, electd_clust, output_dir,cfg)
-    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
-    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
-    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end 
-    if ~isfield(cfg, 'is_plot_subs')        cfg.is_plot_subs = false; end  
-    if ~isfield(cfg, 'is_plot_ste')         cfg.is_plot_ste = true; end  
-    if ~isfield(cfg, 'plot_bp_filter')      cfg.plot_bp_filter = 'no'; end  
-
-    for sov_i = 1:numel(sovs)
-        for cond_i=1:numel(conds)
-            f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{sovs{sov_i}},electd_clust ...
-                ,'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency,"event_lines",cfg.event_lines,'is_plot_subs', cfg.is_plot_subs, ...
-                'is_plot_ste', cfg.is_plot_ste,'plot_bp_filter',cfg.plot_bp_filter)
+            f.plot_erp_per_contrast_and_sov(f,output_dir,curr_contrast_conds,cur_contrast_sovs,electd_clust)
         end
     end
 end
 
 function plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,electd_clust, output_dir,cfg)
-    if ~isfield(cfg, 'test_latency')        cfg.test_latency = [0, f.time(end)]; end
-    if ~isfield(cfg, 'plot_latency')        cfg.plot_latency = [f.time(1), f.time(end)]; end
-    if ~isfield(cfg, 'event_lines')         cfg.event_lines = {}; end
-
     for cont_i=1:numel(contrasts)
         if contrasts{cont_i}{1}.isBaseline || contrasts{cont_i}{2}.isBaseline
             if contrasts{cont_i}{1}.isBaseline
@@ -585,10 +562,10 @@ function plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elec
             else 
                 non_baselise_cond = 1;
             end
-            f.plot_erp_per_cond_across_sovs(f,output_dir,contrasts{cont_i}{non_baselise_cond},sovs,electd_clust, ...
-                'withinSov_contrast_forSigLine',contrasts{cont_i}, ...
-                'betweenSov_cond_forSigLine', contrasts{cont_i}{non_baselise_cond}, ... 
-                'test_latency', cfg.test_latency,'plot_latency',cfg.plot_latency, 'event_lines',cfg.event_lines);
+
+            cfg.withinSov_contrast_forSigLine = contrasts{cont_i};
+            cfg.betweenSov_cond_forSigLine = contrasts{cont_i}{non_baselise_cond};
+            f.plot_erp_per_cond_across_sovs(f,output_dir,contrasts{cont_i}{non_baselise_cond},sovs,electd_clust, cfg);
         end
     end
 end
