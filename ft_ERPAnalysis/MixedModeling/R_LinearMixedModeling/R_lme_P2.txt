@@ -1,0 +1,187 @@
+Model 1: (1 | sub) 
+Linear mixed model fit by maximum likelihood  ['lmerMod']
+Formula: comp_amp ~ -1 + (1 | sub)
+   Data: data_table
+      AIC       BIC    logLik  deviance  df.resid 
+ 2359.585  2368.294 -1177.793  2355.585       573 
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 1.805   
+ Residual             1.712   
+Number of obs: 575, groups:  sub, 36
+No fixed effect coefficients
+
+
+=================================
+
+Model 2: cond + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: comp_amp ~ -1 + cond + (1 | sub)
+   Data: data_table
+REML criterion at convergence: 2207.207
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.8706  
+ Residual             1.5550  
+Number of obs: 575, groups:  sub, 36
+Fixed Effects:
+condNblT1  condNblT2  condNblT3  condNblT4  
+    2.802      1.230      1.322      1.044  
+
+
+=================================
+
+Model 3: sov + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: comp_amp ~ -1 + sov + (1 | sub)
+   Data: data_table
+REML criterion at convergence: 2219.576
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.8673  
+ Residual             1.5732  
+Number of obs: 575, groups:  sub, 36
+Fixed Effects:
+ sovwn   sovN2   sovN3  sovREM  
+0.6768  2.5022  1.8264  1.3967  
+
+
+=================================
+
+Model 4: sov + cond + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: comp_amp ~ -1 + sov + cond + (1 | sub)
+   Data: data_table
+REML criterion at convergence: 2096.789
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.8866  
+ Residual             1.3989  
+Number of obs: 575, groups:  sub, 36
+Fixed Effects:
+    sovwn      sovN2      sovN3     sovREM  condNblT2  condNblT3  condNblT4  
+    1.879      3.705      3.026      2.599     -1.571     -1.480     -1.759  
+
+
+=================================
+
+Model 5: sov * cond + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: comp_amp ~ -1 + sov * cond + (1 | sub)
+   Data: data_table
+REML criterion at convergence: 2064.436
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.8908  
+ Residual             1.3663  
+Number of obs: 575, groups:  sub, 36
+Fixed Effects:
+           sovwn             sovN2             sovN3            sovREM         condNblT2         condNblT3  
+          1.8118            4.2785            3.2872            1.8321           -1.5143           -1.5508  
+       condNblT4   sovN2:condNblT2   sovN3:condNblT2  sovREM:condNblT2   sovN2:condNblT3   sovN3:condNblT3  
+         -1.4748           -0.5469           -0.7924            1.0970           -0.6770           -0.0263  
+sovREM:condNblT3   sovN2:condNblT4   sovN3:condNblT4  sovREM:condNblT4  
+          0.9850           -1.3415           -0.5103            0.7166  
+
+
+=================================
+
+Comparing Model 1: (1 | sub) with Model 2: cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: comp_amp ~ -1 + (1 | sub)
+models[[pair[2]]]: comp_amp ~ -1 + cond + (1 | sub)
+                  npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    2 2359.6 2368.3 -1177.8   2355.6                        
+models[[pair[2]]]    6 2212.0 2238.1 -1100.0   2200.0 155.6  4  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Comparing Model 1: (1 | sub) with Model 3: sov + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: comp_amp ~ -1 + (1 | sub)
+models[[pair[2]]]: comp_amp ~ -1 + sov + (1 | sub)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    2 2359.6 2368.3 -1177.8   2355.6                         
+models[[pair[2]]]    6 2224.4 2250.6 -1106.2   2212.4 143.16  4  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Comparing Model 2: cond + (1 | sub) with Model 3: sov + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: comp_amp ~ -1 + cond + (1 | sub)
+models[[pair[2]]]: comp_amp ~ -1 + sov + (1 | sub)
+                  npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)
+models[[pair[1]]]    6 2212.0 2238.1 -1100.0   2200.0                    
+models[[pair[2]]]    6 2224.4 2250.6 -1106.2   2212.4     0  0           
+
+
+Comparing Model 3: sov + (1 | sub) with Model 4: sov + cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: comp_amp ~ -1 + sov + (1 | sub)
+models[[pair[2]]]: comp_amp ~ -1 + sov + cond + (1 | sub)
+                  npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    6 2224.4 2250.6 -1106.2   2212.4                        
+models[[pair[2]]]    9 2100.9 2140.1 -1041.5   2082.9 129.5  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Comparing Model 2: cond + (1 | sub) with Model 4: sov + cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: comp_amp ~ -1 + cond + (1 | sub)
+models[[pair[2]]]: comp_amp ~ -1 + sov + cond + (1 | sub)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    6 2212.0 2238.1 -1100.0   2200.0                         
+models[[pair[2]]]    9 2100.9 2140.1 -1041.5   2082.9 117.07  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Comparing Model 4: sov + cond + (1 | sub) with Model 5: sov * cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: comp_amp ~ -1 + sov + cond + (1 | sub)
+models[[pair[2]]]: comp_amp ~ -1 + sov * cond + (1 | sub)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    9 2100.9 2140.1 -1041.5   2082.9                         
+models[[pair[2]]]   18 2084.3 2162.7 -1024.2   2048.3 34.573  9  7.086e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Comparison of all models:
+Data: data_table
+Models:
+models[[1]]: comp_amp ~ -1 + (1 | sub)
+models[[2]]: comp_amp ~ -1 + cond + (1 | sub)
+models[[3]]: comp_amp ~ -1 + sov + (1 | sub)
+models[[4]]: comp_amp ~ -1 + sov + cond + (1 | sub)
+models[[5]]: comp_amp ~ -1 + sov * cond + (1 | sub)
+            npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+models[[1]]    2 2359.6 2368.3 -1177.8   2355.6                          
+models[[2]]    6 2212.0 2238.1 -1100.0   2200.0 155.597  4  < 2.2e-16 ***
+models[[3]]    6 2224.4 2250.6 -1106.2   2212.4   0.000  0               
+models[[4]]    9 2100.9 2140.1 -1041.5   2082.9 129.504  3  < 2.2e-16 ***
+models[[5]]   18 2084.3 2162.7 -1024.2   2048.3  34.573  9  7.086e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Bayes Factors for Model Comparison
+
+              Model                             BF
+[models[[2]]] -1 + cond + (1 | sub)       1.85e+28
+[models[[3]]] -1 + sov + (1 | sub)        3.68e+25
+[models[[4]]] -1 + sov + cond + (1 | sub) 3.54e+49
+[models[[5]]] -1 + sov * cond + (1 | sub) 4.35e+44
+
+* Against Denominator: [models[[1]]] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+

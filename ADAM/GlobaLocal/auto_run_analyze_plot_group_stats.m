@@ -88,64 +88,51 @@ end
 
 %% Average decoding
 
-% results_dir  = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100';
-% plot_dir= 'C:\mvpa\balance_on\plots\resamp100';
-% all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'}; % ,'subset-N2','subset-N3','subset-REM'
-% all_contrasts = {'AOF-vs-AOR','AO-vs-intblksmpAO'}; % 
+% results_dir  = 'C:\mvpa\GL\FirstLevel\RESULTS_resamp100';
+% plot_dir= 'C:\mvpa\GL\plots\resamp100';
+% all_subsets = {'subset-wnight','subset-N1','subset-N2','subset-N3','subset-REM'}; % 
+% all_contrasts = {'expomit-vs-unexpomit'}; 
 
-% results_dir = "C:\loo";
-% plot_dir =  'C:\mvpa\balance_on\plots\loo_resamp100';
-% all_subsets = {'subset-wn','subset-N2','subset-N3','subset-REM'};%,
-% all_contrasts = {'AOF-vs-AOR','AO-vs-intblksmpAO'};
-
-% results_dir  = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100_N2noEve';
-% plot_dir= 'C:\mvpa\balance_on\plots\resamp100';
-% all_subsets = {'subset-N2'}; % ,'subset-N2','subset-N3','subset-REM'
-% all_contrasts = {'noEveAO-vs-intblksmpAO','noEveAOF-vs-noEveAOR'}; % 
-
-results_dir = "C:\loo";
-plot_dir =  'C:\mvpa\balance_on\plots\loo_resamp100';
-all_subsets = {'subset-N2'};%,
-all_contrasts = {'noEveAO-vs-intblksmpAO','noEveAOF-vs-noEveAOR'};
+results_dir = "C:\loo\GL";
+plot_dir =  'C:\mvpa\GL\plots\loo_resamp100';
+all_subsets = {'subset-wn','subset-N1','subset-N2','subset-N3','subset-REM'};
+all_contrasts = {'expomit-vs-unexpomit'}; 
 
 timerange_weights_plot = [500 600];
-timerange_test = 0;      % 0 if no, [250 400] if yes   
+cfg = [];
+cfg.tail = 'both';
+cfg.trainlim = [0,1000]; % [] if no, [250 400] if yes   
+cfg.timelim = [-0,1000]; % [] if no, [250 400] if yes   
+acclim = [.35 .65]; % make is symmetrical around 0.5, so white will signify "chance"
 
-for isDiag_i=1:2
-    if isDiag_i==1
-        acclim = [.46 .57];
-        isDiag = true;
-    else
-        acclim = [.445 .555]; % make is symmetrical around 0.5, so white will signify "chance"
-        isDiag = false;
-    end
+for subset_i=1:numel(all_subsets)
+    curr_subset = all_subsets{subset_i};
     
-    for isRightTail_i=1:2
-        if isRightTail_i==1
-            tail = 'right';
-        else
-            tail = 'both';
-        end
-        for subset_i=1:numel(all_subsets)
-            curr_subset = all_subsets{subset_i};
-            subset_dir = sprintf('%s\\%s',results_dir,curr_subset);
-            mvpa_stats=get_avg_decoding(subset_dir, tail,isDiag,timerange_test); 
-            for contrast_i=1:numel(all_contrasts)
-                contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {all_contrasts{contrast_i}}, 'UniformOutput', false);
-                plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-                save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',curr_subset,all_contrasts{contrast_i},isDiag,tail);
-                save_plot_and_close_fig(plot_dir,save_file_name)
+    cfg.wanted_dir = sprintf('%s\\%s',results_dir,curr_subset);
+    cfg.isDiag = true;
+    mvpa_stats_diag =get_avg_decoding(cfg); 
+    cfg.isDiag = false;
+    mvpa_stats_nodiag =get_avg_decoding(cfg); 
+    for contrast_i=1:numel(all_contrasts)
+        contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {all_contrasts{contrast_i}}, 'UniformOutput', false);
+        plot_decoding(contrasts_withsubset,mvpa_stats_diag,acclim)
+        save_file_name = sprintf('%s_%s_decode_diag-%d',curr_subset,all_contrasts{contrast_i},true);
+        save_plot_and_close_fig(plot_dir,save_file_name)
+
+        plot_decoding(contrasts_withsubset,mvpa_stats_nodiag,acclim)
+        save_file_name = sprintf('%s_%s_decode_diag-%d',curr_subset,all_contrasts{contrast_i},false);
+        save_plot_and_close_fig(plot_dir,save_file_name)
+
+
 %                 plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
-            end
+    end
 %             if numel(all_contrasts) >1 % plot all in one png
 %                     contrasts_withsubset = cellfun(@(x) [all_subsets{subset_i}, '_', x], all_contrasts, 'UniformOutput', false);
 %                     plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-%                     save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',subset_name,'all',isDiag,tail);
+%                     save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',subset_name,'all',isDiag, 'both');
 %                     save_plot_and_close_fig(plot_dir,save_file_name)
 %                     plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
 %             end
-        end
-    end
 end
 
 %% COMPARE 2 subsets difference STATS
@@ -238,20 +225,18 @@ function plot_subPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name_
     end
 end
 
-function mvpa_stats=get_avg_decoding(dir,tail,isDiag,timerange)
-    % COMPUTE THE DIAGONAL DECODING RESULTS FOR ALL EEG COMPARISONS
-    cfg = [];                                    % clear the config variable
-    cfg.wanted_dir = dir;           % path to first level results 
-    cfg.mpcompcor_method = 'cluster_based';      % multiple comparison correction method
-    if isDiag
-        cfg.reduce_dims = 'diag';                    % train and test on the same points
-    end
-    cfg.tail             = tail;
-    if timerange
-        cfg.trainlim = timerange;                    % specify a 250-400 ms interval in the training data
-        cfg.reduce_dims = 'avtrain';                 % average over that training interval 
-    end
+function mvpa_stats=get_avg_decoding(cfg)   
+    if ~isfield(cfg, 'wanted_dir')           error('cfg must include dir field with filename'); end
+    if ~isfield(cfg, 'mpcompcor_method')        cfg.mpcompcor_method = 'cluster_based'; end
+    if ~isfield(cfg, 'isDiag')                  cfg.isDiag = 0;  end
+    if ~isfield(cfg, 'tail')                    cfg.tail = 'both'; end
+    if ~isfield(cfg, 'trainlim')                cfg.trainlim = false; end
+    if ~isfield(cfg,'cfg.testlim')              cfg.testlim = cfg.trainlim; end
+    if ~isfield(cfg, 'timelim')                 cfg.timelim = {}; end 
 
+    if cfg.isDiag
+        cfg.reduce_dims = 'diag';                    % train and test on the same time points
+    end
     mvpa_stats = adam_compute_group_MVPA(cfg);
 end
 

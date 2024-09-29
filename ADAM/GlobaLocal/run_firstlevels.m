@@ -1,36 +1,27 @@
 
-input_dir = 'C:\mvpa\preprocessed\N2_noSleepEvents'; 
-main_output_dir = 'C:\mvpa\balance_on\FirstLevel';
-loo_output_dir = 'C:\loo'; % this should be as short as possible! otherwise the file path will be too long
-subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-contrasts = {{'noEveAOF','noEveAOR'},{'noEveAO','intblksmpAO'}};
-between_sovs_conds = {'noEveAO'};
-sovs = {'wnight','N2','N3','REM'};
-sovs = {'N2'};
-conds_string = {'noEveAOF','noEveAOR','noEveAO','intblksmpAOF','intblksmpAOR','intblksmpAO'};
+input_dir = 'C:\mvpa\GL\preprocessed';
+main_output_dir = 'C:\mvpa\GL\FirstLevel';
+
+loo_output_dir = 'C:\loo\GL'; % this should be as short as possible! otherwise the file path will be too long
+contrasts = {{'expomit','unexpomit'}};
+sovs = {'wnight','N1','N2','N3','REM'};
+conds_string = {'expomit','unexpomit'};
+subs = {'1989RTKS','1991AGPE','1993AGRI','1993MRAB','1994LUAA','1994MREG','1994PTBV','1995ALKL','1995DNFR','1995GBKA','1995PTAF','1995RMBN','1995RTKL','1996RTHL','1996USRY','1997AIWG','1997ALKL','1997KRGT','1997MRBAE','1997RMDB','1998AADE','1998BRTI','1998IAKN','1999RTLY','1999VTSA','2000DLAL','2000UEAB'};
 
 
 %%%%%%%%%%%%%%%%%%%%%%% my design %%%%%%%%%%%%%%%%%%%%%%
 %                               
 %                                 factor "ses"
-%                             wake_morning    wake_night        N1       N2      N3        REM
+%                                    wake_night        N1               N2       N3     REM
 % 
-% factor          AOF             1               2             3        4       5          6             
-% "trialtype"     AOR             7               8             9        10      11         12  
-%                 AO              13              14            15       16      17         18
-%                 intblksmpAOF    19              20            21       22      23         24
-%                 intblksmpAOR    25              26            27       28      29         30
-%                 intblksmpAO     31              32            33       34      35         36   
+% factor          expomit               1               2             3        4       5                 
+% "trialtype"     unexpomit             6               7             8        9      10         
+
+%                   
 data_table = [
-    1,  4, 5, 6;
-    7,  10, 11, 12;
-    13, 16, 17, 18;
-    19, 22, 23, 24;
-    25, 28, 29, 30;
-    31, 34, 35, 36];
+    1,  2, 3, 4, 5;
+    6,  7, 8, 9, 10];
 
-
-data_table = [4;10;16;22;28;34];
 symbol_factorArray = array2table(data_table, 'RowNames',conds_string , 'VariableNames', sovs);
 
 %%  regualr + random perm (not leave-one-out)
@@ -89,7 +80,7 @@ end
 tic
 for cont_i=1:numel(contrasts_structs)
     for sub_i=1:numel(subs)
-        sub_input_filename = sprintf("s_%s_allSovs.mat",subs{sub_i});
+        sub_input_filename = sprintf("s-%d_allSovs.mat",sub_i);
         splitted = split(contrasts_structs(cont_i).name, "_");
         subset_name = splitted{1};
         contrast_name = splitted{2};
@@ -108,17 +99,17 @@ end
 % tocBytes(gcp)
 toc
 %%  regualr (not leave-one-out)
-output_dir = sprintf("%s\\RESULTS_resamp100_N2noEve",main_output_dir);
+output_dir = sprintf("%s\\RESULTS_resamp100",main_output_dir);
 
 cfg = [];                                  
 cfg.datadir = input_dir;                  
 cfg.model = 'BDM';                         % backward decoding ('BDM') or forward encoding ('FEM')
 cfg.raw_or_tfr = 'raw';                    % classify raw or time frequency representations ('tfr')
-cfg.nfolds = 10;                            % for test 3
+cfg.nfolds = 10;%10;                            % for test 3
 cfg.class_method = 'AUC';             	   
 cfg.crossclass = 'yes';                    % whether to compute temporal generalization
 cfg.channelpool = 'ALL_NOSELECTION';       
-cfg.resample = 100;                         % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
+cfg.resample = 100;%100;                         % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
 cfg.save_confidence = 'yes';
 contrasts_structs = struct('name', {}, 'cond1', {}, 'cond2', {});
 
@@ -164,7 +155,7 @@ end
 % tic
 for cont_i=1:numel(contrasts_structs)
     for sub_i=1:numel(subs)
-        sub_input_filename = sprintf("s_%s_allSovs.mat",subs{sub_i});
+        sub_input_filename = sprintf("s-%d_allSovs.mat",sub_i);
         splitted = split(contrasts_structs(cont_i).name, "_");
         subset_name = splitted{1};
         contrast_name = splitted{2};
@@ -195,7 +186,7 @@ cfg.crossclass = 'yes';
 cfg.balance_events = 'yes';     % for within-class balancing
 cfg.balance_classes = 'yes';    % for cross-class balancing
 cfg.channelpool = 'ALL_NOSELECTION';
-cfg.resample = 100;             % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
+cfg.resample = 100;%100;             % downsample, "no" or sampling rate units(<250hz) (useful for temporal generalization). For test 30
 cfg.save_confidence = 'yes';
 
 for cont_i=1:numel(contrasts)
@@ -206,14 +197,13 @@ for cont_i=1:numel(contrasts)
         end
         sov_input_filename = sprintf("loo_%s.mat",curr_sov);
         for sub_i=1:numel(subs)
-            curr_sub = subs{sub_i};
     
-            subs_numbers = str2double(subs);
-            indices_to_include = ~ismember(subs_numbers, str2double(curr_sub));
+            subs_numbers = 1:numel(subs);
+            indices_to_include = ~ismember(subs_numbers, sub_i);
             class1.train = subs_numbers(indices_to_include) + 50;  % OF
             class2.train = subs_numbers(indices_to_include);  % OR
-            class1.test = str2num(curr_sub) + 50; % OF
-            class2.test = str2num(curr_sub); % OR
+            class1.test = sub_i + 50; % OF
+            class2.test = sub_i; % OR
             cfg.class_spec{1} = cond_string(class1.train ,';', class1.test);
             cfg.class_spec{2} = cond_string(class2.train ,';', class2.test);
     
@@ -234,7 +224,7 @@ function run_adam_MVPA_firstlevel_loo(sov_input_filename, output_path,cfg)
 end
 
 function run_adam_MVPA_firstlevel(sub_input_filename, cond_1, cond_2, path,cfg)
-    cfg.filenames = file_list_restrict({sub_input_filename},'s_');             % specifies filenames (EEG in this case)
+    cfg.filenames = file_list_restrict({sub_input_filename},'s-');             % specifies filenames (EEG in this case)
     cfg.class_spec{1} = cond_1;  % the first stimulus class
     cfg.class_spec{2} = cond_2;  % the second stimulus class
     cfg.outputdir = path;  % output location

@@ -5,45 +5,35 @@ addpath 'D:\matlab_libs\eeglab2023.0'
 eeglab nogui;
 
 %%
-ft_input_dir = 'D:\OExpOut\processed_data\ft_subSovCond';
-output_adamformat_dir = 'C:\mvpa\preprocessed\N2_noSleepEvents';
+ft_input_dir = 'D:\GlobalLocal\ft_subSovCond';
+output_adamformat_dir = 'C:\mvpa\GL\preprocessed';
 
 %% Regular. No Leave-ove-out design
 
-subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-sovs = {'wake_morning','wake_night','N1','N2','N3','REM'};
-sovs = {'wake_night','N2','N3','REM'};
-sovs = {'N2'};
-conds_string = {'noN2EventsAOF','noN2EventsAOR','noN2EventsAO','intblksmpAOF','intblksmpAOR','intblksmpAO'};
-latency = [0.480 1.160];
+subs = {'1989RTKS','1991AGPE','1993AGRI','1993MRAB','1994LUAA','1994MREG','1994PTBV','1995ALKL','1995DNFR','1995GBKA','1995PTAF','1995RMBN','1995RTKL','1996RTHL','1996USRY','1997AIWG','1997ALKL','1997KRGT','1997MRBAE','1997RMDB','1998AADE','1998BRTI','1998IAKN','1999RTLY','1999VTSA','2000DLAL','2000UEAB'};
+sovs = {'wake_night','N1','N2','N3','REM'};
+conds_string = {'expomit','unexpomit'};
+latency = [-1 1];
 
 
 %%%%%%%%%%%%%%%%%%%%%%% my design %%%%%%%%%%%%%%%%%%%%%%
 %                               
 %                                 factor "ses"
-%                                    wake_morning    wake_night        N1       N2      N3        REM
+%                                    wake_night        N1               N2       N3     REM
 % 
-% factor          noN2KcompAOF             1               2             3        4       5          6             
-% "trialtype"     noN2KcompAOR             7               8             9        10      11         12  
-%                 noN2KcompAO              13              14            15       16      17         18
-%                 intblksmpAOF              19              20            21       22      23         24
-%                 intblksmpAOR              25              26            27       28      29         30
-%                 intblksmpAO               31              32            33       34      35         36   
+% factor          expomit               1               2             3        4       5                 
+% "trialtype"     unexpomit             6               7             8        9      10         
+
 %                   
 data_table = [
-    1,  4, 5, 6;
-    7,  10, 11, 12;
-    13, 16, 17, 18;
-    19, 22, 23, 24;
-    25, 28, 29, 30;
-    31, 34, 35, 36];
+    1,  2, 3, 4, 5;
+    6,  7, 8, 9, 10];
 
-data_table = [4;10;16;22;28;34];
 
 symbol_factorArray = array2table(data_table, 'RowNames',conds_string , 'VariableNames', sovs);
 
 for sub_ind=1:size(subs,2)
-    mat_file_output_name =   sprintf('s_%s_allSovs.mat',subs{sub_ind});
+    mat_file_output_name =   sprintf('s-%d_allSovs.mat',sub_ind);
     if isOutputFile(mat_file_output_name, output_adamformat_dir)  continue; end 
 
     iter = 1;
@@ -60,10 +50,6 @@ for sub_ind=1:size(subs,2)
             cfg.toilim =latency;
             index = find(abs( ft_mat.time{1} - latency(1)) < 1e-6);
             ft_mat = ft_redefinetrial(cfg, ft_mat);
-            cfg = [];
-            cfg.offset = -(index-1);
-            ft_mat = ft_redefinetrial(cfg, ft_mat);
-
             subs_conds_ft{iter} = ft_mat;
             iter =iter+1;
         end
@@ -83,31 +69,42 @@ for sub_ind=1:size(subs,2)
     parsave(sprintf("%s\\%s",output_adamformat_dir,mat_file_output_name),merged_data);
 end
 
+%%%%%%%% save subject indexes
+outputFile = sprintf("%s\\subjects_indexes.txt",output_adamformat_dir); 
+fid = fopen(outputFile, 'w');
+if fid == -1   error('Cannot open file for writing: %s', outputFile); end
+fprintf(fid, 'Index\tString\n');
+for i = 1:length(subs)
+    fprintf(fid, '%d\t%s\n', i, subs{i});
+end
+fclose(fid);
+fprintf('File saved successfully: %s\n', outputFile);
+
 %% Leave-ove-out design
 %%%%%%%%%%%%%%%%%%%%%%% my design (for each sov) %%%%%%%%%%%%%%%%%%%%%%
 %                               
-%                                 factor "block_type"
-%                                OF                OR 
+%                   factor "block_type"
+%                  OF                OR 
 % 
-% factor          8              58              8               
-% "subnum"        9              59              9               
-%                 10             60              10                            
-%                 11             61              11
-%                 13             63              13    
+% factor          1              51                  
+% "subnum"        2              52                 
+%                 3              53                                  
+%                 4              54       
+%                 5              55   
 
 
-subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
-sovs = {'wake_night','N2','N3','REM'};
-sovs = {'N2'};
-conds_string = {'noN2EventsAOF','noN2EventsAOR'};
-sub_nums = str2double(subs);
-OF_vals = 50 + sub_nums;
-OR_vals = sub_nums;
+subs = {'1989RTKS','1991AGPE','1993AGRI','1993MRAB','1994LUAA','1994MREG','1994PTBV','1995ALKL','1995DNFR','1995GBKA','1995PTAF','1995RMBN','1995RTKL','1996RTHL','1996USRY','1997AIWG','1997ALKL','1997KRGT','1997MRBAE','1997RMDB','1998AADE','1998BRTI','1998IAKN','1999RTLY','1999VTSA','2000DLAL','2000UEAB'};
+sovs = {'wake_night','N1','N2','N3','REM'}; 
+conds_string = {'expomit','unexpomit'};
+latency = [-1 1];
+
+
+OF_vals = 50 + (1:numel(subs));
+OR_vals = (1:numel(subs));
 data_table_LOO = [OF_vals', OR_vals'];
 disp('data_table:');
 disp(data_table_LOO);
 symbol_factorArray_LOO = array2table(data_table_LOO, 'RowNames',subs , 'VariableNames', conds_string);
-latency = [0.480 1.160];
 
 
 for sov_i=1:size(sovs,2)
@@ -139,9 +136,6 @@ for sov_i=1:size(sovs,2)
             cfg  =[];
             cfg.toilim =latency;
             index = find(abs( ft_mat.time{1} - latency(1)) < 1e-6);
-            ft_mat = ft_redefinetrial(cfg, ft_mat);
-            cfg = [];
-            cfg.offset = -(index-1);
             ft_mat = ft_redefinetrial(cfg, ft_mat);
 
             subs_conds_ft{iter} = ft_mat;

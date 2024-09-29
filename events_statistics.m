@@ -32,9 +32,9 @@ end
 
 
 %% per cond, create trials table per sov,sub
-subs = {'08','09','10','11','13','14','15','16','17','19','20','21','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
+subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
 sovs = {'wn','N1','N2','N3','REM','tREM','pREM'};
-conds = {'O','OF','OR','intbkMid'};
+conds = {'AO','AOF','AOR'};
 input_folder_path = 'D:\OExpOut\processed_data\ft_processed';
 outputPath = 'D:\OExpOut\event_statistics';
 
@@ -88,7 +88,6 @@ avgTimeBeforeBGINAll = zeros(5, numSubjects);
 avgTimeAfterBGINAll = zeros(5, numSubjects);
 avgTimeTrialAll = zeros(5, numSubjects);
 avgTimeAfterLastPairAll = zeros(5, numSubjects);
-
 
 for sub_i = 1:numel(subs)
     file_pattern = fullfile(input_set_dir, sprintf('*%s*.set',subs{sub_i}));

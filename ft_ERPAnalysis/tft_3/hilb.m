@@ -10,7 +10,7 @@ pREM = struct(); pREM.import_s = "pREM"; pREM.short_s = "pREM"; pREM.long_s = "p
 Wnig = struct(); Wnig.import_s = "wake_night"; Wnig.short_s = "wn"; Wnig.long_s = "Wake Pre";
 Wmor = struct(); Wmor.import_s = "wake_morning"; Wmor.short_s = "wm"; Wmor.long_s = "Wake Post";
 
-% [-0.1, 0.448]
+% [-0.1, 0.58]
 Omi = struct(); Omi.import_s = "O"; Omi.short_s = "O"; Omi.long_s = "Omission";
 OmiR = struct(); OmiR.import_s = "OR"; OmiR.short_s = "OR"; OmiR.long_s = "Omission Random";
 OmiF = struct(); OmiF.import_s = "OF"; OmiF.short_s = "OF"; OmiF.long_s = "Omission Fixed";
@@ -26,7 +26,7 @@ libs_dir = 'D:\matlab_libs';
 %%%%%%
 
 subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'}; 
-% subs = {'08','09','10','11'};
+subs = {'08','09','10','11'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
 restoredefaultpath
@@ -46,7 +46,7 @@ sovs = {Wnig,N2,N3,REM};
 examp_cond = Omi;
 
 curr_sov_subs = sub_exclu_per_sov(subs, sovs,examp_cond);
-imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir); 
+imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir,-0.1:0.004:0.58); 
 timelock = imp.get_cond_timelocked(imp,examp_cond,sovs{1});
 electrodes = timelock{1}.label;
 time = timelock{1}.time;
@@ -108,14 +108,14 @@ end
 %%  over specific set of electd, avg sub. Similar to clusterElla process
 channels_selection = {'E46','E47','E52','E53','E37'};%; % left-posterior {'E46','E47','52','53','37'}, mid-cent {'Cz','31','80','55','7','106'}
 
-cond1_subfreqtime_tfr_hilb= zeros([numel(subs),numel(freqbin_minusone),138]);
-cond2_subfreqtime_tfr_hilb= zeros([numel(subs),numel(freqbin_minusone),138]);
-cond3_subfreqtime_tfr_hilb= zeros([numel(subs),numel(freqbin_minusone),138]);
+cond1_subfreqtime_tfr_hilb= zeros([numel(subs),numel(freqbin_minusone),170]);
+cond2_subfreqtime_tfr_hilb= zeros([numel(subs),numel(freqbin_minusone),170]);
+cond3_subfreqtime_tfr_hilb= zeros([numel(subs),numel(freqbin_minusone),170]);
 
 [~, elec_ind] = ismember(channels_selection, wn_O_raw{1}.('label'));
 for i=1:numel(cond1_subs_hilb_zsc_chanFreqTime)
     cond1_subfreqtime_tfr_hilb(i,:,:) = squeeze(mean(cond1_subs_hilb_zsc_chanFreqTime{i}(elec_ind,:,:),1));
-    cond2_subfreqtime_tfr_hilb(i,:,:) = squeeze(mean(cond2_subs_hilb_zsc_chanFreqTime{i}(elec_ind,:,:),1));
+%     cond2_subfreqtime_tfr_hilb(i,:,:) = squeeze(mean(cond2_subs_hilb_zsc_chanFreqTime{i}(elec_ind,:,:),1));
     cond3_subfreqtime_tfr_hilb(i,:,:) = squeeze(mean(cond3_subs_hilb_zsc_chanFreqTime{i}(elec_ind,:,:),1));
 end
 
@@ -127,11 +127,10 @@ new_elec.chanunit = old_elec.chanunit(1,:);
 new_elec.elecpos = old_elec.elecpos(1,:);
 new_elec.label = old_elec.label(1,:);
 
-
 data1 = struct();
 data2 = struct();
 data1.aaa = reshape(cond1_subfreqtime_tfr_hilb, [1,size(cond1_subfreqtime_tfr_hilb)]);
-data2.aaa = reshape(cond2_subfreqtime_tfr_hilb, [1,size(cond2_subfreqtime_tfr_hilb)]);
+data2.aaa = reshape(cond3_subfreqtime_tfr_hilb, [1,size(cond3_subfreqtime_tfr_hilb)]);
 data1.elec =new_elec;
 data1.elec = new_elec;
 data1.label = {'E2'};
@@ -185,15 +184,15 @@ stats = ft_freqstatistics(cfg,data1,data2);
 % box off;ylim([-1.2 1.2]);
 
 currcond_chanFreqTime_cond1 = cond1_subs_hilb_zsc_chanFreqTime;
-currcond_chanFreqTime_cond2 = cond2_subs_hilb_zsc_chanFreqTime;
+currcond_chanFreqTime_cond3 = cond3_subs_hilb_zsc_chanFreqTime;
 timefreq_meanOverSubs_cond1 = zeros([numel(freqbin_minusone),numel(time)]);
-timefreq_meanOverSubs_cond2 = zeros([numel(freqbin_minusone),numel(time)]);
+timefreq_meanOverSubs_cond3 = zeros([numel(freqbin_minusone),numel(time)]);
 for sub_i=1:numel(subs)
     timefreq_meanOverSubs_cond1 = timefreq_meanOverSubs_cond1 + squeeze(mean(currcond_chanFreqTime_cond1{sub_i}(elec_ind,:,:),1));
-    timefreq_meanOverSubs_cond2 = timefreq_meanOverSubs_cond2 + squeeze(mean(currcond_chanFreqTime_cond2{sub_i}(elec_ind,:,:),1));
+    timefreq_meanOverSubs_cond3 = timefreq_meanOverSubs_cond3 + squeeze(mean(currcond_chanFreqTime_cond3{sub_i}(elec_ind,:,:),1));
 end
 timefreq_meanOverSubs_cond1 = timefreq_meanOverSubs_cond1/numel(subs);
-timefreq_meanOverSubs_cond2 = timefreq_meanOverSubs_cond2/numel(subs);
+timefreq_meanOverSubs_cond3 = timefreq_meanOverSubs_cond3/numel(subs);
 
 mat = timefreq_meanOverSubs_cond1;
 f = figure;
@@ -221,6 +220,9 @@ for i=1:numel(new_cond1_tfr_hilb)
     new_cond1_tfr_hilb{i}.powspctrm = cond1_subs_hilb_zsc_chanFreqTime{i};
     new_cond2_tfr_hilb{i}.powspctrm = cond3_subs_hilb_zsc_chanFreqTime{i};
 
+    new_cond1_tfr_hilb{i}.time = wn_O_timelock{1}.time;
+    new_cond2_tfr_hilb{i}.time = wn_O_timelock{1}.time;
+
     new_cond1_tfr_hilb{i}.freq = freqbin_minusone;
     new_cond2_tfr_hilb{i}.freq = freqbin_minusone;
 
@@ -244,7 +246,7 @@ powspctrm_cond2_avg = powspctrm_cond2_avg/ numel(new_cond1_tfr_hilb);
 
 cfg = [];
 cfg.channel          = channels_selection;
-cfg.latency          = [-0.1 0.448];
+cfg.latency          = [-0.1 0.58];
 cfg.frequency        = [freqbin(1),freqbin(end)];
 % cfg.avgoverchan      = 'yes' ;      
 cfg.method           = 'montecarlo';
@@ -342,13 +344,16 @@ for i=1:numel(new_cond1_tfr_hilb)
     new_cond1_tfr_hilb{i}.powspctrm = cond1_subs_hilb_zsc_chanFreqTime{i};
     new_cond2_tfr_hilb{i}.powspctrm = cond3_subs_hilb_zsc_chanFreqTime{i};
 
+    new_cond1_tfr_hilb{i}.time = wn_O_timelock{1}.time;
+    new_cond2_tfr_hilb{i}.time = wn_O_timelock{1}.time;
+
      new_cond1_tfr_hilb{i} = rmfield(new_cond1_tfr_hilb{i},'cfg');
      new_cond2_tfr_hilb{i} = rmfield(new_cond2_tfr_hilb{i},'cfg');
 end
 
 cfg = [];
 % cfg.channel          = {'EEG'};
-cfg.latency          = [0 0.448];
+cfg.latency          = [0 0.58];
 cfg.frequency        = [13 30];
 cfg.avgoverfreq = 'yes' ;
 cfg.method           = 'montecarlo';
@@ -360,7 +365,7 @@ cfg.minnbchan        = 2;
 cfg.tail             = 0;
 cfg.clustertail      = 0;
 cfg.alpha            = 0.025;
-cfg.numrandomization = 1000;
+cfg.numrandomization = 300;
 cfg.neighbours  = imp.get_neighbours(imp); % defined as above
 
 subj_num = numel(subs);
@@ -386,7 +391,7 @@ cfg.alpha  = 0.025;
 cfg.parameter = 'stat';
 cfg.zlim   = [-5 5];
 cfg.layout =  ft_read_sens('GSN-HydroCel-129.sfp');
-cfg.toi = -0.1:0.04:0.448;
+cfg.toi = -0.1:0.04:0.58;
 cfg.subplotsize = [4,4]; 
 cfg.highlightsizeseries     = [4 4 4 4 4];
 cfg.style              = 'straight';      %     colormap only. Defualt - colormap and conture lines
