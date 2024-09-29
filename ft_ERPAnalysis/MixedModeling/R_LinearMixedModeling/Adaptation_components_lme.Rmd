@@ -1,0 +1,247 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+# run twice 
+library(Matrix)
+library(lme4)
+library(lmtest)
+library(dplyr)
+library(parallel)
+library(bayestestR)
+library(glmmTMB)
+```
+
+```{r}
+output_file_name <- "R_lme_N100.txt" # Replace
+data_table <- read.csv("D:\\OExpOut\\adapt_res\\comp\\N100_dataToR.csv")  # Replace with your actual file path
+
+# Convert variables to factors:
+data_table$sov <- factor(data_table$sov, levels = c('wn', 'N2', 'N3', 'REM'), ordered = FALSE)
+data_table$sub <- factor(data_table$sub, ordered = FALSE)
+data_table$cond <- factor(data_table$cond, levels = c('NblT1', 'NblT2', 'NblT3', 'NblT4'), ordered = FALSE)
+data_table$comp_amp <- as.numeric(data_table$comp_amp)  # Convert comp_amp to numeric
+
+#### Remove outliers:
+std_to_remove_outliers <- 4 
+mean_comp_amp <- mean(data_table$comp_amp, na.rm = TRUE)
+sd_comp_amp <- sd(data_table$comp_amp, na.rm = TRUE)
+outliers <- data_table[abs(data_table$comp_amp - mean_comp_amp) > std_to_remove_outliers * sd_comp_amp, ]
+print("Details of removed outliers:")
+print(outliers)
+data_table <- data_table[abs(data_table$comp_amp - mean_comp_amp) <= std_to_remove_outliers * sd_comp_amp, ]
+```
+```{r}
+# Yoels help?
+# Model Fitting Using glmmTMB with tweedie Distribution---
+model_tweedie <- glmmTMB(comp_amp ~ sov * cond + (1 | sub), data = data_table,family = tweedie(link = "log"))
+model_nor <- glmmTMB(comp_amp ~ sov * cond + (1 | sub), data = data_table,family = gaussian)
+
+
+# Extract the Tweedie power parameter 
+# would be between 1-2 not normal. Normal is 0
+print('model_tweedie log model')
+power_param <- family_params(model_tweedie)
+print(power_param)
+
+print('gaussian model')
+# Extract the Gauusain power parameter - sanity check should be 0 for gaussian
+power_param <- family_params(model_nor)
+print(power_param)
+
+
+print(summary(model_tweedie))
+print(summary(model_nor))
+
+print(summary(anova(model_tweedie,model_nor)))
+
+bayes_out_tweedie <- bayesfactor_models(model_tweedie, denominator = 1)
+bayes_out_nor <- bayesfactor_models(model_nor, denominator = 1)
+
+# Print the inverse Bayes factor values for easier interpretation
+print(1 / as.numeric(bayes_out_tweedie))
+print(1 / as.numeric(bayes_out_nor))
+
+
+bayes_model_comparison <- bayesfactor_models(model_tweedie,model_nor)
+print(bayes_model_comparison)
+
+```
+
+```{r}
+# Compare the models using AIC
+anova(row_glmmTMB, num_glmmTMB, row_num_glmmTMB,baseline_sbj_glmmTMB)
+
+
+# Calculate Bayes factors for the models
+library(bayestestR)
+bayes_out_glmmTMB <- bayesfactor_models(row_glmmTMB, num_glmmTMB, row_num_glmmTMB,baseline_sbj_glmmTMB, denominator = 4)
+
+# Print the inverse Bayes factor values for easier interpretation
+print(1 / as.numeric(bayes_out_glmmTMB))
+
+# Model Fitting Using glmmTMB with Gaussian Distribution------------
+
+# Model 1: Random effect of SBJ_idx only
+baseline_sbj_glmmTMB_nor <- glmmTMB(var_convex_hull ~ 1 + (1 | SBJ_idx), 
+                                    data = filtered_df, 
+                                    family = gaussian)
+
+# Model 2: Fixed effect of Row_Number (bin) and random effect of SBJ_idx
+row_glmmTMB_nor <- glmmTMB(var_convex_hull ~ Row_Number + (1 | SBJ_idx), 
+                           data = filtered_df, 
+                           family = gaussian)
+
+# Model 3: Fixed effect of Row_Number (bin) and Number of items and random effect of SBJ_idx
+row_num_glmmTMB_nor <- glmmTMB(var_convex_hull ~ Row_Number + num_presses + (1 | SBJ_idx), 
+                               data = filtered_df, 
+                               family = gaussian)
+
+# Model 4: Fixed effect of Number of items and random effect of SBJ_idx
+num_glmmTMB_nor <- glmmTMB(var_convex_hull ~ num_presses + (1 | SBJ_idx), 
+                           data = filtered_df, 
+                           family = gaussian)
+
+# Extract the Gauusain power parameter - sanity check should be zero for gaussian
+power_param <- family_params(num_glmmTMB_nor)
+print(power_param)
+
+# Compare the models using AIC
+anova(row_glmmTMB_nor, num_glmmTMB_nor, row_num_glmmTMB_nor,baseline_sbj_glmmTMB_nor)
+```
+
+
+
+```{r}
+#### Manual normality testing of the residuals
+
+model <- lmer(comp_amp ~ -1 + sov * cond + (1 | sub), data = data_table)
+qqnorm(residuals(model))
+qqline(residuals(model))
+plot(model, resid(., type = "pearson") ~ fitted(.), abline = 0)
+print(shapiro.test(residuals(model)))
+
+# If the Q-Q plot shows points roughly along the reference line, the residuals are approximately normally distributed.
+# If the plot of residuals versus fitted values shows no clear pattern (random scatter), homoscedasticity is assumed.
+
+# For the Shapiro-Wilk test:
+# If p-value > 0.05, the residuals are normally distributed (normality assumption is met).
+# If p-value <= 0.05, the residuals deviate significantly from normality (consider data transformation or different model).
+
+# The normality of residuals is model-specific; different models might have different residual distributions.
+
+
+
+############### If not normal, understaמd the shape #############
+plot(density(data_table$comp_amp), main = "Density of comp_amp", xlab = "comp_amp")
+plot(density(residuals(model)), main = "Density of the model residuals")
+
+```
+
+
+
+```{r}
+# Define function to perform analysis on the LME model
+analyze_lme_model <- function(lme_model) {
+  # Shapiro-Wilk test for normality of residuals
+  print(shapiro.test(residuals(lme_model)))
+  
+  # Function to extract the fixed effects estimates from the model
+  fixed_effects <- function(model) {
+    if (length(fixef(model)) == 0) {
+      warning("No fixed effects found in the model.")
+      return(NULL)
+    }
+    fixef(model)
+  }
+  
+  # Set up parallel backend to use multiple processors
+  n_cores <- detectCores() - 1  # Use one less core than available
+  set.seed(123)
+  
+  # Perform parametric bootstrapping using bootMer
+  tryCatch({
+    boot_results <- bootMer(lme_model, 
+                            FUN = fixed_effects, 
+                            nsim = 1000, 
+                            type = "parametric",
+                            parallel = "multicore", 
+                            ncpus = n_cores)
+    
+    # Summarize bootstrap results
+    print(summary(boot_results))
+    
+    # Calculate confidence intervals for the fixed effects
+    conf_intervals <- confint(boot_results, method = "boot", boot.type = "perc")
+    print(conf_intervals)
+  }, error = function(e) {
+    cat("Error during bootstrapping: ", e$message, "\n")
+  })
+}
+
+```
+
+
+```{r}
+### Preform modeling
+sink(output_file_name)  # Redirect console output to a text file
+
+# Fit the linear mixed-effects models
+models <- list(
+  lmer(comp_amp ~ -1 + (1 | sub), data = data_table),
+  lmer(comp_amp ~ -1 + (1 | sub), data = data_table),
+  lmer(comp_amp ~ -1 + cond + (1 | sub), data = data_table,),
+  lmer(comp_amp ~ -1 + sov + (1 | sub), data = data_table),
+  lmer(comp_amp ~ -1 + sov + cond + (1 | sub), data = data_table),
+  lmer(comp_amp ~ -1 + sov * cond + (1 | sub), data = data_table)
+)
+
+# Manually specify pairs of models to compare
+model_pairs <- list(c(1, 2), c(1, 3),c(2, 3), c(3, 4),c(2, 4),c(4,5))
+
+# Model names for clarity
+model_names <- c("Model 1: (1 | sub)",
+                 "Model 2: cond + (1 | sub)",
+                 "Model 3: sov + (1 | sub)",
+                 "Model 4: sov + cond + (1 | sub)",
+                 "Model 5: sov * cond + (1 | sub)")
+
+
+# Print models 
+for (i in seq_along(models)) {
+  cat(model_names[i], "\n")
+  print(models[[i]])
+  cat("\n\n")
+  print(shapiro.test(residuals(models[[i]])))
+  cat("\n\n")  # Add two newlines
+  # boot_results <- analyze_lme_model(models[[i]])
+  # cat("\n\n")  # Add two newlines
+  cat("=================================\n\n")
+}
+
+# Print anova and Bayes models pair comparison results 
+for (pair in model_pairs) {
+  cat("Anova Comparing", model_names[pair[1]], "with", model_names[pair[2]], "\n")
+  print(anova(models[[pair[1]]], models[[pair[2]]]))
+  cat("\n\n")
+  cat("Bayes Comparing", model_names[pair[1]], "with", model_names[pair[2]], "\n")
+  print(bayesfactor_models(models[[pair[1]]], models[[pair[2]]]))
+  cat("\n\n")
+}
+
+# Compare all models together
+cat("Anova Comparison of all models:\n")
+print(summary(do.call(anova, models)))
+cat("\n\nBayes Comparison of all models:\n")
+print(summary(do.call(bayesfactor_models, models)))
+cat("\n\n")
+
+# stop redirecting output
+sink()
+
+```
+
+```{r}
+
+```

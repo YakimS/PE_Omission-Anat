@@ -4,35 +4,31 @@ classdef ft_importer < handle
       input_dir
       output_dir
       epoch_time
-      
-      ftRaw
-      timlocked
-      grandAvg
+      ft_read_sens_string
       neighbours
-      tfrHilbert
-      tfrWavelets
-      tfrMT
-      tfrMT_zscored
     end
     methods(Static)
         % constructor
-        function o = ft_importer(subs, input_dir,output_dir,epoch_time)
+        function o = ft_importer(subs, input_dir,output_dir,epoch_time,ft_read_sens_string)
             o.subs = subs;
             o.input_dir = input_dir;
             o.output_dir = output_dir;
             o.epoch_time = epoch_time;
-
-            o.ftRaw = {};
-            o.timlocked = {};
-            o.grandAvg = {};
-            o.tfrHilbert = {};
-            o.tfrWavelets = {};
-            o.tfrMT = {};
-            o.tfrMT_zscored = {};
+            o.ft_read_sens_string = ft_read_sens_string;
+            o.neighbours = [];
         end
 
         % get/set
-
+        function set_neighbours(o,timelocked_example_elec)
+            cfg = {};
+            cfg.method        =  'triangulation';
+            cfg.feedback    = 'no';
+            cfg.elec = timelocked_example_elec;
+            o.neighbours = ft_prepare_neighbours(cfg);
+        end
+        function s = get_ft_read_sens_string(o)
+            s = o.ft_read_sens_string;
+        end
         function s = get_subs(o)
             s = o.subs;
         end
@@ -47,78 +43,110 @@ classdef ft_importer < handle
         end
         function neighbours = get_neighbours(o)
             if isempty(o.neighbours)
-                cfg = [];
-                cfg.method = 'triangulation' ; 
-                cfg.feedback    = 'no';
-                elec       = ft_read_sens('GSN-HydroCel-129.sfp'); % if Cz is ref, use GSN-HydroCel-128.sfp. If not, use 'GSN-HydroCel-129.sfp'
-                cfg.elec=elec;
-                o.neighbours = ft_prepare_neighbours(cfg);
+                if strcmp(o.ft_read_sens_string, "")
+                    cfg = {};
+                    cfg.method        =  'triangulation';
+                    cfg.feedback    = 'no';
+                    cond_names = fieldnames(o.timlocked);
+                    cfg.elec = o.timlocked.(cond_names{1}){1}.elec;
+                    neighbours = ft_prepare_neighbours(cfg);
+                else
+                    cfg = {};
+                    cfg.method = 'triangulation' ; 
+                    cfg.feedback    = 'no';
+                    cfg.elec= ft_read_sens(o.ft_read_sens_string );
+                    o.neighbours = ft_prepare_neighbours(cfg);
+                end
             end
             neighbours = o.neighbours;
         end
 
-        function cond_ftRaw = get_rawFt_cond(o,cond,sov)
-            if ~isfield(o.ftRaw,sprintf("%s_%s",sov.short_s,cond.short_s))
-                ft_subs_cond = cell(1, size(o.subs,2));
-                for sub_i=1:size(o.subs,2)
-                    if contains(sov.short_s,'WAll') % import both wake night and morning
-                        file_path_ngt = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_night',cond.import_s);
-                        file_path_mng = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},'wake_morning',cond.import_s);
-                        try
-                            sub_data_ngt = load(file_path_ngt);
-                            sub_data_mng = load(file_path_mng);
+        function subs_raw_sovcond = get_rawFt_cond(o,subs,cond,sov)
+            subs_raw_sovcond = cell(1, size(subs,2));
+            for sub_i=1:size(subs,2)
+                if contains(sov.short_s,'WAll') % import both wake night and morning
+                    file_path_ngt = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,subs{sub_i},'wake_night',cond.import_s);
+                    file_path_mng = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,subs{sub_i},'wake_morning',cond.import_s);
+                    try
+                        sub_data_ngt = load(file_path_ngt);
+                        sub_data_mng = load(file_path_mng);
 
-                            cfg = [];
-                            ft_data =  ft_appenddata(cfg, sub_data_ngt.ft_data, sub_data_mng.ft_data);
-                            ft_subs_cond{sub_i} = ft_data;
-                        catch ME
-                            sprintf('cant find: %s\n or: %s', file_path_ngt,file_path_mng)
-                        end                            
-                    else     % import only one cond 
-                        file_path = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,o.subs{sub_i},sov.import_s,cond.import_s);
-                        try
-                            sub_data = load(file_path);
-                            ft_subs_cond{sub_i} = sub_data.ft_data;
-                        catch ME
-                            sprintf('cant find: %s', file_path)
-                        end
+                        cfg = [];
+                        ft_data =  ft_appenddata(cfg, sub_data_ngt.ft_data, sub_data_mng.ft_data);
+                        ft_data.elec = sub_data_ngt.ft_data.elec;
+                        subs_raw_sovcond{sub_i} = ft_data;
+                    catch ME
+                        sprintf('cant find: %s\n or: %s', file_path_ngt,file_path_mng)
+                    end                            
+                else     % import only one cond 
+                    file_path = sprintf("%s\\s_%s_%s_%s.mat",o.input_dir,subs{sub_i},sov.import_s,cond.import_s);
+                    try
+                        sub_data = load(file_path);
+                        subs_raw_sovcond{sub_i} = sub_data.ft_data;
+                    catch ME
+                        sprintf('cant find: %s', file_path)
                     end
                 end
-                o.ftRaw.(sprintf("%s_%s",sov.short_s,cond.short_s)) = ft_subs_cond;
             end
-            cond_ftRaw = o.ftRaw.(sprintf("%s_%s",sov.short_s,cond.short_s));
+        end
+
+
+        function cond_timlocked = get_cond_comp(o,cond,sov,component)
+            cond_timlocked = o.get_cond_timelocked(o,cond,sov);
+            allsubs_cond_timlocked = cell(1, size(o.subs,2));
+            for sub_i=1:size(o.subs,2)
+                file_path = sprintf("%s\\timelocked_sov-%s_cond-%s_sub-%s.mat",o.output_dir,sov.short_s,cond.short_s,o.subs{sub_i});
+                if isfield(cond_timlocked{sub_i},'components') && isfield(cond_timlocked{sub_i}.('components'),component.short_s)
+                    allsubs_cond_timlocked{sub_i} =cond_timlocked{sub_i};
+                else
+                    cfg = [];
+                    cfg.feedback = 'no';
+                    cfg.latency = component.latency;
+                    conds_ftraw = o.get_rawFt_cond(o,o.subs,cond,sov);
+                    comp_ft_time = ft_timelockanalysis(cfg, conds_ftraw{sub_i});
+                    if component.isPositive == 1
+                        [amplitude, local_idx] = max(comp_ft_time.avg,[],2);
+                    else
+                        [amplitude, local_idx] = min(comp_ft_time.avg,[],2);
+                    end
+                    cond_timlocked{sub_i}.('components').(component.short_s).('amplitude') = amplitude;
+                    cond_timlocked{sub_i}.('components').(component.short_s).('time') = comp_ft_time.time(local_idx);
+                    
+                    allsubs_cond_timlocked{sub_i} = cond_timlocked{sub_i};
+                end
+                timelocked_subcond = allsubs_cond_timlocked{sub_i};
+                save(file_path,"timelocked_subcond")
+            end
+            cond_timlocked = allsubs_cond_timlocked;
         end
         
-        function cond_timlocked = get_cond_timelocked(o,cond,sov)
-            if ~isfield(o.timlocked,sprintf("%s_%s",sov.short_s,cond.short_s))
-                allsubs_cond_timlocked = cell(1, size(o.subs,2));
-                for sub_i=1:size(o.subs,2)
-                    file_path = sprintf("%s\\timelocked_sov-%s_cond-%s_sub-%s.mat",o.output_dir,sov.short_s,cond.short_s,o.subs{sub_i});
-                    try
-                        loaded = load(file_path);
-                        allsubs_cond_timlocked{sub_i} = loaded.timelocked_subcond;
-                        if allsubs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') == 1
-                            fprintf('sub: %s, cond: %s, sov: %s\n',o.subs{sub_i}, cond.long_s, sov.long_s)
-                            error('one trail in this cond for this sub. Highly unrecommended')
-                        end
-                    catch ME
-                        cfg = [];
-                        cfg.feedback = 'no';
-                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
-                        allsubs_cond_timlocked{sub_i} = ft_timelockanalysis(cfg, conds_ftraw{sub_i});
-                        allsubs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') = numel(conds_ftraw{sub_i}.trial);
-                        if allsubs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') == 1
-                            fprintf('sub: %s, cond: %s, sov: %s',o.subs{sub_i}, cond.long_s, sov.long_s)
-                            error('one trail in this cond for this sub. Highly unrecommended')
-                        end
-                        %save
-                        timelocked_subcond = allsubs_cond_timlocked{sub_i};
-                        save(file_path,"timelocked_subcond")
+        
+        function subs_cond_timlocked = get_cond_timelocked(o,subs,cond,sov)
+            subs_cond_timlocked = cell(1, size(subs,2));
+            for sub_i=1:size(subs,2)
+                file_path = sprintf("%s\\timelocked_sov-%s_cond-%s_sub-%s.mat",o.output_dir,sov.short_s,cond.short_s,subs{sub_i});
+                try
+                    loaded = load(file_path);
+                    subs_cond_timlocked{sub_i} = loaded.timelocked_subcond;
+                    if subs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') == 1
+                        fprintf('sub: %s, cond: %s, sov: %s\n',subs{sub_i}, cond.long_s, sov.long_s)
+                        error('one trail in this cond for this sub. Highly unrecommended')
                     end
+                catch ME
+                    cfg = [];
+                    cfg.feedback = 'no';
+                    conds_ftraw = o.get_rawFt_cond(o,subs,cond,sov);
+                    subs_cond_timlocked{sub_i} = ft_timelockanalysis(cfg, conds_ftraw{sub_i});
+                    subs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') = numel(conds_ftraw{sub_i}.trial);
+                    if subs_cond_timlocked{sub_i}.cfg.('trials_timelocked_avg') == 1
+                        fprintf('sub: %s, cond: %s, sov: %s',subs{sub_i}, cond.long_s, sov.long_s)
+                        error('one trail in this cond for this sub. Highly unrecommended')
+                    end
+                    %save
+                    timelocked_subcond = subs_cond_timlocked{sub_i};
+                    save(file_path,"timelocked_subcond")
                 end
-                o.timlocked.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_timlocked;
             end
-            cond_timlocked = o.timlocked.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
         
         % deprecated function cond_timlockedBl_preStim = get_cond_timelockedBl_preStim(o,cond,sov)
@@ -145,7 +173,6 @@ classdef ft_importer < handle
 %                         save(file_path,"baseline_subcond")
 %                     end
 %                 end
-%                 o.timlocked_bl.(sprintf("%s_%s",sov,cond)) = allsubs_cond_timlockedBl;
 %             end
 %             cond_timlockedBl_preStim = o.timlocked_bl_pretrial.(sprintf("%s_%s",sov,cond));
 %         end
@@ -159,7 +186,7 @@ classdef ft_importer < handle
 %                         loaded = load(file_path);
 %                         allsubs_cond_rawBl{sub_i} = loaded.baseline_subcond;
 %                     catch ME
-%                         rawFt = o.get_rawFt_cond(o,cond,sov);
+%                         rawFt = o.get_rawFt_cond(o,o.subs,cond,sov);
 %                         curr_sub_raw_ft = rawFt{sub_i};
 %                         time0_ind = find(curr_sub_raw_ft.time{1} == 0, 1);
 %                         time_baseline_ind = find(curr_sub_raw_ft.time{1} == -o.baseline_length*0.001, 1);
@@ -176,7 +203,6 @@ classdef ft_importer < handle
 %                         save(file_path,"baseline_subcond")
 %                     end
 %                 end
-%                 o.raw_bl.(sprintf("%s_%s",sov,cond)) = allsubs_cond_rawBl;
 %             end
 %             cond_rawBl = o.raw_bl.(sprintf("%s_%s",sov,cond));
 %         end
@@ -218,7 +244,7 @@ classdef ft_importer < handle
                         fprintf("Running: %s\n",filename);
                         cfg = [];
                         cfg.feedback = 'no';
-                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+                        conds_ftraw = o.get_rawFt_cond(o,o.subs,cond,sov);
 
 % % %                         freq_bin = 1.5:0.5:40;
 % % %                         sub_hilb_zsc = struct();
@@ -285,7 +311,6 @@ classdef ft_importer < handle
                         save(file_path,"tfrHilbert_subcond")
                     end
                 end
-                o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrHilbert;
             end
             cond_TFR_hiblert = o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
@@ -307,7 +332,7 @@ classdef ft_importer < handle
                         fprintf("Running: %s\n",filename);
                         cfg = [];
                         cfg.feedback = 'no';
-                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+                        conds_ftraw = o.get_rawFt_cond(o,o.subs,cond,sov);
 
                         cfg              = [];
                         cfg.output       = 'pow';
@@ -377,7 +402,6 @@ classdef ft_importer < handle
                         save(file_path,"tfrMTzscored_subcond", '-v7.3')
                     end
                 end
-                o.tfrMT_zscored.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrMT_zscored;
             end
             cond_TFR_MT_zscored = o.tfrMT_zscored.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
@@ -399,7 +423,7 @@ classdef ft_importer < handle
                         fprintf("Running: %s\n",filename);
                         cfg = [];
                         cfg.feedback = 'no';
-                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+                        conds_ftraw = o.get_rawFt_cond(o,o.subs,cond,sov);
 
 %%%                    Multitaper - ft func
                         cfg              = [];
@@ -423,7 +447,6 @@ classdef ft_importer < handle
                         save(file_path,"tfrMT_subcond")
                     end
                 end
-                o.tfrMT.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrMT;
             end
             cond_TFR_MT = o.tfrMT.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
@@ -445,7 +468,7 @@ classdef ft_importer < handle
                         fprintf("Running: %s\n",filename);
                         cfg = [];
                         cfg.feedback = 'no';
-                        conds_ftraw = o.get_rawFt_cond(o,cond,sov);
+                        conds_ftraw = o.get_rawFt_cond(o,o.subs,cond,sov);
 
 %%%                    wavelet - ft func
                         cfg = [];
@@ -469,7 +492,6 @@ classdef ft_importer < handle
                         save(file_path,"tfrWaveletes_subcond")
                     end
                 end
-                o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s)) = allsubs_cond_tfrWavelets;
             end
             cond_TFR_wavelets = o.tfrHilbert.(sprintf("%s_%s",sov.short_s,cond.short_s));
         end
