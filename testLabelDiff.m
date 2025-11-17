@@ -76,7 +76,7 @@ end
 responses_AOF_orig = zeros([numel(subs),3050]);
 for sub_i=1:numel(EEGs_after_extraction_AOF)
     responses_AOF_orig(sub_i,:) = mean(EEGs_after_extraction_AOF{sub_i}.data,[1,3]);
-end
+end 
 
 responses_AT_orig = zeros([numel(subs),3050]);
 for sub_i=1:numel(EEGs_after_extraction_AT)
@@ -85,7 +85,7 @@ end
 
 responses_AOF_orig_mean = mean(responses_AOF_orig,1);
 responses_AT_orig_mean = mean(responses_AT_orig,1);
-
+%%
 plot(responses_AOF_orig_mean,'DisplayName','AOF_Orig');
 hold on;
 plot(responses_AT_orig_mean,'DisplayName','AT_Orig');
@@ -124,7 +124,7 @@ end
 
 responses_AOF_prepro_mean = mean(responses_AOF_prepro,1);
 responses_AT_prepro_mean = mean(responses_AT_prepro,1);
-
+%%
 plot(EEGs_after_extractionPrepro_AOF{sub_i}.times,responses_AOF_prepro_mean,'DisplayName','AOF_prepro');
 hold on;
 plot(EEGs_after_extractionPrepro_AT{sub_i}.times,responses_AT_prepro_mean,'DisplayName','AT_prepro');
