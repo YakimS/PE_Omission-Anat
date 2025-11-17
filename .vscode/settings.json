@@ -1,3 +1,7 @@
 {
-    "python.analysis.typeCheckingMode": "off"
+    "python.analysis.typeCheckingMode": "off",
+
+    "matlab.linterEncoding": "utf8",
+    "matlab.matlabpath": "path/to/your/matlab/executable",
+    "matlab.runInMatlabTerminal": true
 }
