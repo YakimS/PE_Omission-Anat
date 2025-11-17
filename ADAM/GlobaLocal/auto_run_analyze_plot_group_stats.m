@@ -2,20 +2,12 @@ addpath 'D:\matlab_libs'
 
 %% SINGLE SUB DIAGONAL decoding using random permutation
 
-plot_dir = 'C:\mvpa\balance_on\plots\resamp100_subRandPerm';
-results_dir = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100'; % gotta have regular firstlvl before "randperm" dir
-all_subsets = {'subset-wmorning', 'subset-wnight','subset-N1','subset-N2','subset-N3','subset-REM'};
-all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'};
-all_contrasts = {'AO-vs-intblksmpAO','AOF-vs-AOR'}; 
-acclim = [.465 .565];
-timelim = [0 580];
-
-% plot_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\PLOTS_resampNo';
-% results_dir = 'C:\Users\User\Cloud-Drive\BigFiles\OmissionExpOutput\ADAM\RESULTS_resampNo';
-% all_subsets = {'subset-wmorning', 'subset-wnight'};
-% all_contrasts = {'T-vs-A'};
-% acclim = [.465 .765];
-
+plot_dir = 'C:\mvpa\GL\plots\resampNo';
+results_dir = 'C:\mvpa\GL\FirstLevel\RESULTS_resampNo_subRandPerm'; % gotta have regular firstlvl before "randperm" dir
+all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'}; % ,
+all_contrasts = {'expomit-vs-unexpomit'}; 
+acclim = [.35 .7];
+timelim = [0 1000];
 
 for subset_i=1:numel(all_subsets)
     curr_subset = all_subsets{subset_i};
@@ -23,30 +15,40 @@ for subset_i=1:numel(all_subsets)
        curr_contrast = all_contrasts{contrast_i};
         contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {curr_contrast}, 'UniformOutput', false);
         contrast_dir = sprintf('%s\\%s\\%s_%s',results_dir,curr_subset,curr_subset,curr_contrast);
-        mvpa_stats=get_avgSubPerm_decoding(contrast_dir,'both',timelim);     
-        save_file_name = sprintf('%s_%s_PerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,'both');
-        save_plot_and_close_fig(plot_dir,save_file_name);
+
+        cfg = [];                               
+        cfg.wanted_dir = contrast_dir;           % path to first level results 
+        cfg.reduce_dims = 'diag';
+        cfg.plotsubjects = false;
+        cfg.mpcompcor_method = 'fdr';
+        cfg.timelim          = timelim;
+        cfg.compute_randperm = true;
+        cfg.tail = 'both';
+        mvpa_stats = adam_compute_group_MVPA(cfg);
+
+        save_file_name = sprintf('%s\\%s_%s_PerSubDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
+        save_plot_and_close_fig(save_file_name);
 
 %          plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timelim)
 
         %%% AvgPerSubDecodeComparePermu
         plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-        save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,'both');
-        save_plot_and_close_fig(plot_dir,save_file_name)
+        save_file_name = sprintf('%s\\%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
+        save_plot_and_close_fig(save_file_name)
         
-        save_file_name = sprintf('%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',curr_subset,curr_contrast,'both');
-        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset,plot_dir,save_file_name); 
+        save_file_name = sprintf('%s\\%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',plot_dir,curr_subset,curr_contrast,'both');
+        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.8],contrasts_withsubset,save_file_name); 
 
         %%% allPerSubDecodeComparePermu
-        save_file_name = sprintf('%s_%s_subDecodeComparePermu_diag-1_tail-%s',curr_subset,curr_contrast,'both');
-        plot_subPerm_decoding(mvpa_stats,[0.35,0.7],contrasts_withsubset,plot_dir,save_file_name);
+        save_file_name = sprintf('%s\\%s_%s_subDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
+        plot_subPerm_decoding(mvpa_stats,[0.35,0.8],contrasts_withsubset,save_file_name);
     end
 end
 
 %% Average decoding - states of vigi, all at once
 
-plot_dir = 'C:\mvpa\plots\PLOTS_resampNo_allSovs';
-results_dir = 'D:\OExpOut\ADAM\RESULTS_resampNo_allSovs';
+plot_dir = 'C:\mvpa\GL\plots\resampNo';
+results_dir = 'C:\mvpa\GL\FirstLevel\RESULTS_resampNo_subRandPerm';
 all_subsets = {'subset-O'};
 all_contrasts = {'wmorning-vs-wnight','wmorning-vs-N1','wmorning-vs-N2','wmorning-vs-N3','wmorning-vs-REM', ...
                 'wnight-vs-N1','wnight-vs-N2','wnight-vs-N3','wnight-vs-REM', ...
@@ -88,64 +90,55 @@ end
 
 %% Average decoding
 
-% results_dir  = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100';
-% plot_dir= 'C:\mvpa\balance_on\plots\resamp100';
-% all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'}; % ,'subset-N2','subset-N3','subset-REM'
-% all_contrasts = {'AOF-vs-AOR','AO-vs-intblksmpAO'}; % 
+results_dir  = 'C:\mvpa\GL\FirstLevel\RESULTS_resampNo_subRandPerm';
+plot_dir= 'C:\mvpa\GL\plots\resampNo';
+all_subsets = {'subset-wnight','subset-N2','subset-N3','subset-REM'}; % 
+all_contrasts = {'expomit-vs-unexpomit'}; 
 
-% results_dir = "C:\loo";
-% plot_dir =  'C:\mvpa\balance_on\plots\loo_resamp100';
-% all_subsets = {'subset-wn','subset-N2','subset-N3','subset-REM'};%,
-% all_contrasts = {'AOF-vs-AOR','AO-vs-intblksmpAO'};
+results_dir = "C:\loo\GL";
+plot_dir =  'C:\mvpa\GL\plots\loo_resampNo';
+all_subsets = {'subset-wn','subset-N2','subset-N3','subset-REM'};
+all_subsets = {'subset-wn','subset-N2','subset-N3','subset-REM'};
+all_contrasts = {'expomit-vs-unexpomit'}; 
 
-% results_dir  = 'C:\mvpa\balance_on\FirstLevel\RESULTS_resamp100_N2noEve';
-% plot_dir= 'C:\mvpa\balance_on\plots\resamp100';
-% all_subsets = {'subset-N2'}; % ,'subset-N2','subset-N3','subset-REM'
-% all_contrasts = {'noEveAO-vs-intblksmpAO','noEveAOF-vs-noEveAOR'}; % 
+timerange_weights_plot = [300 600];
+cfg = [];
+cfg.tail = 'both';
+cfg.trainlim = [0,850]; % [] if no, [250 400] if yes   
+cfg.timelim = [-0,850]; % [] if no, [250 400] if yes   
+acclim = [.3 .7]; % make is symmetrical around 0.5, so white will signify "chance"
 
-results_dir = "C:\loo";
-plot_dir =  'C:\mvpa\balance_on\plots\loo_resamp100';
-all_subsets = {'subset-N2'};%,
-all_contrasts = {'noEveAO-vs-intblksmpAO','noEveAOF-vs-noEveAOR'};
-
-timerange_weights_plot = [500 600];
-timerange_test = 0;      % 0 if no, [250 400] if yes   
-
-for isDiag_i=1:2
-    if isDiag_i==1
-        acclim = [.46 .57];
-        isDiag = true;
-    else
-        acclim = [.445 .555]; % make is symmetrical around 0.5, so white will signify "chance"
-        isDiag = false;
-    end
+for subset_i=1:numel(all_subsets)
+    curr_subset = all_subsets{subset_i};
     
-    for isRightTail_i=1:2
-        if isRightTail_i==1
-            tail = 'right';
-        else
-            tail = 'both';
-        end
-        for subset_i=1:numel(all_subsets)
-            curr_subset = all_subsets{subset_i};
-            subset_dir = sprintf('%s\\%s',results_dir,curr_subset);
-            mvpa_stats=get_avg_decoding(subset_dir, tail,isDiag,timerange_test); 
-            for contrast_i=1:numel(all_contrasts)
-                contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {all_contrasts{contrast_i}}, 'UniformOutput', false);
-                plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-                save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',curr_subset,all_contrasts{contrast_i},isDiag,tail);
-                save_plot_and_close_fig(plot_dir,save_file_name)
-%                 plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
-            end
+    cfg.wanted_dir = sprintf('%s\\%s',results_dir,curr_subset);
+    cfg.isDiag = true;
+    save_file_name_diag = sprintf('%s\\%s_decode_diag-%d',plot_dir,curr_subset,cfg.isDiag);
+    mvpa_stats_diag =get_avg_decoding(cfg,save_file_name_diag); 
+    cfg.isDiag = false;
+    save_file_name_nodiag = sprintf('%s\\%s_decode_diag-%d',plot_dir,curr_subset,cfg.isDiag);
+    mvpa_stats_nodiag =get_avg_decoding(cfg,save_file_name_nodiag); 
+    for contrast_i=1:numel(all_contrasts)
+        plot_save_file_name_diag = sprintf('%s\\%s_decode_diag-%d_%s',plot_dir,curr_subset,true,all_contrasts{contrast_i});
+        plot_save_file_name_nodiag = sprintf('%s\\%s_decode_diag-%d_%s',plot_dir,curr_subset,false,all_contrasts{contrast_i});
+        contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {all_contrasts{contrast_i}}, 'UniformOutput', false);
+        plot_decoding(contrasts_withsubset,mvpa_stats_diag,acclim)
+        save_plot_and_close_fig(plot_save_file_name_diag)
+
+        plot_decoding(contrasts_withsubset,mvpa_stats_nodiag,acclim)
+        save_plot_and_close_fig(plot_save_file_name_nodiag)
+
+        plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats_diag,timerange_weights_plot)
+        save_file_name = sprintf('%s\\%s_%s_covarTopo_time[%d,%d]',plot_dir,curr_subset,all_contrasts{contrast_i},timerange_weights_plot(1),timerange_weights_plot(2));
+        save_plot_and_close_fig(save_file_name)
+    end
 %             if numel(all_contrasts) >1 % plot all in one png
 %                     contrasts_withsubset = cellfun(@(x) [all_subsets{subset_i}, '_', x], all_contrasts, 'UniformOutput', false);
 %                     plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-%                     save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',subset_name,'all',isDiag,tail);
+%                     save_file_name = sprintf('%s_%s_decode_diag-%d_tail-%s',subset_name,'all',isDiag, 'both');
 %                     save_plot_and_close_fig(plot_dir,save_file_name)
 %                     plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timerange_weights_plot)
 %             end
-        end
-    end
 end
 
 %% COMPARE 2 subsets difference STATS
@@ -163,19 +156,7 @@ save_plot_and_close_fig(plot_dir,save_file_name)
 
 %% Functions
 
-function mvpa_stats=get_avgSubPerm_decoding(dir,tail,timelim)
-    cfg = [];                                % clear the config variable
-    cfg.wanted_dir = dir;           % path to first level results 
-    cfg.reduce_dims = 'diag';
-    cfg.plotsubjects = true;
-    cfg.mpcompcor_method = 'fdr';
-    cfg.timelim          = timelim;
-    cfg.compute_randperm = true;
-    cfg.tail = tail;
-    mvpa_stats = adam_compute_group_MVPA(cfg);
-end
-
-function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name)
+function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_,save_file_name)
     indi_over_time = mvpa_stats.indivClassOverTime;
     h=figure;
     set(h,'visible','off');
@@ -193,10 +174,10 @@ function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_na
     xlabel("time (s)");
     ylabel("AUC");
     set(gcf,'Position',[100 100 600 300])
-    save_plot_and_close_fig(plot_dir,save_file_name)
+    save_plot_and_close_fig(save_file_name)
 end
 
-function plot_subPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name_prefix)
+function plot_subPerm_decoding(mvpa_stats,acclim,title_,save_file_name_prefix)
     indi_over_time = mvpa_stats.indivClassOverTime;
     pvals_indi_over_time = mvpa_stats.pvalsOverTime;
     time = mvpa_stats.settings.times{1};
@@ -234,25 +215,30 @@ function plot_subPerm_decoding(mvpa_stats,acclim,title_,plot_dir,save_file_name_
         ylabel("AUC");
         set(gcf,'Position',[100 100 600 300]);
         save_file_name = sprintf("%s_subINDEX-%d",save_file_name_prefix,i);
-        save_plot_and_close_fig(plot_dir,save_file_name);
+        save_plot_and_close_fig(save_file_name);
     end
 end
 
-function mvpa_stats=get_avg_decoding(dir,tail,isDiag,timerange)
-    % COMPUTE THE DIAGONAL DECODING RESULTS FOR ALL EEG COMPARISONS
-    cfg = [];                                    % clear the config variable
-    cfg.wanted_dir = dir;           % path to first level results 
-    cfg.mpcompcor_method = 'cluster_based';      % multiple comparison correction method
-    if isDiag
-        cfg.reduce_dims = 'diag';                    % train and test on the same points
-    end
-    cfg.tail             = tail;
-    if timerange
-        cfg.trainlim = timerange;                    % specify a 250-400 ms interval in the training data
-        cfg.reduce_dims = 'avtrain';                 % average over that training interval 
-    end
+function mvpa_stats=get_avg_decoding(cfg,save_file_name)   
+    if ~isfield(cfg, 'wanted_dir')           error('cfg must include dir field with filename'); end
+    if ~isfield(cfg, 'mpcompcor_method')        cfg.mpcompcor_method = 'cluster_based'; end
+    if ~isfield(cfg, 'isDiag')                  cfg.isDiag = 0;  end
+    if ~isfield(cfg, 'tail')                    cfg.tail = 'both'; end
+    if ~isfield(cfg, 'trainlim')                cfg.trainlim = false; end
+    if ~isfield(cfg,'cfg.testlim')              cfg.testlim = cfg.trainlim; end
+    if ~isfield(cfg, 'timelim')                 cfg.timelim = {}; end 
 
-    mvpa_stats = adam_compute_group_MVPA(cfg);
+    if cfg.isDiag
+        cfg.reduce_dims = 'diag';                    % train and test on the same time points
+    end
+    matfilename = sprintf("%s.mat",save_file_name);
+    if exist(matfilename,"file")
+        mvpa_stats = load(matfilename);
+        mvpa_stats = mvpa_stats.mvpa_stats; 
+    else
+        mvpa_stats = adam_compute_group_MVPA(cfg);
+        save(matfilename,"mvpa_stats")
+    end
 end
 
 function plot_decoding(plot_order,mvpa_stats,acclim)
@@ -271,8 +257,8 @@ function plot_timerange_activation_pattern(plot_order,mvpa_stats,timerange)
     cfg = [];                                    % clear the config variable
     cfg.plot_order = plot_order;
     cfg.mpcompcor_method = 'cluster_based';      % amultiple comparison correction method. 
-    cfg.plotweights_or_pattern = 'weights';  % covariance activation pattern cAN BE: 'weights', 'covpattern' or 'corpattern'
-    %cfg.weightlim = [-3 3];                  % set common scale to all plots
+    cfg.plotweights_or_pattern = 'covpattern';  % covariance activation pattern cAN BE: 'weights', 'covpattern' or 'corpattern'
+    cfg.weightlim = [-1.5 1.5];                  % set common scale to all plots
     if timerange
         cfg.timelim = timerange;                    % time window to visualize
     end
@@ -281,10 +267,10 @@ end
 
 
 
-function save_plot_and_close_fig(folder,file_name)
+function save_plot_and_close_fig(file_name)
 %     saveas(gcf, sprintf("%s\\%s.fig", folder, file_name));
 %     saveas(gcf, sprintf("%s\\%s.svg", folder, file_name));
-    saveas(gcf, sprintf("%s\\%s.png", folder, file_name));
+    saveas(gcf, sprintf("%s.png", file_name));
     close(gcf);
 end
 
