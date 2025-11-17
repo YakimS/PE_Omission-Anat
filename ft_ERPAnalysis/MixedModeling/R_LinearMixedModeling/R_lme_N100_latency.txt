@@ -1,0 +1,305 @@
+Model 1: (1 | sub) 
+Linear mixed model fit by maximum likelihood  ['lmerMod']
+Formula: latency ~ -1 + (1 | sub)
+   Data: data_table
+      AIC       BIC    logLik  deviance  df.resid 
+-2148.578 -2140.459  1076.289 -2152.578       426 
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.08616 
+ Residual             0.01524 
+Number of obs: 428, groups:  sub, 36
+No fixed effect coefficients
+
+
+
+	Shapiro-Wilk normality test
+
+data:  residuals(models[[i]])
+W = 0.99413, p-value = 0.09812
+
+
+
+=================================
+
+Model 2: cond + (1 | sub) 
+Linear mixed model fit by maximum likelihood  ['lmerMod']
+Formula: latency ~ -1 + (1 | sub)
+   Data: data_table
+      AIC       BIC    logLik  deviance  df.resid 
+-2148.578 -2140.459  1076.289 -2152.578       426 
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.08616 
+ Residual             0.01524 
+Number of obs: 428, groups:  sub, 36
+No fixed effect coefficients
+
+
+
+	Shapiro-Wilk normality test
+
+data:  residuals(models[[i]])
+W = 0.99413, p-value = 0.09812
+
+
+
+=================================
+
+Model 3: sov + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: latency ~ -1 + cond + (1 | sub)
+   Data: data_table
+REML criterion at convergence: -2288.501
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.007798
+ Residual             0.015188
+Number of obs: 428, groups:  sub, 36
+Fixed Effects:
+condNblT1  condNblT2  condNblT3  
+  0.08775    0.08603    0.08367  
+
+
+
+	Shapiro-Wilk normality test
+
+data:  residuals(models[[i]])
+W = 0.99596, p-value = 0.345
+
+
+
+=================================
+
+Model 4: sov + cond + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: latency ~ -1 + sov + (1 | sub)
+   Data: data_table
+REML criterion at convergence: -2335.88
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.008087
+ Residual             0.014105
+Number of obs: 428, groups:  sub, 36
+Fixed Effects:
+  sovwn    sovN2    sovN3   sovREM  
+0.07635  0.08874  0.08684  0.09119  
+
+
+
+	Shapiro-Wilk normality test
+
+data:  residuals(models[[i]])
+W = 0.98004, p-value = 1.27e-05
+
+
+
+=================================
+
+Model 5: sov * cond + (1 | sub) 
+Linear mixed model fit by REML ['lmerMod']
+Formula: latency ~ -1 + sov + cond + (1 | sub)
+   Data: data_table
+REML criterion at convergence: -2319.407
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.008073
+ Residual             0.014041
+Number of obs: 428, groups:  sub, 36
+Fixed Effects:
+    sovwn      sovN2      sovN3     sovREM  condNblT2  condNblT3  
+ 0.078271   0.090611   0.088737   0.093080  -0.001714  -0.003972  
+
+
+
+	Shapiro-Wilk normality test
+
+data:  residuals(models[[i]])
+W = 0.9823, p-value = 4.35e-05
+
+
+
+=================================
+
+NA 
+Linear mixed model fit by REML ['lmerMod']
+Formula: latency ~ -1 + sov * cond + (1 | sub)
+   Data: data_table
+REML criterion at convergence: -2293.062
+Random effects:
+ Groups   Name        Std.Dev.
+ sub      (Intercept) 0.008149
+ Residual             0.013618
+Number of obs: 428, groups:  sub, 36
+Fixed Effects:
+           sovwn             sovN2             sovN3            sovREM         condNblT2  
+        0.085112          0.083667          0.086778          0.095333         -0.012571  
+       condNblT3   sovN2:condNblT2   sovN3:condNblT2  sovREM:condNblT2   sovN2:condNblT3  
+       -0.013557          0.021571          0.014477          0.007127          0.019809  
+ sovN3:condNblT3  sovREM:condNblT3  
+        0.011890          0.006557  
+
+
+
+	Shapiro-Wilk normality test
+
+data:  residuals(models[[i]])
+W = 0.97782, p-value = 4.037e-06
+
+
+
+=================================
+
+Anova Comparing Model 1: (1 | sub) with Model 2: cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: latency ~ -1 + (1 | sub)
+models[[pair[2]]]: latency ~ -1 + (1 | sub)
+                  npar     AIC     BIC logLik deviance Chisq Df Pr(>Chisq)
+models[[pair[1]]]    2 -2148.6 -2140.5 1076.3  -2152.6                    
+models[[pair[2]]]    2 -2148.6 -2140.5 1076.3  -2152.6     0  0           
+
+
+Bayes Comparing Model 1: (1 | sub) with Model 2: cond + (1 | sub) 
+Bayes Factors for Model Comparison
+
+                    Model            BF
+[models[[pair[2]]]] -1 + (1 | sub) 1.00
+
+* Against Denominator: [models[[pair[1]]]] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Anova Comparing Model 1: (1 | sub) with Model 3: sov + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: latency ~ -1 + (1 | sub)
+models[[pair[2]]]: latency ~ -1 + cond + (1 | sub)
+                  npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    2 -2148.6 -2140.5 1076.3  -2152.6                         
+models[[pair[2]]]    5 -2311.6 -2291.3 1160.8  -2321.6 169.01  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Bayes Comparing Model 1: (1 | sub) with Model 3: sov + (1 | sub) 
+Bayes Factors for Model Comparison
+
+                    Model                       BF
+[models[[pair[2]]]] -1 + cond + (1 | sub) 5.65e+32
+
+* Against Denominator: [models[[pair[1]]]] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Anova Comparing Model 2: cond + (1 | sub) with Model 3: sov + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: latency ~ -1 + (1 | sub)
+models[[pair[2]]]: latency ~ -1 + cond + (1 | sub)
+                  npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    2 -2148.6 -2140.5 1076.3  -2152.6                         
+models[[pair[2]]]    5 -2311.6 -2291.3 1160.8  -2321.6 169.01  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Bayes Comparing Model 2: cond + (1 | sub) with Model 3: sov + (1 | sub) 
+Bayes Factors for Model Comparison
+
+                    Model                       BF
+[models[[pair[2]]]] -1 + cond + (1 | sub) 5.65e+32
+
+* Against Denominator: [models[[pair[1]]]] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Anova Comparing Model 3: sov + (1 | sub) with Model 4: sov + cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: latency ~ -1 + cond + (1 | sub)
+models[[pair[2]]]: latency ~ -1 + sov + (1 | sub)
+                  npar     AIC     BIC logLik deviance Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    5 -2311.6 -2291.3 1160.8  -2321.6                        
+models[[pair[2]]]    6 -2367.7 -2343.4 1189.9  -2379.7 58.15  1  2.429e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Bayes Comparing Model 3: sov + (1 | sub) with Model 4: sov + cond + (1 | sub) 
+Bayes Factors for Model Comparison
+
+                    Model                      BF
+[models[[pair[2]]]] -1 + sov + (1 | sub) 2.05e+11
+
+* Against Denominator: [models[[pair[1]]]] -1 + cond + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Anova Comparing Model 2: cond + (1 | sub) with Model 4: sov + cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: latency ~ -1 + (1 | sub)
+models[[pair[2]]]: latency ~ -1 + sov + (1 | sub)
+                  npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)    
+models[[pair[1]]]    2 -2148.6 -2140.5 1076.3  -2152.6                         
+models[[pair[2]]]    6 -2367.7 -2343.4 1189.9  -2379.7 227.16  4  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Bayes Comparing Model 2: cond + (1 | sub) with Model 4: sov + cond + (1 | sub) 
+Bayes Factors for Model Comparison
+
+                    Model                      BF
+[models[[pair[2]]]] -1 + sov + (1 | sub) 1.16e+44
+
+* Against Denominator: [models[[pair[1]]]] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Anova Comparing Model 4: sov + cond + (1 | sub) with Model 5: sov * cond + (1 | sub) 
+Data: data_table
+Models:
+models[[pair[1]]]: latency ~ -1 + sov + (1 | sub)
+models[[pair[2]]]: latency ~ -1 + sov + cond + (1 | sub)
+                  npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)  
+models[[pair[1]]]    6 -2367.7 -2343.4 1189.9  -2379.7                       
+models[[pair[2]]]    8 -2369.5 -2337.1 1192.8  -2385.5 5.7883  2    0.05535 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Bayes Comparing Model 4: sov + cond + (1 | sub) with Model 5: sov * cond + (1 | sub) 
+Bayes Factors for Model Comparison
+
+                    Model                          BF
+[models[[pair[2]]]] -1 + sov + cond + (1 | sub) 0.042
+
+* Against Denominator: [models[[pair[1]]]] -1 + sov + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Anova Comparison of all models:
+      npar             AIC             BIC            logLik        deviance    
+ Min.   : 2.000   Min.   :-2388   Min.   :-2343   Min.   :1076   Min.   :-2416  
+ 1st Qu.: 2.750   1st Qu.:-2369   1st Qu.:-2335   1st Qu.:1097   1st Qu.:-2384  
+ Median : 5.500   Median :-2340   Median :-2311   Median :1175   Median :-2351  
+ Mean   : 6.167   Mean   :-2289   Mean   :-2264   Mean   :1151   Mean   :-2301  
+ 3rd Qu.: 7.500   3rd Qu.:-2189   3rd Qu.:-2178   3rd Qu.:1192   3rd Qu.:-2195  
+ Max.   :14.000   Max.   :-2149   Max.   :-2140   Max.   :1208   Max.   :-2153  
+                                                                                
+     Chisq               Df        Pr(>Chisq)       
+ Min.   :  0.000   Min.   :0.0   Min.   :0.0000000  
+ 1st Qu.:  5.788   1st Qu.:1.0   1st Qu.:0.0000000  
+ Median : 29.985   Median :2.0   Median :0.0000198  
+ Mean   : 52.587   Mean   :2.4   Mean   :0.0138465  
+ 3rd Qu.: 58.150   3rd Qu.:3.0   3rd Qu.:0.0138662  
+ Max.   :169.013   Max.   :6.0   Max.   :0.0553462  
+ NA's   :1         NA's   :1     NA's   :2          
+
+
+Bayes Comparison of all models:
+    Model               log_BF      
+ Length:6           Min.   :  0.00  
+ Class :character   1st Qu.: 18.85  
+ Mode  :character   Median : 85.26  
+                    Mean   : 61.71  
+                    3rd Qu.: 97.50  
+                    Max.   :101.46  
+
+

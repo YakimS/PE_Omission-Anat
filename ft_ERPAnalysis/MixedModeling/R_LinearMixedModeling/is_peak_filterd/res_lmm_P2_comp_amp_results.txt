@@ -1,0 +1,28 @@
+[1] "Details of removed outliers:"
+[1] "ANOVA results:"
+Data: data_table
+Models:
+models[[1]]: comp_amp ~ -1 + (1 | sub)
+models[[2]]: comp_amp ~ -1 + cond + (1 | sub)
+models[[3]]: comp_amp ~ -1 + sov + (1 | sub)
+models[[4]]: comp_amp ~ -1 + sov + cond + (1 | sub)
+models[[5]]: comp_amp ~ -1 + sov * cond + (1 | sub)
+            npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+models[[1]]    2 1921.2 1929.3 -958.62   1917.2                          
+models[[2]]    5 1837.3 1857.3 -913.63   1827.3 89.9805  3  < 2.2e-16 ***
+models[[3]]    6 1829.8 1853.8 -908.90   1817.8  9.4557  1   0.002105 ** 
+models[[4]]    8 1793.7 1825.8 -888.86   1777.7 40.0994  2  1.961e-09 ***
+models[[5]]   14 1797.7 1853.7 -884.83   1769.7  8.0579  6   0.233892    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+[1] "Bayes Factor results:"
+Bayes Factors for Model Comparison
+
+    Model                             BF
+[2] -1 + cond + (1 | sub)       4.21e+15
+[3] -1 + sov + (1 | sub)        2.36e+16
+[4] -1 + sov + cond + (1 | sub) 2.97e+22
+[5] -1 + sov * cond + (1 | sub) 2.50e+16
+
+* Against Denominator: [1] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation

@@ -1,0 +1,179 @@
+==============================================================
+COMPONENT: N350 - STEP VS LINEAR ANALYSIS
+==============================================================
+
+SLEEP STAGE: wn
+Number of subjects: 32
+Number of observations: 128
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 4.33e+10
+
+LINEAR TREND MODEL:
+Slope: 0.5094
+P-value: 4.133e-09
+AIC: 404.3
+BIC: 415.7
+
+BEST STEP MODEL:
+Model type: step_12
+Step location: Between tones 1 and 2
+Step size: 1.806
+Step p-value: 1.822e-19
+AIC: 355.3
+BIC: 366.7
+
+-----------------------------------------------------------
+
+SLEEP STAGE: N1
+Number of subjects: 32
+Number of observations: 127
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 2.531
+
+LINEAR TREND MODEL:
+Slope: 0.3543
+P-value: 0.08218
+AIC: 616
+BIC: 627.4
+
+BEST STEP MODEL:
+Model type: step_23
+Step location: Between tones 2 and 3
+Step size: 0.8256
+Step p-value: 0.07035
+AIC: 614.2
+BIC: 625.5
+
+-----------------------------------------------------------
+
+SLEEP STAGE: N2
+Number of subjects: 32
+Number of observations: 124
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 25.92
+
+LINEAR TREND MODEL:
+Slope: 0.859
+P-value: 8.508e-12
+AIC: 486.6
+BIC: 497.9
+
+BEST STEP MODEL:
+Model type: step_23
+Step location: Between tones 2 and 3
+Step size: 1.961
+Step p-value: 6.988e-13
+AIC: 480.1
+BIC: 491.4
+
+-----------------------------------------------------------
+
+SLEEP STAGE: N3
+Number of subjects: 32
+Number of observations: 126
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 2.739
+
+LINEAR TREND MODEL:
+Slope: 1.575
+P-value: 1.034e-08
+AIC: 690.3
+BIC: 701.7
+
+BEST STEP MODEL:
+Model type: step_23
+Step location: Between tones 2 and 3
+Step size: 3.492
+Step p-value: 8.294e-09
+AIC: 688.3
+BIC: 699.6
+
+-----------------------------------------------------------
+
+SLEEP STAGE: REM
+Number of subjects: 32
+Number of observations: 128
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 3.462
+
+LINEAR TREND MODEL:
+Slope: 0.1518
+P-value: 0.01066
+AIC: 346.1
+BIC: 357.5
+
+BEST STEP MODEL:
+Model type: step_12
+Step location: Between tones 1 and 2
+Step size: 0.4085
+Step p-value: 0.00769
+AIC: 343.7
+BIC: 355.1
+
+-----------------------------------------------------------
+
+SLEEP STAGE: tREM
+Number of subjects: 32
+Number of observations: 128
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 6.404
+
+LINEAR TREND MODEL:
+Slope: 0.1721
+P-value: 0.06812
+AIC: 457.6
+BIC: 469
+
+BEST STEP MODEL:
+Model type: step_12
+Step location: Between tones 1 and 2
+Step size: 0.5495
+Step p-value: 0.02345
+AIC: 453.9
+BIC: 465.3
+
+-----------------------------------------------------------
+
+SLEEP STAGE: pREM
+Number of subjects: 32
+Number of observations: 127
+
+MODEL COMPARISON:
+Better model: STEP
+Model comparison p-value: NA
+BF (Step vs Linear): 3.795
+
+LINEAR TREND MODEL:
+Slope: 0.02379
+P-value: 0.7997
+AIC: 420.7
+BIC: 432
+
+BEST STEP MODEL:
+Model type: step_34
+Step location: Between tones 3 and 4
+Step size: 0.2319
+Step p-value: 0.3653
+AIC: 418
+BIC: 429.4
+
+-----------------------------------------------------------
+

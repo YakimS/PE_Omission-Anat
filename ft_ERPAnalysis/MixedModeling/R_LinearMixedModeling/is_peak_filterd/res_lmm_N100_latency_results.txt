@@ -1,0 +1,28 @@
+[1] "Details of removed outliers:"
+[1] "ANOVA results:"
+Data: data_table
+Models:
+models[[1]]: latency ~ -1 + (1 | sub)
+models[[2]]: latency ~ -1 + cond + (1 | sub)
+models[[3]]: latency ~ -1 + sov + (1 | sub)
+models[[4]]: latency ~ -1 + sov + cond + (1 | sub)
+models[[5]]: latency ~ -1 + sov * cond + (1 | sub)
+            npar     AIC     BIC logLik deviance    Chisq Df Pr(>Chisq)    
+models[[1]]    2 -2113.4 -2105.3 1058.7  -2117.4                           
+models[[2]]    5 -2277.8 -2257.6 1143.9  -2287.8 170.4943  3  < 2.2e-16 ***
+models[[3]]    6 -2327.3 -2303.0 1169.6  -2339.3  51.4258  1  7.435e-13 ***
+models[[4]]    8 -2328.9 -2296.5 1172.4  -2344.9   5.6024  2    0.06074 .  
+models[[5]]   14 -2351.3 -2294.7 1189.7  -2379.3  34.4723  6  5.452e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+[1] "Bayes Factor results:"
+Bayes Factors for Model Comparison
+
+    Model                             BF
+[2] -1 + cond + (1 | sub)       1.20e+33
+[3] -1 + sov + (1 | sub)        8.61e+42
+[4] -1 + sov + cond + (1 | sub) 3.36e+41
+[5] -1 + sov * cond + (1 | sub) 1.36e+41
+
+* Against Denominator: [1] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation

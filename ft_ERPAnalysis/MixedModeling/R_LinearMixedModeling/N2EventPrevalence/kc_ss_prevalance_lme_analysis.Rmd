@@ -1,0 +1,767 @@
+  
+  
+
+```{r}
+
+library(dplyr)
+library(lme4)
+library(stringr)  #  for str_extract
+library(lmerTest)  # For p-values
+
+
+library(ggplot2)
+library(emmeans)
+library(viridis)
+library(ggsignif)
+
+```
+
+```{r}
+T <- read.csv("out_to_preva_lme_anal.csv")
+
+T$hz <- as.numeric(str_extract(T$cond, "(?<=T)\\d+(?=_)"))
+T$torder <- as.numeric(str_extract(T$cond, "(?<=_)\\d+"))
+
+N2_data <- aggregate(trial_amount ~ sub + hz + torder, T[T$sov == "N2",], sum)
+Kc_raw <- aggregate(trial_amount ~ sub + hz + torder, T[T$sov == "N2EliwJKc",], sum)
+Ss_raw <- aggregate(trial_amount ~ sub + hz + torder, T[T$sov == "N2EliwJSs",], sum)
+
+Kc_data <- merge(Kc_raw, N2_data, by = c("sub", "hz", "torder"), suffixes = c("_Kc", "_N2"))
+Kc_data$proportion <- Kc_data$trial_amount_Kc / Kc_data$trial_amount_N2
+
+Ss_data <- merge(Ss_raw, N2_data, by = c("sub", "hz", "torder"), suffixes = c("_Ss", "_N2"))
+Ss_data$proportion <- Ss_data$trial_amount_Ss / Ss_data$trial_amount_N2
+
+
+##############################################
+# Adjust curr_data and run the following sections. Take figs with a grain of salt, as it is very heavily chat induced
+##############################################
+curr_data = Ss_data ## Kc_data, Ss_data 
+
+
+```
+
+```{r}
+###### MLE analysis
+
+# Create output file
+dataset_name <- if(identical(curr_data, Ss_data)) "Ss_data" else "Kc_data"
+output_file <- paste0("lme_analysis_results_", dataset_name, ".txt")
+sink(output_file)  # Redirect output to file
+
+curr_data$torder_ord <- ordered(curr_data$torder)
+curr_data$hz_ord <- ordered(curr_data$hz)
+
+# Calculate BF using BIC differences
+BF <- function(bic1, bic2) {
+    exp((bic1 - bic2)/2)
+}
+
+cat("=== LINEAR MIXED-EFFECTS MODEL ANALYSIS RESULTS ===\n")
+cat("Date:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
+cat("=== MODEL COMPARISONS ===\n\n")
+
+# Compare models to test interaction significance
+model_null            <- lmer(proportion ~ (1|sub), data = curr_data)
+model_hz              <- lmer(proportion ~ hz + (1|sub), data = curr_data)
+model_torder          <- lmer(proportion ~ torder + (1|sub), data = curr_data)
+model_addative        <- lmer(proportion ~ torder + hz + (1|sub), data = curr_data)
+model_interaction     <- lmer(proportion ~ torder * hz + (1|sub), data = curr_data)
+
+
+cat("1. NULL vs HZ MODEL:\n")
+print(anova(model_null, model_hz))
+cat("BF =", BF(BIC(model_null), BIC(model_hz)), "\n")
+cat("\n")
+
+cat("2. NULL vs TORDER MODEL:\n")
+print(anova(model_null, model_torder))
+cat("BF =", BF(BIC(model_null), BIC(model_torder)), "\n")
+cat("\n")
+
+cat("3. HZ vs ADDITIVE MODEL:\n")
+print(anova(model_hz, model_addative))
+cat("BF =", BF(BIC(model_hz), BIC(model_addative)), "\n")
+cat("\n")
+
+cat("4. TORDER vs ADDITIVE MODEL:\n")
+print(anova(model_torder, model_addative))
+cat("BF =", BF(BIC(model_torder), BIC(model_addative)), "\n")
+cat("\n")
+
+cat("5. ADDITIVE vs INTERACTION MODEL:\n")
+print(anova(model_addative, model_interaction))
+cat("BF =", BF(BIC(model_addative), BIC(model_interaction)), "\n")
+cat("\n")
+
+# Test interaction
+cat("=== FINAL INTERACTION MODEL SUMMARY ===\n")
+print(summary(model_interaction))
+cat("\n")
+
+cat("=== TYPE III ANOVA TABLE ===\n")
+print(anova(model_interaction))
+cat("\n")
+
+# Get BIC for all models
+all_models_BIC <- data.frame(
+  Model = c("Null", "Hz only", "Torder only", "Additive", "Interaction"),
+  AIC = c(AIC(model_null), AIC(model_hz), AIC(model_torder), AIC(model_addative), AIC(model_interaction)),
+  BIC = c(BIC(model_null), BIC(model_hz), BIC(model_torder), BIC(model_addative), BIC(model_interaction)),
+  LogLik = c(logLik(model_null), logLik(model_hz), logLik(model_torder), logLik(model_addative), logLik(model_interaction)),
+  df = c(attr(logLik(model_null), "df"), 
+         attr(logLik(model_hz), "df"), 
+         attr(logLik(model_torder), "df"), 
+         attr(logLik(model_addative), "df"), 
+         attr(logLik(model_interaction), "df"))
+)
+
+print(all_models_BIC)
+
+# Calculate BIC differences relative to null model
+all_models_BIC$Delta_BIC_from_null <- all_models_BIC$BIC - BIC(model_null)
+
+# Calculate BIC differences relative to best model
+best_BIC <- min(all_models_BIC$BIC)
+all_models_BIC$Delta_BIC_from_best <- all_models_BIC$BIC - best_BIC
+
+# Calculate Bayes Factors
+null_bic <- BIC(model_null)
+
+# BF relative to null model (BF > 1 means evidence against null)
+all_models_BIC$BF_vs_null <- sapply(all_models_BIC$BIC, function(x) BF(null_bic, x))
+
+# BF relative to best model (BF > 1 means evidence against the model compared to best)
+all_models_BIC$BF_vs_best <- sapply(all_models_BIC$BIC, function(x) BF(best_BIC, x))
+
+print(all_models_BIC)
+
+# Individual BIC values for quick reference
+cat("\nIndividual BIC values:\n")
+cat("Null model:", BIC(model_null), "\n")
+cat("Hz model:", BIC(model_hz), "\n") 
+cat("Torder model:", BIC(model_torder), "\n")
+cat("Additive model:", BIC(model_addative), "\n")
+cat("Interaction model:", BIC(model_interaction), "\n")
+
+# Best model
+best_model_index <- which.min(all_models_BIC$BIC)
+cat("\nBest model (lowest BIC):", all_models_BIC$Model[best_model_index], 
+    "with BIC =", all_models_BIC$BIC[best_model_index], "\n")
+
+# Bayes Factor interpretations
+cat("\n=== BAYES FACTOR ANALYSIS ===\n\n")
+
+cat("BAYES FACTORS vs NULL MODEL:\n")
+for(i in 1:nrow(all_models_BIC)) {
+  bf_val <- all_models_BIC$BF_vs_null[i]
+  model_name <- all_models_BIC$Model[i]
+  
+  # Interpretation based on Kass & Raftery (1995) criteria
+  if(bf_val < 1) {
+    evidence <- "Evidence against"
+  } else if(bf_val >= 1 & bf_val < 3) {
+    evidence <- "Barely worth mentioning evidence for"
+  } else if(bf_val >= 3 & bf_val < 10) {
+    evidence <- "Positive evidence for"
+  } else if(bf_val >= 10 & bf_val < 30) {
+    evidence <- "Strong evidence for"
+  } else if(bf_val >= 30 & bf_val < 100) {
+    evidence <- "Very strong evidence for"
+  } else {
+    evidence <- "Decisive evidence for"
+  }
+  
+  cat(sprintf("%-15s: BF = %8.2f (%s)\n", model_name, bf_val, evidence))
+}
+
+cat("\nBAYES FACTORS vs BEST MODEL:\n")
+best_model_name <- all_models_BIC$Model[best_model_index]
+cat("Best model:", best_model_name, "\n")
+
+for(i in 1:nrow(all_models_BIC)) {
+  if(i != best_model_index) {
+    bf_val <- all_models_BIC$BF_vs_best[i]
+    model_name <- all_models_BIC$Model[i]
+    
+    # Interpretation
+    if(bf_val < 1) {
+      evidence <- "Evidence against best model"
+    } else if(bf_val >= 1 & bf_val < 3) {
+      evidence <- "Barely worth mentioning evidence against"
+    } else if(bf_val >= 3 & bf_val < 10) {
+      evidence <- "Positive evidence against"
+    } else if(bf_val >= 10 & bf_val < 30) {
+      evidence <- "Strong evidence against"
+    } else if(bf_val >= 30 & bf_val < 100) {
+      evidence <- "Very strong evidence against"
+    } else {
+      evidence <- "Decisive evidence against"
+    }
+    
+    cat(sprintf("%-15s: BF = %8.2f (%s)\n", model_name, bf_val, evidence))
+  }
+}
+
+# Key pairwise comparisons
+cat("\n=== KEY MODEL COMPARISONS ===\n")
+
+# Hz vs Null
+bf_hz_null <- BF(BIC(model_null), BIC(model_hz))
+cat(sprintf("Hz vs Null:        BF = %8.2f\n", bf_hz_null))
+
+# Torder vs Null  
+bf_torder_null <- BF(BIC(model_null), BIC(model_torder))
+cat(sprintf("Torder vs Null:    BF = %8.2f\n", bf_torder_null))
+
+# Additive vs Hz only
+bf_add_hz <- BF(BIC(model_hz), BIC(model_addative))
+cat(sprintf("Additive vs Hz:    BF = %8.2f\n", bf_add_hz))
+
+# Additive vs Torder only
+bf_add_torder <- BF(BIC(model_torder), BIC(model_addative))
+cat(sprintf("Additive vs Torder: BF = %8.2f\n", bf_add_torder))
+
+# Interaction vs Additive
+bf_int_add <- BF(BIC(model_addative), BIC(model_interaction))
+cat(sprintf("Interaction vs Add: BF = %8.2f\n", bf_int_add))
+
+# Post-hoc analysis
+cat("\n=== POST-HOC ANALYSIS ===\n\n")
+
+curr_data$torder_factor <- factor(curr_data$torder, levels = c(1, 2, 3, 4))
+model_posthoc <- lmer(proportion ~ torder_factor * hz + (1|sub), data = curr_data)
+
+# Get marginal means
+emm_torder <- emmeans(model_posthoc, ~ torder_factor)
+cat("ESTIMATED MARGINAL MEANS BY TORDER:\n")
+print(emm_torder)
+cat("\n")
+
+# Get all pairwise comparisons WITHOUT FDR correction first
+all_pairs_raw <- pairs(emm_torder, adjust = "none")
+pairs_summary_raw <- summary(all_pairs_raw, infer = TRUE)
+
+# Extract only the 3 consecutive comparisons
+consecutive_indices <- c(1, 4, 6)  # T1-T2, T2-T3, T3-T4 from the pairs output
+consecutive_only <- pairs_summary_raw[consecutive_indices, ]
+consecutive_only$p.value.fdr <- p.adjust(consecutive_only$p.value, method = "fdr")
+
+# Create table with consecutive comparison results
+comparison_names <- c("T1_vs_T2", "T2_vs_T3", "T3_vs_T4")
+
+consecutive_table <- data.frame(
+  Comparison = comparison_names,
+  Difference = round(consecutive_only$estimate, 4),
+  SE = round(consecutive_only$SE, 4),
+  t_ratio = round(consecutive_only$t.ratio, 2),
+  df = consecutive_only$df,
+  p_raw = sprintf("%.2e", consecutive_only$p.value),
+  p_FDR_corrected = sprintf("%.2e", consecutive_only$p.value.fdr),
+  stringsAsFactors = FALSE
+)
+
+cat("=== CONSECUTIVE COMPARISONS TABLE ===\n")
+print(consecutive_table, row.names = FALSE)
+cat("\n")
+
+# Clean table for manuscript
+manuscript_table <- data.frame(
+  Comparison = comparison_names,
+  `Mean Difference` = sprintf("%.4f", consecutive_only$estimate),
+  `95% CI` = paste0("[", sprintf("%.4f", consecutive_only$lower.CL), ", ", 
+                    sprintf("%.4f", consecutive_only$upper.CL), "]"),
+  `t` = sprintf("%.2f", consecutive_only$t.ratio),
+  `p (FDR-corrected)` = sprintf("%.2e", consecutive_only$p.value.fdr),
+  check.names = FALSE
+)
+
+cat("=== MANUSCRIPT-READY TABLE ===\n")
+print(manuscript_table, row.names = FALSE)
+cat("\n")
+
+
+# Extract key statistics for manuscript
+cat("=== KEY STATISTICS FOR MANUSCRIPT ===\n")
+model_summary <- summary(model_interaction)
+anova_summary <- anova(model_interaction)
+
+cat("MAIN EFFECTS:\n")
+cat("- Torder: F(", anova_summary$NumDF[1], ",", round(anova_summary$DenDF[1]), ") = ", 
+    round(anova_summary$`F value`[1], 2), ", p = ", 
+    ifelse(anova_summary$`Pr(>F)`[1] < 0.001, 
+           sprintf("%.2e", anova_summary$`Pr(>F)`[1]), 
+           round(anova_summary$`Pr(>F)`[1], 3)), "\n")
+
+cat("  Beta = ", sprintf("%.3e", model_summary$coefficients[2, 1]), 
+    ", t = ", round(model_summary$coefficients[2, 4], 2),
+    ", p = ", sprintf("%.2e", model_summary$coefficients[2, 5]), "\n")
+
+cat("- Hz: F(", anova_summary$NumDF[2], ",", round(anova_summary$DenDF[2]), ") = ", 
+    round(anova_summary$`F value`[2], 2), ", p = ", 
+    ifelse(anova_summary$`Pr(>F)`[2] < 0.001, 
+           sprintf("%.2e", anova_summary$`Pr(>F)`[2]), 
+           round(anova_summary$`Pr(>F)`[2], 3)), "\n")
+
+cat("  Beta = ", sprintf("%.3e", model_summary$coefficients[3, 1]), 
+    ", t = ", round(model_summary$coefficients[3, 4], 2),
+    ", p = ", sprintf("%.2e", model_summary$coefficients[3, 5]), "\n")
+
+cat("INTERACTION:\n")
+cat("- Torder x Hz: F(", anova_summary$NumDF[3], ",", round(anova_summary$DenDF[3]), ") = ", 
+    round(anova_summary$`F value`[3], 2), ", p = ", 
+    ifelse(anova_summary$`Pr(>F)`[3] < 0.001, 
+           sprintf("%.2e", anova_summary$`Pr(>F)`[3]), 
+           round(anova_summary$`Pr(>F)`[3], 3)), "\n")
+
+cat("  Beta = ", sprintf("%.3e", model_summary$coefficients[4, 1]), 
+    ", t = ", round(model_summary$coefficients[4, 4], 2),
+    ", p = ", sprintf("%.2e", model_summary$coefficients[4, 5]), "\n")
+
+cat("\n=== BAYES FACTOR SUMMARY FOR MANUSCRIPT ===\n")
+cat("Model selection based on BIC and Bayes Factors:\n")
+cat("- Best model:", best_model_name, "(lowest BIC)\n")
+cat("- Evidence for best model vs null: BF =", all_models_BIC$BF_vs_null[best_model_index], "\n")
+
+if(best_model_name != "Interaction") {
+  int_index <- which(all_models_BIC$Model == "Interaction")
+  cat("- Evidence against interaction model: BF =", all_models_BIC$BF_vs_best[int_index], "\n")
+}
+
+cat("\n=== ANALYSIS COMPLETE ===\n")
+cat("Results saved to:", output_file, "\n")
+
+# Close the sink to return output to console
+sink()
+
+# Print confirmation message to console
+cat("Analysis complete! Results saved to:", output_file, "\n")
+cat("File location:", file.path(getwd(), output_file), "\n")
+```
+  
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+
+# Create boxplots with mustard color gradient
+# Assuming curr_data is already available from your analysis
+
+# Convert proportion to percentage
+curr_data$percentage <- curr_data$proportion * 100
+curr_data$torder_factor <- factor(curr_data$torder, levels = c(1, 2, 3, 4), 
+                                 labels = c("T1", "T2", "T3", "T4"))
+
+# Define mustard color gradient (light to dark)
+mustard_colors <- c("#FFF8DC", "#F0E68C", "#DAA520", "#B8860B")
+
+# Create the boxplot
+p <- ggplot(curr_data, aes(x = torder_factor, y = percentage, fill = torder_factor)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  
+  # Add mean points
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 3, 
+               fill = "white", stroke = 1.5) +
+  
+  # Styling
+  labs(title = paste("Sleep Event Prevalence Across Tone Repetitions -", dataset_name),
+       x = "Tone Repetition",
+       y = "% Trials with Events") +
+  scale_fill_manual(values = mustard_colors, name = "Tone\nRepetition") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12, face = "bold"),
+        legend.title = element_text(size = 10, face = "bold"),
+        legend.text = element_text(size = 10)) +
+  ylim(0, 20)
+
+# Print the plot
+print(p)
+
+# Save the plot
+ggsave(paste0("boxplot_", dataset_name, ".svg"), 
+       plot = p, width = 8, height = 6, dpi = 300)
+
+cat("Boxplot created and saved successfully!\n")
+```
+
+  
+```{r}
+
+# Function to add significance asterisks
+add_sig <- function(p_val) {
+  if (p_val < 0.001) return("***")
+  else if (p_val < 0.01) return("**") 
+  else if (p_val < 0.05) return("*")
+  else return("ns")
+}
+```
+
+```{r}
+
+
+###### MLE analysis plotting ######
+
+# Create prediction data for interaction plots
+hz_range_seq <- seq(min(curr_data$hz), max(curr_data$hz), length.out = 10)
+torder_range_seq <- seq(min(curr_data$torder), max(curr_data$torder), length.out = 50)
+
+pred_data_full <- expand.grid(
+  torder = torder_range_seq,
+  hz = hz_range_seq,
+  sub = curr_data$sub[1]
+)
+pred_data_full$predicted <- predict(model_interaction, pred_data_full, re.form = NA)
+
+# Plot 1: Interaction lines across all Hz values
+plot_interaction_lines <- ggplot(pred_data_full, aes(x = torder, y = predicted, color = hz)) +
+  geom_line(aes(group = hz), size = 1.2) +
+  scale_color_viridis_c(name = "Hz") +
+  scale_y_continuous(limits = c(min(pred_data_full$predicted)*0.98, max(pred_data_full$predicted)*1.02)) +
+  labs(title = "Torder × Hz Interaction Across All Hz Values",
+       x = "Torder", 
+       y = "Predicted Proportion",
+       subtitle = paste("Interaction p =", round(anova(model_addative, model_interaction)$`Pr(>Chisq)`[2], 4))) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_interaction_lines)
+
+# Plot 2: 2D heatmap showing interaction surface
+pred_grid_full <- expand.grid(
+  torder = seq(min(curr_data$torder), max(curr_data$torder), length.out = 50),
+  hz = seq(min(curr_data$hz), max(curr_data$hz), length.out = 50),
+  sub = curr_data$sub[1]
+)
+pred_grid_full$predicted <- predict(model_interaction, pred_grid_full, re.form = NA)
+
+plot_heatmap <- ggplot(pred_grid_full, aes(x = torder, y = hz, fill = predicted)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Proportion") +
+  geom_contour(aes(z = predicted), color = "white", alpha = 0.5, size = 0.5) +
+  labs(title = "Interaction Surface: All Hz × Torder Combinations",
+       x = "Torder", y = "Hz") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_heatmap)
+
+# Plot 3: Raw data points colored by Hz with overall trend
+plot_raw_data <- ggplot(curr_data, aes(x = torder, y = proportion, color = hz)) +
+  geom_point(size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "black", size = 1.5) +
+  scale_color_viridis_c(name = "Hz") +
+  labs(title = "Raw Data: All Hz Values with Overall Trend",
+       x = "Torder", 
+       y = "Observed Proportion",
+       subtitle = "Black line shows overall linear trend") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_raw_data)
+
+# Plot 4: Slope of torder effect across Hz values
+hz_seq <- seq(min(curr_data$hz), max(curr_data$hz), length.out = 20)
+slopes_data_full <- data.frame()
+
+for(hz_val in hz_seq) {
+  window_size <- (max(curr_data$hz) - min(curr_data$hz)) / 20
+  temp_data <- curr_data[abs(curr_data$hz - hz_val) <= window_size, ]
+  
+  if(nrow(temp_data) > 5) {
+    slope_model <- lm(proportion ~ torder, data = temp_data)
+    slopes_data_full <- rbind(slopes_data_full, data.frame(
+      hz = hz_val,
+      slope = coef(slope_model)[2],
+      slope_se = summary(slope_model)$coefficients[2,2],
+      n_points = nrow(temp_data)
+    ))
+  }
+}
+
+plot_slopes <- ggplot(slopes_data_full, aes(x = hz, y = slope)) +
+  geom_point(aes(size = n_points), color = "darkblue", alpha = 0.7) +
+  geom_errorbar(aes(ymin = slope - 1.96*slope_se, ymax = slope + 1.96*slope_se), 
+                width = 50, alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", size = 1.5) +
+  scale_size_continuous(name = "N points", range = c(2, 6)) +
+  labs(title = "How Torder Effect Changes Across All Hz Values",
+       x = "Hz", 
+       y = "Slope of Torder Effect",
+       subtitle = "Red line shows linear trend in slope changes") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_slopes)
+
+# Plot 5: Faceted plots by Hz (if manageable number)
+unique_hz <- sort(unique(curr_data$hz))
+if(length(unique_hz) <= 12) {
+  plot_facets <- ggplot(curr_data, aes(x = torder, y = proportion)) +
+    geom_point(alpha = 0.6, size = 1.5) +
+    geom_smooth(method = "lm", se = TRUE, size = 1) +
+    facet_wrap(~hz, scales = "free_y", 
+               labeller = labeller(hz = function(x) paste("Hz =", x))) +
+    labs(title = "Torder Effect at Each Unique Hz Value",
+         x = "Torder", 
+         y = "Observed Proportion") +
+    theme_minimal(base_size = 12) +
+    theme(strip.text = element_text(size = 10),
+          plot.title = element_text(size = 16, face = "bold"))
+  
+  print(plot_facets)
+} else {
+  cat("Too many unique Hz values (", length(unique_hz), ") for individual facets.\n")
+  cat("Unique Hz values:", paste(unique_hz, collapse = ", "))
+}
+
+###### Bar plots with significance ######
+
+model_summary <- summary(model_interaction)
+
+# Plot 6: Fixed main effects (across ranges)
+hz_range <- max(curr_data$hz) - min(curr_data$hz)
+torder_range <- max(curr_data$torder) - min(curr_data$torder)
+
+effects_range <- data.frame(
+  Effect = c("Torder", "Hz"),
+  Estimate_per_unit = model_summary$coefficients[2:3, 1],
+  Range = c(torder_range, hz_range),
+  Effect_across_range = c(
+    model_summary$coefficients[2, 1] * torder_range,
+    model_summary$coefficients[3, 1] * hz_range
+  ),
+  SE_across_range = c(
+    model_summary$coefficients[2, 2] * torder_range,
+    model_summary$coefficients[3, 2] * hz_range
+  ),
+  p_value = model_summary$coefficients[2:3, 5]
+)
+
+effects_range$significance <- sapply(effects_range$p_value, add_sig)
+effects_range$CI_lower <- effects_range$Effect_across_range - 1.96 * effects_range$SE_across_range
+effects_range$CI_upper <- effects_range$Effect_across_range + 1.96 * effects_range$SE_across_range
+
+# Format p-values properly (avoid p=0)
+effects_range$p_label <- ifelse(effects_range$p_value < 0.001, 
+                               paste("p <", "0.001"), 
+                               paste("p =", round(effects_range$p_value, 3)))
+
+# Fix positioning for asterisks - use absolute positions
+effects_range$y_pos_stars <- pmax(effects_range$CI_upper, effects_range$Effect_across_range) + 
+                            0.02 * max(abs(effects_range$Effect_across_range))
+
+# Calculate y-axis limits to include asterisks
+y_min <- min(effects_range$CI_lower) * 1.1
+y_max <- max(effects_range$y_pos_stars) * 1.2
+
+plot_main_effects_fixed <- ggplot(effects_range, aes(x = Effect, y = Effect_across_range)) +
+  geom_col(fill = "steelblue", alpha = 0.7, width = 0.6) +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.2, size = 1) +
+  geom_text(aes(label = significance, y = y_pos_stars), vjust = 0, size = 8) +
+  geom_text(aes(label = p_label, y = CI_lower), vjust = 1.2, size = 4) +
+  scale_y_continuous(limits = c(y_min, y_max)) +
+  labs(title = "Main Effects Across Variable Ranges",
+       subtitle = paste("Torder range:", torder_range, "| Hz range:", hz_range),
+       x = "Effect", y = "Effect Across Full Range") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_main_effects_fixed)
+
+# Plot 7: Standardized effects
+curr_data_scaled <- curr_data
+curr_data_scaled$torder_z <- scale(curr_data_scaled$torder)[,1]
+curr_data_scaled$hz_z <- scale(curr_data_scaled$hz)[,1]
+
+model_standardized <- lmer(proportion ~ torder_z * hz_z + (1|sub), data = curr_data_scaled)
+model_std_summary <- summary(model_standardized)
+
+std_effects <- data.frame(
+  Effect = c("Torder (std)", "Hz (std)"),
+  Estimate = model_std_summary$coefficients[2:3, 1],
+  SE = model_std_summary$coefficients[2:3, 2],
+  p_value = model_std_summary$coefficients[2:3, 5]
+)
+std_effects$significance <- sapply(std_effects$p_value, add_sig)
+std_effects$CI_lower <- std_effects$Estimate - 1.96 * std_effects$SE
+std_effects$CI_upper <- std_effects$Estimate + 1.96 * std_effects$SE
+
+# Format p-values properly
+std_effects$p_label <- ifelse(std_effects$p_value < 0.001, 
+                             paste("p <", "0.001"), 
+                             paste("p =", round(std_effects$p_value, 3)))
+
+# Fix positioning and y-axis limits for standardized plot too
+std_effects$y_pos_stars <- pmax(std_effects$CI_upper, std_effects$Estimate) + 
+                          0.02 * max(abs(std_effects$Estimate))
+
+y_min_std <- min(std_effects$CI_lower) * 1.1
+y_max_std <- max(std_effects$y_pos_stars) * 1.2
+
+plot_standardized_effects <- ggplot(std_effects, aes(x = Effect, y = Estimate)) +
+  geom_col(fill = "darkgreen", alpha = 0.7, width = 0.6) +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.2, size = 1) +
+  geom_text(aes(label = significance, y = y_pos_stars), vjust = 0, size = 8) +
+  geom_text(aes(label = p_label, y = CI_lower), vjust = 1.2, size = 4) +
+  scale_y_continuous(limits = c(y_min_std, y_max_std)) +
+  labs(title = "Standardized Main Effects",
+       subtitle = "Effects in standard deviation units",
+       x = "Effect", y = "Standardized Coefficient") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_standardized_effects)
+
+# Plot 8: Mean proportion by torder value
+torder_means <- curr_data %>%
+  group_by(torder) %>%
+  summarise(
+    mean_prop = mean(proportion),
+    se_prop = sd(proportion)/sqrt(n()),
+    n_obs = n(),
+    .groups = "drop"
+  )
+
+# Test if each torder differs significantly from grand mean
+grand_mean <- mean(curr_data$proportion)
+torder_means$t_stat <- (torder_means$mean_prop - grand_mean) / torder_means$se_prop
+torder_means$p_value <- 2 * (1 - pt(abs(torder_means$t_stat), df = torder_means$n_obs - 1))
+torder_means$significance <- sapply(torder_means$p_value, add_sig)
+torder_means$sig_label <- ifelse(torder_means$significance == "ns", "", torder_means$significance)
+
+plot_torder_means <- ggplot(torder_means, aes(x = factor(torder), y = mean_prop)) +
+  geom_col(fill = "forestgreen", alpha = 0.7, width = 0.8) +
+  geom_errorbar(aes(ymin = mean_prop - 1.96*se_prop, ymax = mean_prop + 1.96*se_prop), 
+                width = 0.2, size = 1) +
+  geom_hline(yintercept = grand_mean, linetype = "dashed", alpha = 0.6, color = "red") +
+  geom_text(aes(label = sig_label, y = mean_prop + 1.96*se_prop), vjust = -0.5, size = 5) +
+  labs(title = "Mean Proportion by Torder Value",
+       subtitle = "Dashed line = grand mean; asterisks = significantly different from grand mean",
+       x = "Torder", y = "Mean Proportion") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(plot_torder_means)
+
+# Plot 9: Mean proportion by Hz value
+hz_means <- curr_data %>%
+  group_by(hz) %>%
+  summarise(
+    mean_prop = mean(proportion),
+    se_prop = sd(proportion)/sqrt(n()),
+    n_obs = n(),
+    .groups = "drop"
+  )
+
+# Test if each hz differs significantly from grand mean
+hz_means$t_stat <- (hz_means$mean_prop - grand_mean) / hz_means$se_prop
+hz_means$p_value <- 2 * (1 - pt(abs(hz_means$t_stat), df = hz_means$n_obs - 1))
+hz_means$significance <- sapply(hz_means$p_value, add_sig)
+hz_means$sig_label <- ifelse(hz_means$significance == "ns", "", hz_means$significance)
+
+plot_hz_means <- ggplot(hz_means, aes(x = factor(hz), y = mean_prop)) +
+  geom_col(fill = "orange", alpha = 0.7, width = 0.8) +
+  geom_errorbar(aes(ymin = mean_prop - 1.96*se_prop, ymax = mean_prop + 1.96*se_prop), 
+                width = 0.2, size = 1) +
+  geom_hline(yintercept = grand_mean, linetype = "dashed", alpha = 0.6, color = "red") +
+  geom_text(aes(label = sig_label, y = mean_prop + 1.96*se_prop), vjust = -0.5, size = 5) +
+  labs(title = "Mean Proportion by Hz Value",
+       subtitle = "Dashed line = grand mean; asterisks = significantly different from grand mean",
+       x = "Hz", y = "Mean Proportion") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(plot_hz_means)
+
+# Plot 10: Interaction bars (remove hardcoded asterisks for now)
+interaction_means <- curr_data %>%
+  group_by(hz, torder) %>%
+  summarise(
+    mean_prop = mean(proportion),
+    se_prop = sd(proportion)/sqrt(n()),
+    n_obs = n(),
+    .groups = "drop"
+  ) %>%
+  filter(n_obs >= 3)  # Only combinations with sufficient data
+
+plot_interaction_bars <- ggplot(interaction_means, aes(x = factor(torder), y = mean_prop, fill = factor(hz))) +
+  geom_col(position = "dodge", alpha = 0.8, width = 0.8) +
+  geom_errorbar(aes(ymin = mean_prop - 1.96*se_prop, ymax = mean_prop + 1.96*se_prop), 
+                position = position_dodge(0.8), width = 0.2, size = 1) +
+  scale_fill_viridis_d(name = "Hz") +
+  labs(title = "Interaction: Mean Proportion by Hz × Torder",
+       subtitle = "Individual condition means (no significance testing)",
+       x = "Torder", y = "Mean Proportion") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+print(plot_interaction_bars)
+
+# Plot 11: Interaction effect significance
+interaction_effect <- data.frame(
+  Effect = "Torder × Hz",
+  Estimate = model_summary$coefficients[4, 1],
+  SE = model_summary$coefficients[4, 2],
+  p_value = model_summary$coefficients[4, 5]
+)
+interaction_effect$significance <- sapply(interaction_effect$p_value, add_sig)
+interaction_effect$CI_lower <- interaction_effect$Estimate - 1.96 * interaction_effect$SE
+interaction_effect$CI_upper <- interaction_effect$Estimate + 1.96 * interaction_effect$SE
+
+# Format p-value properly
+interaction_effect$p_label <- ifelse(interaction_effect$p_value < 0.001, 
+                                   paste("p <", "0.001"), 
+                                   paste("p =", round(interaction_effect$p_value, 3)))
+
+# Fix positioning and y-axis limits for interaction plot too
+interaction_effect$y_pos_stars <- pmax(interaction_effect$CI_upper, interaction_effect$Estimate) + 
+                                  0.02 * max(abs(interaction_effect$Estimate))
+
+y_min_int <- min(interaction_effect$CI_lower) * 1.1
+y_max_int <- max(interaction_effect$y_pos_stars) * 1.2
+
+plot_interaction_significance <- ggplot(interaction_effect, aes(x = Effect, y = Estimate)) +
+  geom_col(fill = "darkred", alpha = 0.7, width = 0.4) +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.1, size = 1) +
+  geom_text(aes(label = significance, y = y_pos_stars), vjust = 0, size = 8) +
+  geom_text(aes(label = p_label, y = CI_lower), vjust = 1.2, size = 4) +
+  scale_y_continuous(limits = c(y_min_int, y_max_int)) +
+  labs(title = "Interaction Effect Significance",
+       x = "", y = "Coefficient Estimate") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(plot_interaction_significance)
+
+###### Summary output ######
+
+# Print summary of unique values
+cat("\nUnique values in data:\n")
+cat("Torder values:", sort(unique(curr_data$torder)), "\n")
+cat("Hz values:", sort(unique(curr_data$hz)), "\n")
+cat("Total combinations:", nrow(interaction_means), "\n")
+
+# Print significance legend
+cat("\nSignificance levels:\n")
+cat("*** p < 0.001\n")
+cat("**  p < 0.01\n")
+cat("*   p < 0.05\n")
+cat("ns  not significant\n")
+
+# Show the ranges for context
+cat("\nVariable ranges:\n")
+cat("Torder: min =", min(curr_data$torder), ", max =", max(curr_data$torder), ", range =", torder_range, "\n")
+cat("Hz: min =", min(curr_data$hz), ", max =", max(curr_data$hz), ", range =", hz_range, "\n")
+cat("\nPer-unit effects:\n")
+cat("Torder:", round(model_summary$coefficients[2, 1], 6), "\n")
+cat("Hz:", round(model_summary$coefficients[3, 1], 8), "\n")
+cat("\nEffect across full range:\n")
+cat("Torder:", round(effects_range$Effect_across_range[1], 4), "\n")
+cat("Hz:", round(effects_range$Effect_across_range[2], 4), "\n")
+``` 

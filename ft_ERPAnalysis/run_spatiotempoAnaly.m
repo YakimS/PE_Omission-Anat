@@ -1,50 +1,63 @@
-
+clear
+close all
+%%
 % sovs
-N1 = defineExpStruct("N1", "N1", "N1", false);
-N2 = defineExpStruct("N2", "N2", "N2", false);
-N3 = defineExpStruct("N3", "N3", "N3", false);
-REM = defineExpStruct("REM", "REM", "REM", false);
-tREM = defineExpStruct("tREM", "tREM", "tREM", false);
-pREM = defineExpStruct("pREM", "pREM", "pREM", false);
-Wnig = defineExpStruct("wake_night", "wn", "Wake Pre", false);
-Wmor = defineExpStruct("wake_morning", "wm", "Wake Post", false);
-Wake = defineExpStruct("wake", "wake", "Wake Pre+Post", false);
+N1 = defineExpStruct("N1", "N1", "N1", false, [0.9, 0.1, 0.9]);
+N2 = defineExpStruct("N2", "N2", "N2", false,[1, 0.6, 0]);
+N3 = defineExpStruct("N3", "N3", "N3", false,[0.1, 0.9, 0.1]);
+REM = defineExpStruct("REM", "REM", "REM", false,[0.9, 0.1, 0.1]);
+Wnig = defineExpStruct("wake_night", "wn", "Wake Pre", false,[0, 0.7, 1]);
+
+N2wo = defineExpStruct("N2wo", "N2wo", "N2 w/o events", false,[1, 0.6, 0]);
+N2woSs = defineExpStruct("N2woSs", "N2woSs", "N2 w/o spindles", false,[1, 0.6, 0]);
+N2woKc = defineExpStruct("N2woKc", "N2woKc", "N2 w/o k-complex", false,[1, 0.6, 0]);
+N2wJSs = defineExpStruct("N2wJSs", "N2wJSs", "N2 w/ spindles", false,[1, 0.6, 0]);
+N2wJKc = defineExpStruct("N2wJKc", "N2wJKc", "N2 w/ k-complex", false,[1, 0.6, 0]);
+tREM = defineExpStruct("tREM", "tREM", "tREM", false,[1, 0, 0]);
+pREM = defineExpStruct("pREM", "pREM", "pREM", false,[1, 0, 0]);
+% Wmor = defineExpStruct("wake_morning", "wm", "Wake Post", false); 
+% Wake = defineExpStruct("wake", "WAll", "Wake Pre+Post", false); % Short must be WAll for ft_importer
+
+v = struct();
+n2_variants = {'wo', 'woSs', 'woKc', 'wSs', 'wKc', 'wJSs', 'wJKc', 'wSsKc', 'EliwJSs', 'EliwJKc', 'EliwSsKc', 'Eliwo'};
+for i = 1:length(n2_variants)
+    variant = n2_variants{i};
+    full_name = ['N2' variant];
+    v.(full_name) = defineExpStruct(full_name, full_name, full_name, false, N2.color);
+end
 
 % [-0.1, 1.16]
-AOmi = defineExpStruct("AO", "AO", "Omission", false);
-AOmiR = defineExpStruct("AOR", "AOR", "Unpredictable Omission", false);
-AOmiF = defineExpStruct("AOF", "AOF", "Predictable Omission", false);
-AblOmi = defineExpStruct("AblO", "AblO", "Omission", false);
-intblksmpAO = defineExpStruct("intblksmpAO", "intblksmpAO", "Baseline", true);
-intblksmpAblO = defineExpStruct("intblksmpAblO", "intblksmpAblO", "Baseline", true);
-intblksmpAOR = defineExpStruct("intblksmpAOR", "intblksmpAOR", "Baseline", true);
-intblksmpAOF = defineExpStruct("intblksmpAOF", "intblksmpAOF", "Baseline", true);
+NblAOmi = defineExpStruct("NblAO", "NblAO", "Omission", false, [0, 0, 0]);
+NblAOmiR = defineExpStruct("NblAOR", "NblAOR", "Unpredictable Omission", false, [0, 0, 0]);
+NblAOmiF = defineExpStruct("NblAOF", "NblAOF", "Predictable Omission", false, [0, 0, 0]);
+intblksmpNblAO = defineExpStruct("intblksmpNblAO", "intblksmpNblAO", "Baseline", true, [0, 0, 0]);
+intblksmpNblAOR = defineExpStruct("intblksmpNblAOR", "intblksmpNblAOR", "Baseline", true, [0, 0, 0]);
+intblksmpNblAOF = defineExpStruct("intblksmpNblAOF", "intblksmpNblAOF", "Baseline", true, [0, 0, 0]);
+AT1 = defineExpStruct("AT1", "AT1", "1st tone", false, [0, 0, 0]);
+AT5 = defineExpStruct("AT5", "AT5", "5th tone", false, [0, 0, 0]);
+AT8 = defineExpStruct("AT8", "AT8", "8th tone", false, [0, 0, 0]);
+ATR10 = defineExpStruct("ATR10", "ATR10", "10th tone, random block", false, [0, 0, 0]);
 
-noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission w/o ss&kc", false);
-noN2EventsAOF = defineExpStruct("noN2EventsAOF", "noN2EventsAOF", "Omission fixed w/o ss&kc", false);
-noN2EventsAOR = defineExpStruct("noN2EventsAOR", "noN2EventsAOR", "Omission random w/o ss&kc", false);
-noN2KcompAO = defineExpStruct("noN2KcompAO", "noN2KcompAO", "Omission w/o kc", false);
-noN2KcompAOF = defineExpStruct("noN2KcompAOF", "noN2KcompAOF", "Predictable Omission w/o kc", false);
-noN2KcompAOR = defineExpStruct("noN2KcompAOR", "noN2KcompAOR", "Unpredictable Omission w/o kc", false);
-noN2SsAO = defineExpStruct("noN2SsAO", "noN2SsAO", "Omission w/o ss", false);
+AblOmi = defineExpStruct("AblO", "AblO", "Omission", false, [0, 0, 0]);
+intblksmpAblO = defineExpStruct("intblksmpAblO", "intblksmpAblO", "Baseline", true, [0, 0, 0]);
+intblksmpAOR = defineExpStruct("intblksmpAOR", "intblksmpAOR", "Baseline", true, [0, 0, 0]);
+intblksmpAOF = defineExpStruct("intblksmpAOF", "intblksmpAOF", "Baseline", true, [0, 0, 0]);
 
 % [-1.6, 2.66]
-AOmiftr = defineExpStruct("AOtfr", "AOtfr", "Omission", false);
-AOmiRtfr = defineExpStruct("AOFtfr", "AOFtfr", "Unpredictable Omission", false);
-AOmiFtfr = defineExpStruct("AORtfr", "AORtfr", "Predictable Omission", false);
-intblksmpAOtfr = defineExpStruct("intblksmpAOtfr", "intblksmpAOtfr", "Baseline", true);
+AOmi = defineExpStruct("AO", "AO", "Omission", false, [0, 0, 0]);
+AOmiF  = defineExpStruct("AOF", "AOF", "Predictable Omission", false, [0, 0, 0]);
+AOmiR = defineExpStruct("AOR", "AOR", "Unpredictable Omission", false, [0, 0, 0]);
+intblksmpAO = defineExpStruct("intblksmpAO", "intblksmpAO", "Baseline", true, [0, 0, 0]);
 
 % [-1.5, 2.5] (note! They are opposite - T5thTfr is T1stTfr and vice versa)
-T5thTfr = defineExpStruct("T5thTfr", "T5thTfr", "1st trial tone", false);
-T1stTfr = defineExpStruct("T1stTfr", "T1stTfr", "5th trial tone", false);
-
+T5thTfr = defineExpStruct("T5thTfr", "T5thTfr", "1st trial tone", false, [0, 0, 0]);
+T1stTfr = defineExpStruct("T1stTfr", "T1stTfr", "5th trial tone", false, [0, 0, 0]);
 
 % [-0.1, 6]
-lastAOF = defineExpStruct("lastAOF", "lastAOF", "Last A OF", false);
-lastAT = defineExpStruct("lastAT", "lastAT", "Last A T", false);
-lastAOFnoN2Events  = defineExpStruct("LastAOFNoN2Events", "LastAOFNoN2Events", "Last A OF w/o ss&kc", false);
-lastATnoN2Events = defineExpStruct("LastATNoN2Events", "LastATNoN2Events", "Last A T w/o ss&kc", false);
-
+lastAOF = defineExpStruct("lastAOF", "lastAOF", "Last A OF", false, [0, 0, 0]);
+lastAT = defineExpStruct("lastAT", "lastAT", "Last A T", false, [0, 0, 0]);
+lastAOFnoN2Events  = defineExpStruct("LastAOFNoN2Events", "LastAOFNoN2Events", "Last A OF w/o ss&kc", false, [0, 0, 0]);
+lastATnoN2Events = defineExpStruct("LastATNoN2Events", "LastATNoN2Events", "Last A T w/o ss&kc", false, [0, 0, 0]);
 
 % % [-12, 6]
 % OmiR618 = struct(); OmiR618.import_s = "OR618"; OmiR618.short_s = "OR618"; OmiR618.long_s = "Omission Random, 6th";
@@ -78,22 +91,24 @@ libs_dir = 'D:\matlab_libs';
 
 subs = {'08','09','10','11','13','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'}; 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
 % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
-restoredefaultpath
-addpath(sprintf('%s\\fieldtrip-20230223', libs_dir))
+restoredefaultpath 
+addpath(sprintf('%s\\fieldtrip-20241219', libs_dir)) % fieldtrip-20230223
 ft_defaults
-addpath(sprintf('%s\\eeglab2023.0', libs_dir))
+addpath(sprintf('%s\\eeglab2024.2', libs_dir)) %%eeglab2023.0'
 close;
 addpath(libs_dir)
 addpath(genpath('C:\Users\User\OneDrive\Documents\githubProjects'))
 
+
 %% elec clusters
 %channels_selection =  {'Cz','E31','E80','E55','E7','E106'};%mid-cent%{'E46','E47','E52','E53','E37'}; % left-posterior %{'Cz'};%{'E46','E47','52','53','37'}, 
 
-time = -0.1:0.004:5.996;
-f = get_funcs_instant(subs,{N2}, AOmi,ft_cond_input_dir,ft_cond_output_dir,time);
-arbitrary_cond = f.imp.get_cond_timelocked(f.imp,AOmi,N2);
+time = -1.6:0.004:2.656;
+f = get_funcs_instant(subs,{Wnig}, {AOmi},ft_cond_input_dir,ft_cond_output_dir,time);
+arbitrary_cond = f.imp.get_cond_timelocked(f.imp,f.imp.subs,AOmi,Wnig);
 arbitrary_cond_elec = arbitrary_cond{1}.elec;
 
 clusts_struct = struct();
@@ -104,20 +119,267 @@ clusts_struct.('elec_gen_info') = arbitrary_cond_elec;
 % central_cluster.('short_s') = 'centElec';
 % central_cluster.('long_s') = '6 central elect';
 % central_cluster.('elect_label') =  {'Cz','E31','E80','E55','E7','E106'};
-% [isMember, indices] = ismember(central_cluster.('elect_label') , clusts_struct.('elec_gen_info').('label'));
-% central_cluster.('elect') =  indices(isMember);
 % clusts_struct.('central6') = central_cluster;
 
-% wn: intblk vs AO
-% clust_wn_intblk_AO_res_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
-% clust_wn_intblk_AO = f.get_electdClust(f,'simple_contrast',clust_wn_intblk_AO_res_dir,{intblksmpAO,AOmi},{Wnig,Wnig},0.05);
-% clusts_struct.('clust_wn_intblk_AO_pos1') = clust_wn_intblk_AO.pos_1; 
+% % % wn: intblk vs AO
+AO_new_with_TFR_dir = sprintf("%s\\AO_new_with_TFR",output_main_dir);
+clust_wn_intblk_AO_res_dir = sprintf("%s\\AO_and_NblAO",output_main_dir);
+clust_wn_intblk_AO = f.get_electdClust(f,'simple_contrast',AO_new_with_TFR_dir,{intblksmpAO,AOmi},{Wnig,Wnig},0.05);
+clusts_struct.('clust_wn_intblk_AO_pos1') = clust_wn_intblk_AO.pos_1; 
 % clusts_struct.('clust_wn_intblk_AO_neg1') = clust_wn_intblk_AO.neg_1; 
 
 % wn: OF vs OR
-clust_wn_AOF_AOR_res_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
-clust_wn_AOF_AOR = f.get_electdClust(f,'simple_contrast',clust_wn_AOF_AOR_res_dir,{AOmiF,AOmiR},{Wnig,Wnig},0.1);
+AO_new_with_TFR_dir = sprintf("%s\\AO_new_with_TFR",output_main_dir);
+clust_wn_AOF_AOR = f.get_electdClust(f,'simple_contrast',AO_new_with_TFR_dir,{AOmiF,AOmiR},{Wnig,Wnig},0.05);
 clusts_struct.('clust_wn_AOF_AOR_pos1') = clust_wn_AOF_AOR.pos_1; 
+
+% N2, 13-30Hz: OF vs OR
+% clust_N2_AOF_AOR_1330HZ_res_dir = sprintf("%s\\TFR_topo\\zscored",output_main_dir);
+% electd_clusts=f.get_electdClust_tfrband(f,clust_N2_AOF_AOR_1330HZ_res_dir,{AOmiFtfr,AOmiRtfr},{N2,N2},"15.0-30.0",0.05);
+% clusts_struct.('clust_wn_AOF_AOR_pos1') = clust_wn_AOF_AOR.pos_1; 
+
+
+%% AO_and_NblAO
+AO_and_NblAO_output_dir = sprintf("%s\\AO_new_with_TFR",output_main_dir);
+sovs = {Wnig,N2,N3}; % Wnig,N1,N2,N3,REM
+time = -1.6:0.004:2.656;
+
+adaptor_event = struct();
+adaptor_event.("event_time") = [0,0.1];
+adaptor_event.("event_color") = [.85, .85 ,.85];
+adaptor_event.("event_text") = 'Adaptor';
+adaptor_event.('event_text_color') = [0,0,0];
+omission_event = struct();
+omission_event.("event_time") = [0.58,0.62];
+omission_event.("event_color") = [.93, .93 ,.93];
+omission_event.("event_text") = 'Omission';
+omission_event.('event_text_color') = [0,0,0];
+event_lines = {adaptor_event,omission_event};
+
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
+cfg.is_plot_subs = false;
+cfg.is_plot_ste = true;
+cfg.ylim_ = [-1.2,3];
+cfg.LineWidth = 8;
+maxPval = 0.05;
+
+cfg.ticksY = 1:1:cfg.ylim_(2);
+cfg.ticksX = 0:0.2:time(end);
+cfg.axisFontSize = 20;
+cfg.is_test = true;
+cfg.is_svg_plot = true;
+
+contrasts = {{AOmiF,AOmiR},{intblksmpAO,AOmi}}; %
+for sov_i=1:numel(sovs)
+    for cont_i=1:numel(contrasts)
+        f = get_funcs_instant(subs,{sovs{sov_i}}, contrasts{cont_i},ft_cond_input_dir,ft_cond_output_dir,time);
+        f.run_STCP_ERP_dependent(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}}, cfg)
+
+        curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,contrasts{cont_i},{Wnig,Wnig},maxPval);
+        f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},curr_electd_clust, cfg);
+
+        curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},maxPval);
+        f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},curr_electd_clust, cfg);
+
+%         f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},clusts_struct, cfg); 
+    end
+end
+
+%%% n2 all
+cfg.is_test = true;
+
+N2_sovs = {v.N2wJKc,v.N2wJSs,v.N2wo};
+f = get_funcs_instant(subs,N2_sovs, {AOmi},ft_cond_input_dir,ft_cond_output_dir,time);
+condSovPairs = {{AOmi,v.N2wJKc},{AOmi,v.N2wJSs},{AOmi,v.N2wo},{intblksmpAO,N2}};
+maxPval = 0.05;
+curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
+f.plot_erp_per_condsSovPairs(f,AO_and_NblAO_output_dir,condSovPairs,curr_electd_clust,sprintf("%s'-allN2Sovs",AOmi.short_s) ,cfg);
+f = get_funcs_instant(subs,{N2,v.N2wo}, {AOmi},ft_cond_input_dir,ft_cond_output_dir,time);
+f.run_STCP_ERP_dependent(f,AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{N2,v.N2wo}, cfg)
+f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{N2,v.N2wo},curr_electd_clust, cfg);
+f.run_STCP_ERP_dependent(f,AO_and_NblAO_output_dir,{AOmiF,AOmiR},{v.N2wo,v.N2wo}, cfg)
+f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,{AOmiF,AOmiR},{v.N2wo,v.N2wo},curr_electd_clust, cfg);
+
+n2wo_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{N2,N2wo},0.05);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{AOmi,N2}, {AOmi,N2wo},{intblksmpAO,N2}},n2wo_electd_clust,"allN2Sovs_" , cfg);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{AOmi,N2}, {AOmi,N2wo},{intblksmpAO,N2}},curr_electd_clust,"allN2Sovs_" , cfg);
+
+timerange_test = cfg.test_latency;
+freqrange_test =  {[0.5,4],[4,8],[8,13],[13,30],[30,50],[50,70]};
+timerange_plot =cfg.plot_latency;
+is_bl_in_band = false;
+
+for sov_i=1:numel(sovs)
+    for cont_i=1:numel(contrasts)
+        for freq_i=1:numel(freqrange_test)
+            f = get_funcs_instant(subs,{sovs{sov_i}}, contrasts{cont_i},ft_cond_input_dir,ft_cond_output_dir,time);
+            f.run_STCP_TFR_dependent(f,AO_and_NblAO_output_dir, contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test{freq_i},timerange_plot,is_bl_in_band,'hilbert_zscored')
+        end
+    end
+end
+
+%% AO_and_NblAO
+AO_and_NblAO_output_dir = sprintf("%s\\AO_new_with_TFR",output_main_dir);
+sovs = {Wnig,N2,REM,N3}; % Wnig,N1,N2,N3,REM
+time = -0.1:0.004:1.1596;
+
+adaptor_event = struct();
+adaptor_event.("event_time") = [0,0.1];
+adaptor_event.("event_color") = [.85, .85 ,.85];
+adaptor_event.("event_text") = 'Adaptor';
+adaptor_event.('event_text_color') = [0,0,0];
+omission_event = struct();
+omission_event.("event_time") = [0.58,0.62];
+omission_event.("event_color") = [.93, .93 ,.93];
+omission_event.("event_text") = 'Omission';
+omission_event.('event_text_color') = [0,0,0];
+event_lines = {adaptor_event,omission_event};
+
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
+cfg.is_plot_subs = false;
+cfg.is_plot_ste = true;
+cfg.ylim_ = [-2,3];
+cfg.LineWidth = 8;
+maxPval = 0.05;
+
+cfg.ticksY = cfg.ylim_(1):1:cfg.ylim_(2);
+cfg.ticksX = 0:0.2:time(end);
+cfg.axisFontSize = 20;
+cfg.is_test = true;
+
+contrasts = {{intblksmpNblAO,NblAOmi}}; %
+for sov_i=1:numel(sovs)
+    for cont_i=1:numel(contrasts)
+        f = get_funcs_instant(subs,{sovs{sov_i}}, contrasts{cont_i},ft_cond_input_dir,ft_cond_output_dir,time);
+        f.run_STCP_ERP_dependent(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}}, cfg)
+
+        curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,contrasts{cont_i},{Wnig,Wnig},maxPval);
+        f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},curr_electd_clust, cfg);
+
+        curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},maxPval);
+        f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},curr_electd_clust, cfg);
+
+%         f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},clusts_struct, cfg); 
+    end
+end
+
+%%% n2 all
+
+% cfg.ylim_ = [-2,2];
+% cfg.ticksY = cfg.ylim_(1):0.5:cfg.ylim_(2);
+% cfg.is_test = true;
+% 
+% N2_sovs = {v.N2wJKc,v.N2wJSs,v.N2wo};
+% f = get_funcs_instant(subs,N2_sovs, {AOmi},ft_cond_input_dir,ft_cond_output_dir,time);
+% condSovPairs = {{AOmi,v.N2wJKc},{AOmi,v.N2wJSs},{AOmi,v.N2wo},{intblksmpAO,N2}};
+% maxPval = 0.05;
+% curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
+% f.plot_erp_per_condsSovPairs(f,AO_and_NblAO_output_dir,condSovPairs,curr_electd_clust,sprintf("%s'-allN2Sovs",AOmi.short_s) ,cfg);
+% f = get_funcs_instant(subs,{N2,v.N2wo}, {AOmi},ft_cond_input_dir,ft_cond_output_dir,time);
+% f.run_STCP_ERP_dependent(f,AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{N2,v.N2wo}, cfg)
+% f.run_STCP_ERP_dependent(f,AO_and_NblAO_output_dir,{AOmiF,AOmiR},{v.N2wo,v.N2wo}, cfg)
+% f.plot_erp_per_contrast_and_sov(f,AO_and_NblAO_output_dir,{AOmiF,AOmiR},{v.N2wo,v.N2wo},curr_electd_clust, cfg);
+% 
+% 
+% 
+% timerange_test = cfg.test_latency;
+% freqrange_test =  {[0.5,4],[4,8],[8,13],[13,30],[30,50],[50,70]};
+% timerange_plot =cfg.plot_latency;
+% is_bl_in_band = false;
+% 
+% for sov_i=1:numel(sovs)
+%     for cont_i=1:numel(contrasts)
+%         for freq_i=1:numel(freqrange_test)
+%             f = get_funcs_instant(subs,{sovs{sov_i}}, contrasts{cont_i},ft_cond_input_dir,ft_cond_output_dir,time);
+%             f.run_STCP_TFR_dependent(f,AO_and_NblAO_output_dir, contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test{freq_i},timerange_plot,is_bl_in_band,'hilbert_zscored')
+%         end
+%     end
+% end
+
+%%
+
+AO_new_with_TFR_dir = sprintf("%s\\AO_new_with_TFR",output_main_dir);
+sovs = {Wnig,N2,N3,REM,N1}; % Wnig,N1,N2,N3,REM
+time = -1.6:0.004:2.656;
+
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Adaptor';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission';
+event_lines = {adaptor_event,omission_event};
+tfr_algos = {'hilbert_zscored'}; % 'hilbert','multitaper','multitaper_zscored'
+
+
+timerange_test = [0.58,1.16];
+freqrange_test =  [0.5,45];
+timerange_plot = [-0.1,1.16];
+
+contrasts = {{AOmiF,AOmiR},{intblksmpAO,AOmi}}; %
+for tfr_algo_i=1:numel(tfr_algos)
+    for sov_i=1:numel(sovs)
+        for cont_i=1:numel(contrasts)
+            f = get_funcs_instant(subs,{sovs{sov_i}}, contrasts{cont_i},ft_cond_input_dir,ft_cond_output_dir,time);
+            f.run_STCP_TFRMAP_dependent(f,AO_new_with_TFR_dir,tfr_algos{tfr_algo_i}, contrasts{cont_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test,clusts_struct,timerange_plot,event_lines)
+        end
+    end
+end
+
+%%
+at10_vs_of_output_dir = sprintf("%s\\at10_vs_of",output_main_dir);
+AO_and_NblAO_output_dir = sprintf("%s\\AO_and_NblAO",output_main_dir);
+sovs = {N2,N1,N2wo}; % 
+time = -0.1:0.004:1.1596;
+
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Adaptor';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Omission/Tone';
+event_lines = {adaptor_event,omission_event};
+
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
+cfg.is_plot_subs = false;
+cfg.is_plot_ste = true;
+% cfg.plot_bp_filter = [0.1,20];
+cfg.ylim_ = [-1.3,2];
+maxPval = 0.05;
+
+for sov_i=1:numel(sovs)
+    f = get_funcs_instant(subs,{sovs{sov_i}}, {AOmiF},ft_cond_input_dir,ft_cond_output_dir,time);
+    condSovPairs = {{intblksmpAO,sovs{sov_i}},{AOmiF,sovs{sov_i}},{ATR10,sovs{sov_i}}};
+
+    curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{sovs{sov_i},sovs{sov_i}},maxPval);
+
+    f.plot_erp_per_condsSovPairs(f,at10_vs_of_output_dir,condSovPairs,curr_electd_clust,sprintf("%s-ATF10VsOFVsBl",sovs{sov_i}.short_s) ,cfg);
+end
+
+condSovPairs = {{intblksmpAO,N2},{AOmiF,N2wo},{ATR10,N2wo}};
+curr_electd_clust = f.get_electdClust(f,'simple_contrast',AO_and_NblAO_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
+f.plot_erp_per_condsSovPairs(f,at10_vs_of_output_dir,condSovPairs,curr_electd_clust,sprintf("%s-ATF10VsOFVsBl",N2wo.short_s) ,cfg);
+
+
 
 %% RUN all conds for Anat Japanika
 %%%%%%%%%%%%%%%%%%%%
@@ -125,7 +387,7 @@ clusts_struct.('clust_wn_AOF_AOR_pos1') = clust_wn_AOF_AOR.pos_1;
 %%%%%%%%%%%%%%%%%%%%
 
 AdaptorOmission_output_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
-sovs = {Wnig,N2,N3,REM}; % 
+sovs = {Wnig,N2,N3,REM,Wake}; % 
 conds = {AOmi,AOmiF,AOmiR};
 time = -0.1:0.004:1.1596;
 f = get_funcs_instant(subs,sovs, conds{1},ft_cond_input_dir,ft_cond_output_dir,time);
@@ -149,7 +411,8 @@ cfg.is_plot_topoplot = true;
 cfg.is_plot_video = false;
 cfg.is_plot_subs = false;
 cfg.is_plot_ste = true;
-cfg.plot_bp_filter = [0.1,20];
+% cfg.plot_bp_filter = [0.1,20];
+cfg.ylim_ = [-1.3,2];
 maxPval = 0.05;
 
 %%% Contrast
@@ -161,74 +424,80 @@ maxPval = 0.05;
 % f.plot_erp_per_contrast_and_sov(f,output_dir,{AOmi,AOmi},{N3,N3},curr_electd_clust, cfg);
 
 % %%% Per cond
-output_dir = sprintf("%s\\furanat\\singleERP_O,OR,OF_elec-eachSovClust",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\furanat\\singleERP_O,OR,OF_elec-eachSovClust",output_main_dir); mkdir(AO_new_with_TFR_dir);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},0.05);
 for cond_i=1:numel(conds)
-    f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{Wnig},curr_electd_clust, cfg)
+    f.plot_erp_per_cond_across_sovs(f,AO_new_with_TFR_dir,conds{cond_i},{Wnig},curr_electd_clust, cfg)
 end
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},0.05);
 for cond_i=1:numel(conds)
-    f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{N2},curr_electd_clust, cfg)
+    f.plot_erp_per_cond_across_sovs(f,AO_new_with_TFR_dir,conds{cond_i},{N2},curr_electd_clust, cfg)
 end
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{REM,REM},0.05);
 for cond_i=1:numel(conds)
-    f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{REM},curr_electd_clust, cfg)
+    f.plot_erp_per_cond_across_sovs(f,AO_new_with_TFR_dir,conds{cond_i},{REM},curr_electd_clust, cfg)
 end
 %%
-output_dir = sprintf("%s\\furanat\\ERP-contrast\\OF vs OR vs Baseline",output_main_dir); mkdir(output_dir);
-curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,Wnig}, {AOmiF,Wnig},{AOmiR,Wnig}},curr_electd_clust,"intbOFOR-wn" , cfg);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N3}, {AOmiF,N3},{AOmiR,N3}},curr_electd_clust,"intbOFOR-N3" ,cfg);
-curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmiF,N2},{AOmiR,N2}},curr_electd_clust,"intbOFOR-N2" , cfg);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents" ,cfg);
-curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{REM,REM},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,REM}, {AOmiF,REM},{AOmiR,REM}},curr_electd_clust,"intbOFOR-REM" ,cfg);
+time = -0.1:0.004:1.1596;
+f = get_funcs_instant(subs,{Wnig}, intblksmpAO,ft_cond_input_dir,ft_cond_output_dir,time);
+
+AO_new_with_TFR_dir = sprintf("%s\\furanat\\ERP-contrast\\OF vs OR vs Baseline",output_main_dir); mkdir(AO_new_with_TFR_dir);
+curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N1,N1},maxPval);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N1}, {AOmiF,N1},{AOmiR,N1}},curr_electd_clust,"intbOFOR-N1" , cfg);
+% curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},0.05);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,Wnig}, {AOmiF,Wnig},{AOmiR,Wnig}},curr_electd_clust,"intbOFOR-wn" , cfg);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,Wmor}, {AOmiF,Wmor},{AOmiR,Wmor}},curr_electd_clust,"intbOFOR-wm" , cfg);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N3}, {AOmiF,N3},{AOmiR,N3}},curr_electd_clust,"intbOFOR-N3" ,cfg);
+% curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},maxPval);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmiF,N2},{AOmiR,N2}},curr_electd_clust,"intbOFOR-N2" , cfg);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents" ,cfg);
+% curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{REM,REM},maxPval);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,REM}, {AOmiF,REM},{AOmiR,REM}},curr_electd_clust,"intbOFOR-REM" ,cfg);
 %%
-curr_electd_clust =  f.get_electdClust(f,'simple_contrast',sprintf("%s\\furanat\\N2_noSSKC",output_main_dir),{intblksmpAblO,AblOmi},{N2,N2},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents-ClusterAblOmi" , cfg);
-%
-output_dir = sprintf("%s\\furanat\\singleERP_O,OR,OF_elec-wnCluster",output_main_dir); mkdir(output_dir);
-curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
-for sov_i=1:numel(sovs)
-    for cond_i=1:numel(conds)
-        f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},sovs{sov_i},curr_electd_clust, cfg)
-    end
-end
+% curr_electd_clust =  f.get_electdClust(f,'simple_contrast',sprintf("%s\\furanat\\N2_noSSKC",output_main_dir),{intblksmpAblO,AblOmi},{N2,N2},maxPval);
+% f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {noN2EventsAOF,N2},{noN2EventsAOR,N2}},curr_electd_clust,"intbOFOR-N2NoEvents-ClusterAblOmi" , cfg);
+% %
+% output_dir = sprintf("%s\\furanat\\singleERP_O,OR,OF_elec-wnCluster",output_main_dir); mkdir(output_dir);
+% curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
+% for sov_i=1:numel(sovs)
+%     for cond_i=1:numel(conds)
+%         f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},sovs{sov_i},curr_electd_clust, cfg)
+%     end
+% end
 
 % %%% N2 stuff 
-output_dir = sprintf("%s\\furanat\\N2_noSSKC",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\furanat\\N2_noSSKC",output_main_dir); mkdir(AO_new_with_TFR_dir);
 curr_electd_clust = "curr_sov_cont_clustersElect";
-run_withinSov_betweenCond_stcp_analysis(f, {N2}, {{intblksmpAblO,AblOmi}},curr_electd_clust,output_dir,maxPval,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, {N2}, {{intblksmpAblO,AblOmi}},curr_electd_clust,AO_new_with_TFR_dir,maxPval,cfg)
 
-curr_electd_clust =  f.get_electdClust(f,'simple_contrast',output_dir,{intblksmpAblO,AblOmi},{N2,N2},maxPval);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" , cfg);
+curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AO_new_with_TFR_dir,{intblksmpAblO,AblOmi},{N2,N2},maxPval);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" , cfg);
 
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{N2,N2},maxPval);
-run_withinSov_betweenCond_stcp_analysis(f, {N2}, {{intblksmpAblO,AblOmi}},curr_electd_clust,output_dir,maxPval,cfg)
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" ,cfg);
+run_withinSov_betweenCond_stcp_analysis(f, {N2}, {{intblksmpAblO,AblOmi}},curr_electd_clust,AO_new_with_TFR_dir,maxPval,cfg)
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},curr_electd_clust,"BlWAndWOAllEveTypes" ,cfg);
  
 %%% contrasts
-output_dir = sprintf("%s\\furanat\\REM",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\furanat\\REM",output_main_dir); mkdir(AO_new_with_TFR_dir);
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAblO,AblOmi},{REM,REM},maxPval);
-run_withinSov_betweenCond_stcp_analysis(f, {REM}, {{intblksmpAblO,AblOmi}},curr_electd_clust,output_dir,maxPval,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, {REM}, {{intblksmpAblO,AblOmi}},curr_electd_clust,AO_new_with_TFR_dir,maxPval,cfg)
 
 sovs = {tREM,pREM}; % 
 conds = {AblOmi};
 time = -0.1:0.004:1.1596;
 f = get_funcs_instant(subs,sovs, conds{1},ft_cond_input_dir,ft_cond_output_dir,time);
 curr_cont_elec =  "curr_sov_cont_clustersElect";
-run_withinSov_betweenCond_stcp_analysis(f, {tREM,pREM}, {{intblksmpAblO,AblOmi}},curr_cont_elec,output_dir,maxPval,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, {tREM,pREM}, {{intblksmpAblO,AblOmi}},curr_cont_elec,AO_new_with_TFR_dir,maxPval,cfg)
 
 curr_electd_clust =  f.get_electdClust(f,'simple_contrast',AdaptorOmission_output_dir,{intblksmpAO,AOmi},{REM,REM},maxPval);
-run_withinSov_betweenCond_stcp_analysis(f, {tREM,pREM}, {{intblksmpAblO,AblOmi}},curr_electd_clust,output_dir,maxPval,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, {tREM,pREM}, {{intblksmpAblO,AblOmi}},curr_electd_clust,AO_new_with_TFR_dir,maxPval,cfg)
 
 %% RUN {lastAOF,lastAT} & tfr 
-output_dir = sprintf("%s\\EndOfBlock",output_main_dir); mkdir(output_dir);
-sovs = {Wake,N2,REM};
+AO_new_with_TFR_dir = sprintf("%s\\EndOfBlock",output_main_dir); mkdir(AO_new_with_TFR_dir);
+sovs = {N2,REM,Wnig,N3};
 contrasts = {{lastAT,lastAOF}};
 time = -0.1:0.004:5.996;
-f = get_funcs_instant(subs,sovs, contrasts{1}{1},ft_cond_input_dir,ft_cond_output_dir,time);
+f = get_funcs_instant(subs,sovs, AOmi,lastAT,ft_cond_output_dir,time);
 
 adaptor_event = struct();
 adaptor_event.("event_time") = 0;
@@ -251,14 +520,15 @@ cfg.is_plot_video = false;
 % curr_cont_elec =  "curr_sov_cont_clustersElect";
 curr_cont_elec = clusts_struct;
 
-run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,0.05,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,AO_new_with_TFR_dir,0.05,cfg)
 
-conds = {lastAT,lastAOF};
-for sov_i=1:numel(sovs)
-    for cond_i=1:numel(conds)
-        f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{sovs{sov_i}},clusts_struct, cfg)
-    end
-end
+% conds = {lastAT,lastAOF};
+% for sov_i=1:numel(sovs)
+%     f = get_funcs_instant(subs,{sovs{sov_i}}, contrasts{1}{1},ft_cond_input_dir,ft_cond_output_dir,time);
+%     for cond_i=1:numel(conds)
+%         f.plot_erp_per_cond_across_sovs(f,output_dir,conds{cond_i},{sovs{sov_i}},clusts_struct, cfg)
+%     end
+% end
 
 % timerange_plot =[-0.1,5.996];
 % timerange_test =[0.58,4];
@@ -273,15 +543,56 @@ end
 
 sovs = {N2};
 contrasts = {{lastATnoN2Events,lastAOFnoN2Events}};
-run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,0.05,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,AO_new_with_TFR_dir,0.05,cfg)
+
+%% RUN  AT1 [-0.1,1.16]
+AO_new_with_TFR_dir = sprintf("%s\\AT158_AO",output_main_dir); mkdir(AO_new_with_TFR_dir);
+adaptor_omission_dir = sprintf("%s\\AdaptorOmission",output_main_dir); 
+sovs = {Wnig,N2,N3,REM,Wmor,Wake,N1};
+time = -0.1:0.004:1.156;
+
+adaptor_event = struct();
+adaptor_event.("event_time") = 0;
+adaptor_event.("event_color") = [.2, .2 ,.2];
+adaptor_event.("event_text") = 'Adaptor';
+omission_event = struct();
+omission_event.("event_time") = 0.6;
+omission_event.("event_color") = [.2, .2 ,.2];
+omission_event.("event_text") = 'Tone/Omission';
+event_lines = {adaptor_event,omission_event};
+
+cfg = {};
+cfg.event_lines = event_lines;
+cfg.test_latency = [0.58,1.16];
+cfg.plot_latency= [-0.1,1.16];
+cfg.is_plot_topoplot = true;
+cfg.is_plot_video = false;
+cfg.ylim_ = [-3,3];
+% cfg.plot_bp_filter = [0.1,20];
+
+for sov_i=1:numel(sovs)
+    f = get_funcs_instant(subs,{sovs{sov_i}}, AOmi,ft_cond_input_dir,ft_cond_output_dir,time);
+    elcdClust =  f.get_electdClust(f,'simple_contrast',adaptor_omission_dir,{intblksmpAO,AOmi},{sovs{sov_i},sovs{sov_i}},0.05);
+    f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,sovs{sov_i}},{AOmi,sovs{sov_i}},{AT1,sovs{sov_i}},{AT5,sovs{sov_i}},{AT8,sovs{sov_i}}}, ...
+        elcdClust,sprintf("AOT158-%s",sovs{sov_i}.short_s), cfg);
+end
+
+sovs = {N2};
+for sov_i=1:numel(sovs)
+    f = get_funcs_instant(subs,{sovs{sov_i}}, AOmi,ft_cond_input_dir,ft_cond_output_dir,time);
+    elcdClust =  f.get_electdClust(f,'simple_contrast',adaptor_omission_dir,{intblksmpAO,AOmi},{Wnig, Wnig},0.05);
+    f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,sovs{sov_i}},{noN2EventsAO,sovs{sov_i}},{noN2EventsAT1,sovs{sov_i}},{noN2EventsAT8,sovs{sov_i}}}, ...
+        elcdClust,sprintf("AOT18-%s",sovs{sov_i}.short_s), cfg);
+end
+
 
 %% RUN  (AO,AOF,AOR vs Aintbk) & (AOF vs. AOR) with a specific range [-0.1,1.16]
 adaptor_omission_dir = sprintf("%s\\AdaptorOmission",output_main_dir); mkdir(adaptor_omission_dir);
-sovs = {Wnig,N2,N3,REM,tREM,pREM};
-contrasts = {{intblksmpAO,AOmi}, {AOmiF,AOmiR}};
+sovs = {Wmor};
+contrasts = {{AOmiF,AOmiR},{intblksmpAO,AOmi}}; %,
 conds = {AOmi,AOmiF,AOmiR};
 time = -0.1:0.004:1.156;
-f = get_funcs_instant(subs,sovs, conds{1},ft_cond_input_dir,ft_cond_output_dir,time);
+f = get_funcs_instant(subs,sovs, AOmi,ft_cond_input_dir,ft_cond_output_dir,time);
 
 adaptor_event = struct();
 adaptor_event.("event_time") = 0;
@@ -299,27 +610,25 @@ cfg.test_latency = [0.58,1.16];
 cfg.plot_latency= [-0.1,1.16];
 cfg.is_plot_topoplot = true;
 cfg.is_plot_video = false;
-cfg.plot_bp_filter = [0.1,20];
+cfg.ylim_ = [-1.3,2];
+% cfg.plot_bp_filter = [0.1,20];
 maxPval = 0.05;
 
 
-
-% curr_cont_elec =  "curr_sov_cont_clustersElect";
-% run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,maxPval,cfg)
+curr_cont_elec =  "curr_sov_cont_clustersElect";
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,adaptor_omission_dir,0.05,cfg)
 % 
 % curr_electd_clust =  f.get_electdClust(f,'simple_contrast',adaptor_omission_dir,{intblksmpAO,AOmi},{Wnig,Wnig},maxPval);
 % f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO,AOmi},{N3,N3},curr_electd_clust,cfg);
 
-output_dir = sprintf("%s\\furanat\\ERP-contrast\\OF vs OR",output_main_dir); mkdir(output_dir);
 best_cluster_cont = {AOmiF,AOmiR};
 best_cluster_contSovs = {Wnig,Wnig};
 elcdClust_bestCluster =  f.get_electdClust(f,'simple_contrast',adaptor_omission_dir,best_cluster_cont,best_cluster_contSovs,0.1);
 % union_intersect_sovs = {Wnig,N2,N3,REM};
 % elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',adaptor_omission_dir,best_cluster_cont,union_intersect_sovs,maxPval);
-run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,elcdClust_bestCluster,output_dir,maxPval,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,elcdClust_bestCluster,adaptor_omission_dir,maxPval,cfg)
 
-output_dir = sprintf("%s\\furanat\\ERP-contrast\\O vs Baseline",output_main_dir); mkdir(output_dir);
-plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, output_dir,cfg)
+% plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, adaptor_omission_dir,cfg)
 
 % run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,elcdClust_bestCluster,output_dir,cfg)
 % for sov_i=1:numel(sovs)
@@ -329,9 +638,9 @@ plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bes
 % end
 
 %% RUN TFR Cluster-permu 
-output_dir = sprintf("%s\\TFR_topo\\zscored",output_main_dir); mkdir(output_dir); %
-sovs = {Wnig,REM,N3,N2};
-contrasts = {{AOmiFtfr,AOmiRtfr}};
+AO_new_with_TFR_dir = sprintf("%s\\TFR_topo\\zscored",output_main_dir); mkdir(AO_new_with_TFR_dir); %
+sovs = {N2}; % Wnig,REM,N3,
+contrasts = {{noN2EventsAORtfr,noN2EventsAOFtfr}};%{AOmiFtfr,AOmiRtfr}
 time = -1.6:0.004:2.66;
 f = get_funcs_instant(subs,sovs, AOmi,ft_cond_input_dir,ft_cond_output_dir,time);
 timerange_test = [0.58,1.16];
@@ -344,7 +653,7 @@ for trfalgo_i=1:numel(tfr_algos)
     for sov_i=1:numel(sovs)
         for cond_i=1:numel(contrasts)
             for freq_i=1:numel(freqrange_test)
-                f.run_STCP_TFR_dependent(f,output_dir, contrasts{cond_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test{freq_i},timerange_plot,is_bl_in_band,tfr_algos{trfalgo_i})
+                f.run_STCP_TFR_dependent(f,AO_new_with_TFR_dir, contrasts{cond_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test{freq_i},timerange_plot,is_bl_in_band,tfr_algos{trfalgo_i})
             end
         end
     end
@@ -353,7 +662,7 @@ end
 
 %%  RUN TFRMAP Cluster-permu  {T1stTfr, T5thTfr}
 
-output_dir = sprintf("%s\\test",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\test",output_main_dir); mkdir(AO_new_with_TFR_dir);
 sovs = {Wnig}; % ,N2,N3,REM}
 contrasts = {{T1stTfr, T5thTfr}};
 
@@ -370,36 +679,14 @@ for tfr_algo_i=1:numel(tfr_algos)
     tfr_algo = tfr_algos{tfr_algo_i};
     for cond_i=1:numel(contrasts)
         for sov_i=1:numel(sovs)
-            f.run_STCP_TFRMAP_dependent(f,output_dir,tfr_algo, contrasts{cond_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test,clusts_struct,timerange_plot)
-        end
-    end
-end
-
-%% RUN TFRMAP Cluster-permu 
-contrasts = {{AOmiFtfr,AOmiRtfr}}; % {intblksmpAOtfr,AOmiftr}
-
-output_dir = sprintf("%s\\TFR\\zscored",output_main_dir); mkdir(output_dir);
-sovs = {Wnig,N2,N3,REM};
-time = -1.6:0.004:2.66;
-f = get_funcs_instant(subs,sovs, contrasts{1}{1},ft_cond_input_dir,ft_cond_output_dir,time);
-timerange_test = [0.58,1.16];
-timerange_plot = [-0.1 1.6];
-freqrange_test =  [0.5,70];
-clusts_struct = clusts_struct;
-
-tfr_algos = {'multitaper_zscored'}; % 'hilbert', 'multitaper', 'multitaper_zscored'
-for tfr_algo_i=1:numel(tfr_algos)
-    tfr_algo = tfr_algos{tfr_algo_i};
-    for cond_i=1:numel(contrasts)
-        for sov_i=1:numel(sovs)
-            f.run_STCP_TFRMAP_dependent(f,output_dir,tfr_algo, contrasts{cond_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test,clusts_struct,timerange_plot)
+            f.run_STCP_TFRMAP_dependent(f,AO_new_with_TFR_dir,tfr_algo, contrasts{cond_i},{sovs{sov_i},sovs{sov_i}},timerange_test,freqrange_test,clusts_struct,timerange_plot)
         end
     end
 end
 
 
 %%
-output_dir = sprintf("%s\\test",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\test",output_main_dir); mkdir(AO_new_with_TFR_dir);
 sovs = {Wnig,N2,N3,REM};
 contrasts = {{intblksmpAO,AOmi}, {AOmiF,AOmiR}};
 conds = {AOmi,AOmiF,AOmiR};
@@ -423,22 +710,22 @@ cfg.is_plot_topoplot = true;
 cfg.is_plot_video = false;
 
 curr_cont_elec =  "curr_sov_cont_clustersElect";
-run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,output_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,curr_cont_elec,AO_new_with_TFR_dir,cfg)
 
 best_cluster_cont = {AOmiF,AOmiR};
 best_cluster_contSovs = {Wnig,Wnig};
-elcdClust_bestCluster =  f.get_electdClust(f,'simple_contrast',output_dir,best_cluster_cont,best_cluster_contSovs);
+elcdClust_bestCluster =  f.get_electdClust(f,'simple_contrast',AO_new_with_TFR_dir,best_cluster_cont,best_cluster_contSovs);
 % elcdClust_unionInter =  f.get_electdClust(f,'unionWithinFrontBack_intersectBetweenSovs',output_dir,best_cluster_cont,union_intersect_sovs);
 
-run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,elcdClust_bestCluster,output_dir,cfg)
-plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, output_dir,cfg)
-run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,elcdClust_bestCluster,output_dir,cfg)
-plot_erp_withinSovCond_allSubs(f, sovs, conds, elcdClust_bestCluster, output_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,elcdClust_bestCluster,AO_new_with_TFR_dir,cfg)
+plot_erp_allSovsOneCondOneContrastAllBlContrasts(f, sovs,contrasts,elcdClust_bestCluster, AO_new_with_TFR_dir,cfg)
+run_betweenSovs_withinCond_stcp_analysis(f,sovs, conds,elcdClust_bestCluster,AO_new_with_TFR_dir,cfg)
+plot_erp_withinSovCond_allSubs(f, sovs, conds, elcdClust_bestCluster, AO_new_with_TFR_dir,cfg)
 
 %%
 sovs = {N2};
 cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
-output_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(AO_new_with_TFR_dir);
 cfg = {};
 cfg.test_latency =  [0,0.58];
 cfg.plot_latency= [-0.1,0.58];
@@ -450,16 +737,16 @@ cfg.event_lines = {omission_event};
 
 f = get_funcs_instant(subs,sovs, intblksmpAblO,ft_cond_input_dir,ft_cond_output_dir);
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, noN2EventsAblOmi},{N2,N2},electd_clust ,cfg);
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAblO, AblOmi},{N2,N2},electd_clust ,cfg);
+f.plot_erp_per_contrast_and_sov(f,AO_new_with_TFR_dir,{intblksmpAblO, noN2EventsAblOmi},{N2,N2},electd_clust ,cfg);
+f.plot_erp_per_contrast_and_sov(f,AO_new_with_TFR_dir,{intblksmpAblO, AblOmi},{N2,N2},electd_clust ,cfg);
 
-run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAblO, noN2EventsAblOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAblO, noN2EventsAblOmi}},'curr_sov_cont_clustersElect',AO_new_with_TFR_dir,cfg)
 
 
 
 %%
 sovs = {N2};
-output_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(AO_new_with_TFR_dir);
 
 cfg = {};
 cfg.test_latency = [0.58,1.16];
@@ -479,16 +766,16 @@ f = get_funcs_instant(subs,sovs, intblksmpAO,ft_cond_input_dir,ft_cond_output_di
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
 
 
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, noN2EventsAO},{N2,N2},electd_clust ,cfg);
-f.plot_erp_per_contrast_and_sov(f,output_dir,{intblksmpAO, AOmi},{N2,N2},electd_clust ,cfg);
-run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, noN2EventsAO}},'curr_sov_cont_clustersElect',output_dir,cfg)
-run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, AOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
-run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAO, AOmi}},'curr_sov_cont_clustersElect',output_dir,cfg)
-run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAOF, noN2EventsAOR}},'curr_sov_cont_clustersElect',output_dir,cfg)
+f.plot_erp_per_contrast_and_sov(f,AO_new_with_TFR_dir,{intblksmpAO, noN2EventsAO},{N2,N2},electd_clust ,cfg);
+f.plot_erp_per_contrast_and_sov(f,AO_new_with_TFR_dir,{intblksmpAO, AOmi},{N2,N2},electd_clust ,cfg);
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, noN2EventsAO}},'curr_sov_cont_clustersElect',AO_new_with_TFR_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{intblksmpAO, AOmi}},'curr_sov_cont_clustersElect',AO_new_with_TFR_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAO, AOmi}},'curr_sov_cont_clustersElect',AO_new_with_TFR_dir,cfg)
+run_withinSov_betweenCond_stcp_analysis(f, sovs, {{noN2EventsAOF, noN2EventsAOR}},'curr_sov_cont_clustersElect',AO_new_with_TFR_dir,cfg)
 
 cluster_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
 electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{AOmiF,AOmiR},{Wnig,Wnig});
-f.plot_erp_per_contrast_and_sov(f,output_dir,{noN2EventsAOF, noN2EventsAOR},{N2,N2},electd_clust ,cfg);
+f.plot_erp_per_contrast_and_sov(f,AO_new_with_TFR_dir,{noN2EventsAOF, noN2EventsAOR},{N2,N2},electd_clust ,cfg);
 
 % 
 % noN2EventsAO = defineExpStruct("noN2EventsAO", "noN2EventsAO", "Omission without ss&kc", false);
@@ -497,8 +784,9 @@ f.plot_erp_per_contrast_and_sov(f,output_dir,{noN2EventsAOF, noN2EventsAOR},{N2,
 
 %%
 sovs = {N2};
-output_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(output_dir);
-f = get_funcs_instant(subs,sovs, intblksmpAO,ft_cond_input_dir,ft_cond_output_dir);
+AO_new_with_TFR_dir = sprintf("%s\\N2_without",output_main_dir); mkdir(AO_new_with_TFR_dir);
+time = -0.1:0.004:1.156;
+f = get_funcs_instant(subs,sovs, intblksmpAO,ft_cond_input_dir,ft_cond_output_dir,time);
 
 cfg = {};
 cfg.test_latency = [0.58,1.16];
@@ -514,12 +802,16 @@ omission_event.("event_text") = 'Omission';
 cfg.event_lines = {adaptor_event,omission_event};
 
 cluster_dir = sprintf("%s\\Omission058_AblLocked",output_main_dir);
-electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2});
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2KcompAO,N2}},electd_clust,"BlNokc" , cfg);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2}},electd_clust,"BlNoss" ,cfg);
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2EventsAO,N2}},electd_clust,"BlNoeve" , cfg);
+electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAblO,AblOmi},{N2,N2},0.05);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2KcompAO,N2}},electd_clust,"BlNokc" , cfg);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2}},electd_clust,"BlNoss" ,cfg);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2EventsAO,N2}},electd_clust,"BlNoeve" , cfg);
 
-f.plot_erp_per_condsSovPairs(f,output_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},electd_clust,"BlWAndWOAllEveTypes" , cfg);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},electd_clust,"BlWAndWOAllEveTypes" , cfg);
+
+cluster_dir = sprintf("%s\\AdaptorOmission",output_main_dir);
+electd_clust = f.get_electdClust(f,'simple_contrast',cluster_dir,{intblksmpAO,AOmi},{N2,N2},0.05);
+f.plot_erp_per_condsSovPairs(f,AO_new_with_TFR_dir,{{intblksmpAO,N2}, {AOmi,N2},{noN2SsAO,N2},{noN2KcompAO,N2},{noN2EventsAO,N2}},electd_clust,"BlWAndWOAllEveTypes" , cfg);
 %% functions
 
 function run_withinSov_betweenCond_stcp_analysis(f, sovs, contrasts,electd_clust,output_dir,maxPval,cfg)
@@ -572,14 +864,16 @@ end
 
 
 
-function f = get_funcs_instant(actual_subs,actual_sovs, examp_cond,ft_cond_input_dir,ft_cond_output_dir,time)
-    curr_sov_subs = sub_exclu_per_sov(actual_subs, actual_sovs,examp_cond);
-    imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir,time); 
-    timelock = imp.get_cond_timelocked(imp,examp_cond,actual_sovs{1});
+function f = get_funcs_instant(actual_subs,actual_sovs, conds,ft_cond_input_dir,ft_cond_output_dir,time)
+    curr_sov_subs = sub_exclu_per_sov(actual_subs, actual_sovs,conds);
+    imp = ft_importer(curr_sov_subs,ft_cond_input_dir,ft_cond_output_dir,time,'GSN-HydroCel-129.sfp'); % if Cz is ref, use GSN-HydroCel-128.sfp. If not, use 'GSN-HydroCel-129.sfp'; 
+    timelock = imp.get_cond_timelocked(imp,{curr_sov_subs{1}},conds{1},actual_sovs{1});
     label = timelock{1}.label;
     electrodes = timelock{1}.elec;
+     imp.set_neighbours(imp,electrodes);
     f = funcs_(imp, label,electrodes,time);
 end
+
 
 function Y = uniquePairs(X)
     n = numel(X); % Number of elements in X
@@ -593,35 +887,42 @@ function Y = uniquePairs(X)
     end
 end
 
-function expStruct = defineExpStruct(import_s, short_s, long_s, isBaseline)
+function expStruct = defineExpStruct(import_s, short_s, long_s, isBaseline,color)
     expStruct = struct();
     expStruct.import_s = import_s;
     expStruct.short_s = short_s;
     expStruct.long_s = long_s;
     expStruct.isBaseline = isBaseline;
+    expStruct.color = color;
 end
 
-function curr_sov_subs = sub_exclu_per_sov(subs, sovs,cond)
+function curr_sov_subs = sub_exclu_per_sov(subs, sovs,conds)
     curr_sov_subs = subs;
     for sov_i=1:numel(sovs)
-        if strcmp(sovs{sov_i}.import_s, 'wake_night')
-%             if strcmp(cond.import_s,'lastAblOF')
-%                 curr_sov_subs(ismember(curr_sov_subs, { '29','32'})) = [];
-%             end
-        elseif strcmp(sovs{sov_i}.import_s, 'N1')
-        elseif strcmp(sovs{sov_i}.import_s, 'wake_morning')
-            curr_sov_subs(ismember(curr_sov_subs, { '23'})) = [];
-        elseif strcmp(sovs{sov_i}.import_s, 'N2')
-        elseif strcmp(sovs{sov_i}.import_s, 'N3')
-            if strcmp(cond.import_s,'lastAT')
-                curr_sov_subs(ismember(curr_sov_subs, { '15'})) = [];
+        for cond_i=1:numel(conds)
+            if strcmp(sovs{sov_i}.import_s, 'wake_night')
+    %             if strcmp(cond.import_s,'lastAblOF')
+    %                 curr_sov_subs(ismember(curr_sov_subs, { '29','32'})) = [];
+    %             end
+            elseif strcmp(sovs{sov_i}.import_s, 'N1')
+                curr_sov_subs(ismember(curr_sov_subs, { '33'})) = [];
+                curr_sov_subs(ismember(curr_sov_subs, { '36'})) = [];
+            elseif strcmp(sovs{sov_i}.import_s, 'wake_morning')
+                curr_sov_subs(ismember(curr_sov_subs, { '23'})) = [];
+            elseif strcmp(sovs{sov_i}.import_s, 'wake')
+                curr_sov_subs(ismember(curr_sov_subs, { '23'})) = [];
+            elseif strcmp(sovs{sov_i}.import_s, 'N2')
+            elseif strcmp(sovs{sov_i}.import_s, 'N3')
+                if strcmp(conds{cond_i}.import_s,'lastAT')
+                    curr_sov_subs(ismember(curr_sov_subs, { '15'})) = [];
+                end
+            elseif strcmp(sovs{sov_i}.import_s, "tREM")
+                curr_sov_subs(ismember(curr_sov_subs, {'36'})) = [];
+            elseif strcmp(sovs{sov_i}.import_s, "REM")
+    %             if strcmp(cond.import_s,'lastAblOF')
+    %                 curr_sov_subs(ismember(curr_sov_subs, { '09'})) = [];
+    %             end
             end
-        elseif strcmp(sovs{sov_i}.import_s, "tREM")
-            curr_sov_subs(ismember(curr_sov_subs, {'36'})) = [];
-        elseif strcmp(sovs{sov_i}.import_s, "REM")
-%             if strcmp(cond.import_s,'lastAblOF')
-%                 curr_sov_subs(ismember(curr_sov_subs, { '09'})) = [];
-%             end
         end
     end
 end

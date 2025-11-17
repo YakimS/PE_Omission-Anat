@@ -1,0 +1,24 @@
+[1] "ANOVA results:"
+Data: data_table
+Models:
+models[[1]]: comp_amp ~ -1 + (1 | sub)
+models[[3]]: comp_amp ~ -1 + trial_pos + (1 | sub)
+models[[4]]: comp_amp ~ -1 + hz + (1 | sub)
+models[[2]]: comp_amp ~ -1 + sov + (1 | sub)
+            npar   AIC   BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+models[[1]]    2 19981 19993 -9988.4    19977                         
+models[[3]]    3 19870 19889 -9932.1    19864 112.60  1  < 2.2e-16 ***
+models[[4]]    3 19943 19962 -9968.7    19937   0.00  0               
+models[[2]]    6 19773 19811 -9880.6    19761 176.24  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+[1] "Bayes Factor results:"
+Bayes Factors for Model Comparison
+
+    Model                            BF
+[2] -1 + sov + (1 | sub)       4.73e+39
+[3] -1 + trial_pos + (1 | sub) 4.54e+22
+[4] -1 + hz + (1 | sub)        6.16e+06
+
+* Against Denominator: [1] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation

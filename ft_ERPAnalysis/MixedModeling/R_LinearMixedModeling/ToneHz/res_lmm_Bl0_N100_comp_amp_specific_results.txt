@@ -1,0 +1,428 @@
+
+Rows removed:
+ - 139 non-peaks from 31 subjects: s_38, s_03, s_04, s_01, s_32, s_35, s_33, s_09, s_25, s_17, s_31, s_13, s_20, s_29, s_24, s_21, s_23, s_08, s_30, s_02, s_15, s_16, s_36, s_37, s_11, s_10, s_28, s_26, s_27, s_34, s_19
+
+==============================
+==============================
+
+_______Anova Comparisons:_______
+Data: data_table_filtered
+Models:
+m0: comp_amp ~ (1 | sub)
+m_trial: comp_amp ~ trial_pos + (1 | sub)
+m_int: comp_amp ~ sov * trial_pos + (1 | sub)
+m_inthz: comp_amp ~ sov * trial_pos * hz + (1 | sub)
+        npar   AIC   BIC logLik deviance   Chisq  Df Pr(>Chisq)    
+m0         3 25396 25416 -12695    25390                           
+m_trial    6 25373 25413 -12681    25361  28.769   3  2.504e-06 ***
+m_int     22 24902 25046 -12429    24858 503.745  16  < 2.2e-16 ***
+m_inthz  182 25057 26254 -12346    24693 165.090 160     0.3749    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Data: data_table_filtered
+Models:
+m0: comp_amp ~ (1 | sub)
+m_sov: comp_amp ~ sov + (1 | sub)
+m_int: comp_amp ~ sov * trial_pos + (1 | sub)
+m_inthz: comp_amp ~ sov * trial_pos * hz + (1 | sub)
+        npar   AIC   BIC logLik deviance  Chisq  Df Pr(>Chisq)    
+m0         3 25396 25416 -12695    25390                          
+m_sov      7 24987 25033 -12486    24973 417.46   4     <2e-16 ***
+m_int     22 24902 25046 -12429    24858 115.06  15     <2e-16 ***
+m_inthz  182 25057 26254 -12346    24693 165.09 160     0.3749    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Data: data_table_filtered
+Models:
+m0: comp_amp ~ (1 | sub)
+m_sov: comp_amp ~ sov + (1 | sub)
+m_int: comp_amp ~ sov * trial_pos + (1 | sub)
+m_plusHz: comp_amp ~ sov * trial_pos + hz + (1 | sub)
+         npar   AIC   BIC logLik deviance    Chisq Df Pr(>Chisq)    
+m0          3 25396 25416 -12695    25390                           
+m_sov       7 24987 25033 -12486    24973 417.4579  4     <2e-16 ***
+m_int      22 24902 25046 -12429    24858 115.0559 15     <2e-16 ***
+m_plusHz   30 24908 25106 -12424    24848   9.4946  8     0.3023    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+_______bayesfactor Comparisons:_______
+Bayes Factors for Model Comparison
+
+        Model                 BF
+[m_sov] sov + (1 | sub) 1.57e+83
+
+* Against Denominator: [m0] 1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Bayes Factors for Model Comparison
+
+          Model                   BF
+[m_trial] trial_pos + (1 | sub) 4.55
+
+* Against Denominator: [m0] 1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Bayes Factors for Model Comparison
+
+          Model                       BF
+[m_trial] trial_pos + (1 | sub) 2.89e-83
+
+* Against Denominator: [m_sov] sov + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Bayes Factors for Model Comparison
+
+        Model                          BF
+[m_int] sov * trial_pos + (1 | sub) 0.001
+
+* Against Denominator: [m_sov] sov + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Bayes Factors for Model Comparison
+
+        Model                             BF
+[m_int] sov * trial_pos + (1 | sub) 3.77e+79
+
+* Against Denominator: [m_trial] trial_pos + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Bayes Factors for Model Comparison
+
+          Model                                   BF
+[m_inthz] sov * trial_pos * hz + (1 | sub) 5.49e-263
+
+* Against Denominator: [m_int] sov * trial_pos + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+
+Bayes Factors for Model Comparison
+
+           Model                                  BF
+[m_plusHz] sov * trial_pos + hz + (1 | sub) 1.43e-13
+
+* Against Denominator: [m_int] sov * trial_pos + (1 | sub)
+*   Bayes Factor Type: BIC approximation
+==============================
+==============================
+
+
+_______Model Selection Analysis:_______
+
+Bayes Factors (how much Favors simpler model ):
+BF(BIC(m_int), BIC(m_trial)): 5.77e-75
+BF(BIC(m_int), BIC(m_sov)): 5.54e+07
+BF(BIC(m_inthz), BIC(m_int)): 6.62e+243
+
+
+_______Cross-validation Analysis:_______
+CV MSE - trial model: 6.82
+CV MSE - sov model: 6.34
+CV MSE - interaction model: 6.25
+CV MSE - Hz-specific: 6.54
+
+============================================================
+
+Data summary before analysis:
+
+  wn   N1   N2   N3  REM 
+1134  911 1126 1053 1102 
+
+
+Analyzing Hz and trial_pos interaction within each sleep stage:
+
+Sleep stage: wn, Number of observations: 1134
+ANOVA comparison:
+Data: sov_data
+Models:
+m0_hz: comp_amp ~ (1 | sub)
+m1_hz: comp_amp ~ trial_pos + (1 | sub)
+m2_hz: comp_amp ~ hz * trial_pos + (1 | sub)
+      npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+m0_hz    3 4425.5 4440.6 -2209.7   4419.5                         
+m1_hz    6 4397.9 4428.1 -2193.0   4385.9 33.560  3  2.454e-07 ***
+m2_hz   38 4436.6 4627.9 -2180.3   4360.6 25.302 32     0.7936    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Bayes Factors (how much Favors simpler model ):
+BF10 (trial_pos effect): 7.02e-02
+BF21 (hz interaction effect): 1.06e+46
+
+Sleep stage: N1, Number of observations: 911
+ANOVA comparison:
+Data: sov_data
+Models:
+m0_hz: comp_amp ~ (1 | sub)
+m1_hz: comp_amp ~ trial_pos + (1 | sub)
+m2_hz: comp_amp ~ hz * trial_pos + (1 | sub)
+      npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)
+m0_hz    3 4658.2 4672.7 -2326.1   4652.2                      
+m1_hz    6 4662.9 4691.8 -2325.4   4650.9  1.3452  3     0.7184
+m2_hz   38 4693.9 4876.8 -2308.9   4617.9 32.9997 32     0.4180
+
+Bayes Factors (how much Favors simpler model ):
+BF10 (trial_pos effect): 5.28e+04
+BF21 (hz interaction effect): 3.05e+32
+
+Sleep stage: N2, Number of observations: 1126
+ANOVA comparison:
+Data: sov_data
+Models:
+m0_hz: comp_amp ~ (1 | sub)
+m1_hz: comp_amp ~ trial_pos + (1 | sub)
+m2_hz: comp_amp ~ hz * trial_pos + (1 | sub)
+      npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+m0_hz    3 4133.9 4149.0 -2064.0   4127.9                          
+m1_hz    6 3985.8 4016.0 -1986.9   3973.8 154.077  3     <2e-16 ***
+m2_hz   38 4013.5 4204.5 -1968.7   3937.5  36.379 32      0.272    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Bayes Factors (how much Favors simpler model ):
+BF10 (trial_pos effect): 7.58e-28
+BF21 (hz interaction effect): 7.54e+45
+
+Sleep stage: N3, Number of observations: 1053
+ANOVA comparison:
+Data: sov_data
+Models:
+m0_hz: comp_amp ~ (1 | sub)
+m1_hz: comp_amp ~ trial_pos + (1 | sub)
+m2_hz: comp_amp ~ hz * trial_pos + (1 | sub)
+      npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+m0_hz    3 5781.1 5795.9 -2887.5   5775.1                         
+m1_hz    6 5766.0 5795.8 -2877.0   5754.0 21.012  3  0.0001047 ***
+m2_hz   38 5796.5 5985.0 -2860.3   5720.5 33.502 32  0.3943601    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Bayes Factors (how much Favors simpler model ):
+BF10 (trial_pos effect): 2.55e+00
+BF21 (hz interaction effect): 7.86e+31
+
+Sleep stage: REM, Number of observations: 1102
+ANOVA comparison:
+Data: sov_data
+Models:
+m0_hz: comp_amp ~ (1 | sub)
+m1_hz: comp_amp ~ trial_pos + (1 | sub)
+m2_hz: comp_amp ~ hz * trial_pos + (1 | sub)
+      npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)  
+m0_hz    3 4524.5 4539.5 -2259.3   4518.5                        
+m1_hz    6 4523.3 4553.3 -2255.7   4511.3  7.2083  3    0.06555 .
+m2_hz   38 4555.3 4745.5 -2239.7   4479.3 31.9834 32    0.46757  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Bayes Factors (how much Favors simpler model ):
+BF10 (trial_pos effect): 2.32e+04
+BF21 (hz interaction effect): 2.95e+42
+
+============================================================
+
+Analyzing Hz scaling effects within each sleep stage:
+
+
+Sleep stage: wn
+Model Comparison p-values:
+                          Null Model (m0) Linear Model Quadratic Model
+Null Model (m0)                        NA       0.8811          0.9112
+Linear Model                           NA           NA          0.7065
+Quadratic Model                        NA           NA              NA
+Harmonic Difference Model              NA           NA              NA
+Nominal Model                          NA           NA              NA
+Interaction Model                      NA           NA              NA
+                          Harmonic Difference Model Nominal Model
+Null Model (m0)                              0.9389        0.7936
+Linear Model                                     NA        0.6752
+Quadratic Model                              0.6366        0.5816
+Harmonic Difference Model                        NA        0.6546
+Nominal Model                                    NA            NA
+Interaction Model                                NA            NA
+                          Interaction Model
+Null Model (m0)                      0.7627
+Linear Model                         0.8811
+Quadratic Model                      0.8235
+Harmonic Difference Model            1.0000
+Nominal Model                        0.7219
+Interaction Model                        NA
+
+Model Comparison - AIC and BIC values:
+Model                       AIC       BIC
+----------------------------------------
+Null Model (m0)           4406.96   4437.16  
+Linear Model              4483.61   4533.95  
+Quadratic Model           4386.09   4456.56  
+Harmonic Difference Model 4433.13   4483.47  
+Nominal Model             4457.83   4649.11  
+Interaction Model         4455.43   4500.73  
+
+Best Model by AIC: Quadratic Model
+Best Model by BIC: Null Model (m0)
+
+2nd Best Model by AIC: Null Model (m0)
+2nd Best Model by BIC: Quadratic Model
+
+
+Sleep stage: N1
+Model Comparison p-values:
+                          Null Model (m0) Linear Model Quadratic Model
+Null Model (m0)                        NA       0.9665          0.7550
+Linear Model                           NA           NA          0.3478
+Quadratic Model                        NA           NA              NA
+Harmonic Difference Model              NA           NA              NA
+Nominal Model                          NA           NA              NA
+Interaction Model                      NA           NA              NA
+                          Harmonic Difference Model Nominal Model
+Null Model (m0)                              0.7394        0.4180
+Linear Model                                     NA        0.2573
+Quadratic Model                              0.5504        0.2611
+Harmonic Difference Model                        NA        0.3162
+Nominal Model                                    NA            NA
+Interaction Model                                NA            NA
+                          Interaction Model
+Null Model (m0)                      0.5630
+Linear Model                         1.0000
+Quadratic Model                      0.7033
+Harmonic Difference Model            1.0000
+Nominal Model                        0.3676
+Interaction Model                        NA
+
+Model Comparison - AIC and BIC values:
+Model                       AIC       BIC
+----------------------------------------
+Null Model (m0)           4667.46   4696.35  
+Linear Model              4738.67   4786.82  
+Quadratic Model           4634.69   4702.10  
+Harmonic Difference Model 4686.38   4734.53  
+Nominal Model             4662.99   4845.94  
+Interaction Model         4710.51   4753.85  
+
+Best Model by AIC: Quadratic Model
+Best Model by BIC: Null Model (m0)
+
+2nd Best Model by AIC: Nominal Model
+2nd Best Model by BIC: Quadratic Model
+
+
+Sleep stage: N2
+Model Comparison p-values:
+                          Null Model (m0) Linear Model Quadratic Model
+Null Model (m0)                        NA       0.2732          0.1772
+Linear Model                           NA           NA          0.1769
+Quadratic Model                        NA           NA              NA
+Harmonic Difference Model              NA           NA              NA
+Nominal Model                          NA           NA              NA
+Interaction Model                      NA           NA              NA
+                          Harmonic Difference Model Nominal Model
+Null Model (m0)                              0.1827        0.2720
+Linear Model                                     NA        0.3066
+Quadratic Model                              0.2648        0.4099
+Harmonic Difference Model                        NA        0.3561
+Nominal Model                                    NA            NA
+Interaction Model                                NA            NA
+                          Interaction Model
+Null Model (m0)                      0.1940
+Linear Model                         0.5135
+Quadratic Model                      0.2406
+Harmonic Difference Model            0.2184
+Nominal Model                        0.3348
+Interaction Model                        NA
+
+Model Comparison - AIC and BIC values:
+Model                       AIC       BIC
+----------------------------------------
+Null Model (m0)           3996.52   4026.68  
+Linear Model              4070.58   4120.84  
+Quadratic Model           3970.25   4040.62  
+Harmonic Difference Model 4018.58   4068.84  
+Nominal Model             4046.95   4237.95  
+Interaction Model         4042.43   4087.67  
+
+Best Model by AIC: Quadratic Model
+Best Model by BIC: Null Model (m0)
+
+2nd Best Model by AIC: Null Model (m0)
+2nd Best Model by BIC: Quadratic Model
+
+
+Sleep stage: N3
+Model Comparison p-values:
+                          Null Model (m0) Linear Model Quadratic Model
+Null Model (m0)                        NA       0.4316          0.0499
+Linear Model                           NA           NA          0.0197
+Quadratic Model                        NA           NA              NA
+Harmonic Difference Model              NA           NA              NA
+Nominal Model                          NA           NA              NA
+Interaction Model                      NA           NA              NA
+                          Harmonic Difference Model Nominal Model
+Null Model (m0)                              0.0691        0.3944
+Linear Model                                     NA        0.3784
+Quadratic Model                              0.1460        0.8037
+Harmonic Difference Model                        NA        0.6386
+Nominal Model                                    NA            NA
+Interaction Model                                NA            NA
+                          Interaction Model
+Null Model (m0)                      0.0644
+Linear Model                         1.0000
+Quadratic Model                      0.1421
+Harmonic Difference Model            0.2282
+Nominal Model                        0.6119
+Interaction Model                        NA
+
+Model Comparison - AIC and BIC values:
+Model                       AIC       BIC
+----------------------------------------
+Null Model (m0)           5769.68   5799.44  
+Linear Model              5836.86   5886.46  
+Quadratic Model           5723.66   5793.09  
+Harmonic Difference Model 5781.18   5830.77  
+Nominal Model             5757.87   5946.32  
+Interaction Model         5806.97   5851.60  
+
+Best Model by AIC: Quadratic Model
+Best Model by BIC: Quadratic Model
+
+2nd Best Model by AIC: Nominal Model
+2nd Best Model by BIC: Null Model (m0)
+
+
+Sleep stage: REM
+Model Comparison p-values:
+                          Null Model (m0) Linear Model Quadratic Model
+Null Model (m0)                        NA        0.822          0.8745
+Linear Model                           NA           NA          0.6851
+Quadratic Model                        NA           NA              NA
+Harmonic Difference Model              NA           NA              NA
+Nominal Model                          NA           NA              NA
+Interaction Model                      NA           NA              NA
+                          Harmonic Difference Model Nominal Model
+Null Model (m0)                              0.3024        0.4676
+Linear Model                                     NA        0.3417
+Quadratic Model                              1.0000        0.2525
+Harmonic Difference Model                        NA        0.5113
+Nominal Model                                    NA            NA
+Interaction Model                                NA            NA
+                          Interaction Model
+Null Model (m0)                      0.3291
+Linear Model                         1.0000
+Quadratic Model                      0.9962
+Harmonic Difference Model            0.2335
+Nominal Model                        0.4888
+Interaction Model                        NA
+
+Model Comparison - AIC and BIC values:
+Model                       AIC       BIC
+----------------------------------------
+Null Model (m0)           4532.14   4562.17  
+Linear Model              4607.36   4657.41  
+Quadratic Model           4508.80   4578.87  
+Harmonic Difference Model 4553.14   4603.18  
+Nominal Model             4567.57   4757.75  
+Interaction Model         4577.51   4622.55  
+
+Best Model by AIC: Quadratic Model
+Best Model by BIC: Null Model (m0)
+
+2nd Best Model by AIC: Null Model (m0)
+2nd Best Model by BIC: Quadratic Model

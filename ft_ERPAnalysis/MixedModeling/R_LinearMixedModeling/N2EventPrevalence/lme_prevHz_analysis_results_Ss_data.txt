@@ -1,0 +1,190 @@
+=== LINEAR MIXED-EFFECTS MODEL ANALYSIS RESULTS ===
+Date: 2025-11-06 14:43:43 
+
+=== MODEL COMPARISONS ===
+
+1. NULL vs hzDiff MODEL:
+Data: curr_data
+Models:
+model_null: proportion ~ (1 | sub)
+model_hzDiff: proportion ~ hzDiff + (1 | sub)
+             npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)  
+model_null      3 -1072.3 -1060.5 539.16  -1078.3                       
+model_hzDiff    5 -1075.2 -1055.4 542.58  -1085.2 6.8414  2    0.03269 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+BF = 1.881697e-05 
+
+2. NULL vs TORDER MODEL:
+Data: curr_data
+Models:
+model_null: proportion ~ (1 | sub)
+model_torder: proportion ~ torder + (1 | sub)
+             npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)
+model_null      3 -1072.3 -1060.5 539.16  -1078.3                     
+model_torder    4 -1071.3 -1055.5 539.66  -1079.3 1.0066  1     0.3157
+BF = 0.0005129373 
+
+3. hzDiff vs ADDITIVE MODEL:
+Data: curr_data
+Models:
+model_hzDiff: proportion ~ hzDiff + (1 | sub)
+model_addative: proportion ~ torder + hzDiff + (1 | sub)
+               npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)
+model_hzDiff      5 -1075.2 -1055.4 542.58  -1085.2                     
+model_addative    6 -1074.2 -1050.5 543.09  -1086.2 1.0264  1      0.311
+BF = 0.0005129802 
+
+4. TORDER vs ADDITIVE MODEL:
+Data: curr_data
+Models:
+model_torder: proportion ~ torder + (1 | sub)
+model_addative: proportion ~ torder + hzDiff + (1 | sub)
+               npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)  
+model_torder      4 -1071.3 -1055.5 539.66  -1079.3                       
+model_addative    6 -1074.2 -1050.5 543.09  -1086.2 6.8612  2    0.03237 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+BF = 1.881854e-05 
+
+5. ADDITIVE vs INTERACTION MODEL:
+Data: curr_data
+Models:
+model_addative: proportion ~ torder + hzDiff + (1 | sub)
+model_interaction: proportion ~ torder * hzDiff + (1 | sub)
+                  npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)
+model_addative       6 -1074.2 -1050.5 543.09  -1086.2                     
+model_interaction    8 -1070.5 -1038.9 543.26  -1086.5 0.3355  2     0.8456
+BF = 5.838876e-07 
+
+=== FINAL INTERACTION MODEL SUMMARY ===
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: proportion ~ torder * hzDiff + (1 | sub)
+   Data: curr_data
+
+REML criterion at convergence: -1035.2
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-4.5904 -0.5134 -0.0724  0.3467  6.0424 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ sub      (Intercept) 0.003313 0.05756 
+ Residual             0.002799 0.05291 
+Number of obs: 384, groups:  sub, 32
+
+Fixed effects:
+                   Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)       1.223e-01  1.532e-02  1.251e+02   7.983  7.9e-13 ***
+torder           -4.742e-04  4.183e-03  3.470e+02  -0.113    0.910    
+hzDifflow         1.147e-02  1.620e-02  3.470e+02   0.708    0.479    
+hzDiffmid        -5.728e-03  1.620e-02  3.470e+02  -0.354    0.724    
+torder:hzDifflow -3.076e-03  5.915e-03  3.470e+02  -0.520    0.603    
+torder:hzDiffmid -2.798e-03  5.915e-03  3.470e+02  -0.473    0.636    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) torder hzDffl hzDffm trdr:hzDffl
+torder      -0.683                                 
+hzDifflow   -0.529  0.645                          
+hzDiffmid   -0.529  0.645  0.500                   
+trdr:hzDffl  0.483 -0.707 -0.913 -0.456            
+trdr:hzDffm  0.483 -0.707 -0.456 -0.913  0.500     
+
+=== TYPE III ANOVA TABLE ===
+Type III Analysis of Variance Table with Satterthwaite's method
+                 Sum Sq    Mean Sq NumDF DenDF F value Pr(>F)
+torder        0.0028394 0.00283936     1   347  1.0143 0.3146
+hzDiff        0.0032719 0.00163597     2   347  0.5844 0.5580
+torder:hzDiff 0.0009263 0.00046313     2   347  0.1654 0.8476
+
+
+Individual BIC values:
+Null model: -1053.174 
+hzDiff model: -1031.412 
+Torder model: -1038.023 
+Additive model: -1016.262 
+Interaction model: -987.5548 
+
+Best model (lowest BIC): Null with BIC = -1053.174 
+
+=== BAYES FACTOR ANALYSIS ===
+
+BAYES FACTORS vs NULL MODEL:
+Null           : BF =     1.00 (Barely worth mentioning evidence for)
+hzDiff only    : BF =     0.00 (Evidence against)
+Torder only    : BF =     0.00 (Evidence against)
+Additive       : BF =     0.00 (Evidence against)
+Interaction    : BF =     0.00 (Evidence against)
+
+BAYES FACTORS vs BEST MODEL:
+Best model: Null 
+hzDiff only    : BF =     0.00 (Evidence against best model)
+Torder only    : BF =     0.00 (Evidence against best model)
+Additive       : BF =     0.00 (Evidence against best model)
+Interaction    : BF =     0.00 (Evidence against best model)
+
+=== KEY MODEL COMPARISONS ===
+hzDiff vs Null:        BF =     0.00
+Torder vs Null:    BF =     0.00
+Additive vs hzDiff:    BF =     0.00
+Additive vs Torder: BF =     0.00
+Interaction vs Add: BF =     0.00
+
+=== POST-HOC ANALYSIS ===
+
+ESTIMATED MARGINAL MEANS BY TORDER:
+ torder_factor emmean     SE df lower.CL upper.CL
+ 1              0.129 0.0115 44   0.1059    0.152
+ 2              0.114 0.0115 44   0.0908    0.137
+ 3              0.106 0.0115 44   0.0827    0.129
+ 4              0.124 0.0115 44   0.1005    0.147
+
+Results are averaged over the levels of: hzDiff 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+ESTIMATED MARGINAL MEANS BY hzDiff:
+ hzDiff emmean     SE   df lower.CL upper.CL
+ high    0.121 0.0112 39.4   0.0985    0.144
+ low     0.125 0.0112 39.4   0.1023    0.148
+ mid     0.108 0.0112 39.4   0.0858    0.131
+
+Results are averaged over the levels of: torder_factor 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+PAIRWISE COMPARISONS FOR hzDiff:
+ contrast   estimate      SE  df  lower.CL upper.CL t.ratio p.value
+ high - low -0.00378 0.00654 341 -0.019517   0.0120  -0.578  0.5637
+ high - mid  0.01272 0.00654 341 -0.003013   0.0285   1.945  0.0789
+ low - mid   0.01650 0.00654 341  0.000767   0.0322   2.523  0.0363
+
+Results are averaged over the levels of: torder_factor 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+Conf-level adjustment: bonferroni method for 3 estimates 
+P value adjustment: fdr method for 3 tests 
+=== CONSECUTIVE COMPARISONS TABLE ===
+
+=== MANUSCRIPT-READY TABLE ===
+
+=== KEY STATISTICS FOR MANUSCRIPT ===
+MAIN EFFECTS:
+- Torder: F( 1 , 347 ) =  1.01 , p =  0.315 
+  Beta =  -4.742e-04 , t =  -0.11 , p =  9.10e-01 
+- hzDiff: F( 2 , 347 ) =  0.58 , p =  0.558 
+  Beta =  1.147e-02 , t =  0.71 , p =  4.79e-01 
+INTERACTION:
+- Torder x hzDiff: F( 2 , 347 ) =  0.17 , p =  0.848 
+  Beta =  -5.728e-03 , t =  -0.35 , p =  7.24e-01 
+
+=== BAYES FACTOR SUMMARY FOR MANUSCRIPT ===
+Model selection based on BIC and Bayes Factors:
+- Best model: Null (lowest BIC)
+- Evidence for best model vs null: BF = 1 
+- Evidence against interaction model: BF = 5.636109e-15 
+
+=== ANALYSIS COMPLETE ===
+Results saved to: lme_prevHz_analysis_results_Ss_data.txt 

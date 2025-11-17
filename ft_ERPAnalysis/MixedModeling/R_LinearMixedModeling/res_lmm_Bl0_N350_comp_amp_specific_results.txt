@@ -1,0 +1,28 @@
+
+Rows removed:
+ - 18 non-peaks from 11 subjects: s_10, s_33, s_03, s_15, s_38, s_35, s_27, s_23, s_30, s_05, s_19
+
+==============================
+==============================
+Data: data_table_filtered
+Models:
+m0: comp_amp ~ (1 | sub)
+m_trial: comp_amp ~ trial_pos + (1 | sub)
+m_sov: comp_amp ~ sov + (1 | sub)
+        npar   AIC   BIC logLik deviance  Chisq Df Pr(>Chisq)    
+m0         3 27998 28017 -13996    27992                         
+m_trial    5 27896 27928 -13943    27886 105.41  2  < 2.2e-16 ***
+m_sov      7 27307 27352 -13647    27293 592.87  2  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Data: data_table_filtered
+Models:
+m0: comp_amp ~ (1 | sub)
+m_trial: comp_amp ~ trial_pos + (1 | sub)
+m_sov: comp_amp ~ sov + (1 | sub)
+        npar   AIC   BIC logLik deviance  Chisq Df Pr(>Chisq)    
+m0         3 27998 28017 -13996    27992                         
+m_trial    5 27896 27928 -13943    27886 105.41  2  < 2.2e-16 ***
+m_sov      7 27307 27352 -13647    27293 592.87  2  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

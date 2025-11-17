@@ -1,0 +1,232 @@
+
+Results for P2 :
+
+__Model Comparisons:__
+
+Null vs Main Effects Model:
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov_main + bedOrEnd + cond + (1 | subject)
+                   npar   AIC   BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 968.6 979.2 -481.30    962.6                         
+main_effects_model    6 925.9 947.1 -456.95    913.9 48.706  3  1.507e-10 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov_main + bedOrEnd + cond + (1 | subject)
+interaction_model: amplitude ~ sov_main * bedOrEnd * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    6 925.90 947.10 -456.95   913.90                     
+interaction_model    10 928.85 964.19 -454.43   908.85 5.0417  4      0.283
+
+Null vs Interaction Model:
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov_main * bedOrEnd * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 968.60 979.20 -481.30   962.60                         
+interaction_model   10 928.85 964.19 -454.43   908.85 53.748  7  2.638e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main Effects:__
+
+Main effect of SOV (wn vs wm):
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_main_model: amplitude ~ sov_main + (1 | subject)
+               npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model        3 968.60 979.20 -481.30   962.60                     
+sov_main_model    4 968.83 982.97 -480.42   960.83 1.7682  1     0.1836
+
+Main effect of Position (beg vs end):
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+bedOrEnd_model: amplitude ~ bedOrEnd + (1 | subject)
+               npar    AIC    BIC logLik deviance  Chisq Df Pr(>Chisq)
+null_model        3 968.60 979.20 -481.3   962.60                     
+bedOrEnd_model    4 969.79 983.93 -480.9   961.79 0.8102  1     0.3681
+
+Main effect of Condition:
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar   AIC    BIC logLik deviance Chisq Df Pr(>Chisq)    
+null_model    3 968.6 979.20 -481.3    962.6                        
+cond_model    4 924.8 938.94 -458.4    916.8  45.8  1  1.309e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Two-way Interactions:__
+
+SOV × Position Interaction:
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov_main + bedOrEnd + cond + (1 | subject)
+sov_bedOrEnd_model: amplitude ~ sov_main * bedOrEnd + (1 | subject)
+                   npar   AIC   BIC  logLik deviance Chisq Df Pr(>Chisq)
+main_effects_model    6 925.9 947.1 -456.95    913.9                    
+sov_bedOrEnd_model    6 972.0 993.2 -480.00    960.0     0  0           
+
+SOV × Condition Interaction:
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov_main + bedOrEnd + cond + (1 | subject)
+sov_cond_model: amplitude ~ sov_main * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)
+main_effects_model    6 925.90 947.10 -456.95   913.90                    
+sov_cond_model        6 926.72 947.92 -457.36   914.72     0  0           
+
+Position × Condition Interaction:
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov_main + bedOrEnd + cond + (1 | subject)
+bedOrEnd_cond_model: amplitude ~ bedOrEnd * cond + (1 | subject)
+                    npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)
+main_effects_model     6 925.90 947.10 -456.95   913.90                    
+bedOrEnd_cond_model    6 924.89 946.09 -456.44   912.89 1.011  0           
+
+__Full model summary:__
+Linear mixed model fit by REML ['lmerMod']
+Formula: amplitude ~ sov_main * bedOrEnd * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 918.4
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.5620 -0.5267  0.0048  0.4453  5.0980 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.6879   0.8294  
+ Residual             1.8459   1.3586  
+Number of obs: 253, groups:  subject, 32
+
+Fixed effects:
+                              Estimate Std. Error t value
+(Intercept)                    1.14975    0.22551   5.099
+sov_mainwn                     0.26745    0.24231   1.104
+bedOrEndend                    0.17193    0.24124   0.713
+cond.L                        -0.90037    0.24230  -3.716
+sov_mainwn:bedOrEndend        -0.03338    0.34193  -0.098
+sov_mainwn:cond.L             -0.34949    0.34268  -1.020
+bedOrEndend:cond.L             0.10022    0.34117   0.294
+sov_mainwn:bedOrEndend:cond.L  0.65288    0.48356   1.350
+
+Correlation of Fixed Effects:
+            (Intr) sv_mnw bdOrEn cond.L sv_:OE sv_:.L bOE:.L
+sov_mainwn  -0.537                                          
+bedOrEndend -0.540  0.502                                   
+cond.L      -0.013  0.012  0.012                            
+sv_mnwn:bOE  0.381 -0.709 -0.706 -0.009                     
+sv_mnwn:c.L  0.009 -0.018 -0.009 -0.707  0.012              
+bdOrEndn:.L  0.009 -0.009 -0.009 -0.710  0.006  0.502       
+sv_mn:OE:.L -0.007  0.012  0.006  0.501 -0.004 -0.709 -0.706
+
+__Estimated Marginal Means:__
+
+SOV (wn vs wm):
+ sov_main emmean   SE   df lower.CL upper.CL
+ wm         1.24 0.19 48.1    0.854     1.62
+ wn         1.49 0.19 48.4    1.104     1.87
+
+Results are averaged over the levels of: bedOrEnd, cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Position (beg vs end):
+ bedOrEnd emmean   SE   df lower.CL upper.CL
+ beg        1.28 0.19 48.4    0.901     1.67
+ end        1.44 0.19 48.1    1.057     1.82
+
+Results are averaged over the levels of: sov_main, cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Condition:
+ cond  emmean   SE   df lower.CL upper.CL
+ Bl0T1  1.970 0.19 48.4     1.59     2.35
+ Bl0T2  0.752 0.19 48.1     0.37     1.13
+
+Results are averaged over the levels of: sov_main, bedOrEnd 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+SOV × Position:
+ sov_main bedOrEnd emmean    SE   df lower.CL upper.CL
+ wm       beg        1.15 0.226 89.0    0.702     1.60
+ wn       beg        1.42 0.226 89.0    0.969     1.87
+ wm       end        1.32 0.224 87.6    0.876     1.77
+ wn       end        1.56 0.226 89.0    1.108     2.00
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+SOV × Condition:
+ sov_main cond  emmean    SE   df lower.CL upper.CL
+ wm       Bl0T1  1.837 0.226 89.0    1.389     2.29
+ wn       Bl0T1  2.104 0.226 89.0    1.656     2.55
+ wm       Bl0T2  0.634 0.224 87.6    0.189     1.08
+ wn       Bl0T2  0.869 0.226 89.0    0.421     1.32
+
+Results are averaged over the levels of: bedOrEnd 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Position × Condition:
+ bedOrEnd cond  emmean    SE   df lower.CL upper.CL
+ beg      Bl0T1  2.044 0.227 90.4   1.5934    2.494
+ end      Bl0T1  1.897 0.224 87.6   1.4513    2.343
+ beg      Bl0T2  0.523 0.224 87.6   0.0773    0.969
+ end      Bl0T2  0.980 0.226 89.0   0.5321    1.428
+
+Results are averaged over the levels of: sov_main 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Three-way interaction (SOV × Position × Condition):
+ sov_main bedOrEnd cond  emmean    SE  df lower.CL upper.CL
+ wm       beg      Bl0T1  1.786 0.285 166   1.2236     2.35
+ wn       beg      Bl0T1  2.301 0.285 166   1.7382     2.86
+ wm       end      Bl0T1  1.887 0.281 162   1.3318     2.44
+ wn       end      Bl0T1  1.907 0.281 162   1.3513     2.46
+ wm       beg      Bl0T2  0.513 0.281 162  -0.0426     1.07
+ wn       beg      Bl0T2  0.533 0.281 162  -0.0223     1.09
+ wm       end      Bl0T2  0.756 0.281 162   0.2002     1.31
+ wn       end      Bl0T2  1.204 0.285 166   0.6417     1.77
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise Comparisons:__
+
+SOV (wn vs wm):
+ contrast estimate    SE  df t.ratio p.value
+ wm - wn    -0.251 0.171 214  -1.467  0.1439
+
+Results are averaged over the levels of: bedOrEnd, cond 
+Degrees-of-freedom method: kenward-roger 
+
+Position (beg vs end):
+ contrast  estimate    SE  df t.ratio p.value
+ beg - end   -0.155 0.171 214  -0.908  0.3649
+
+Results are averaged over the levels of: sov_main, cond 
+Degrees-of-freedom method: kenward-roger 
+
+Condition:
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2     1.22 0.171 214   7.129  <.0001
+
+Results are averaged over the levels of: sov_main, bedOrEnd 
+Degrees-of-freedom method: kenward-roger 

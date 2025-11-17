@@ -1,0 +1,670 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# run twice 
+library(caret)
+library(Matrix)
+library(lme4)
+library(lmtest)
+library(dplyr)
+library(parallel)
+library(bayestestR)
+library(glmmTMB)
+library(gridExtra)
+library(effectsize) 
+library(effects)
+library(xtable)
+```
+
+
+```{r}
+plot_lmer_interaction <- function(model, x_var, color_var, y_var, save_path = NULL, width = 8, height = 6) {
+  require(ggplot2)
+  require(effects)
+  
+  pred_data <- as.data.frame(Effect(c(color_var, x_var), model))
+  
+  p <- ggplot(pred_data, aes_string(x = x_var, y = "fit", color = color_var, group = color_var)) +
+    geom_line(size = 1) +
+    geom_ribbon(aes_string(ymin = "lower", ymax = "upper", fill = color_var), alpha = 0.2) +
+    theme_minimal() +
+    labs(x = x_var, y = y_var, color = color_var, fill = color_var) +
+    theme(legend.position = "bottom", panel.grid.minor = element_blank())
+  
+  if (!is.null(save_path)) {
+    ggsave(save_path, p, width = width, height = height, dpi = 300)
+  }
+  
+  return(p)
+}
+
+# Function to extract and print model comparison results
+print_model_comparison <- function(models) {
+  # Create comparison matrix
+  comparison_matrix <- matrix(NA, nrow=length(models), ncol=length(models), 
+                               dimnames=list(names(models), names(models)))
+  
+  # Compare each pair of models
+  for(i in 1:(length(models)-1)) {
+    for(j in (i+1):length(models)) {
+      comparison <- anova(models[[i]], models[[j]])
+      comparison_matrix[i,j] <- comparison$`Pr(>Chisq)`[2]
+    }
+  }
+  
+  # Print results
+  cat("Model Comparison p-values:\n")
+  print(round(comparison_matrix, 4))
+}
+
+  # Simpler cross-validation function
+  cv_lmer <- function(formula, data, k=5) {
+      set.seed(123)
+      folds <- createFolds(1:nrow(data), k=k)
+      mse <- numeric(k)
+      
+      for(i in 1:k) {
+          train <- data[-folds[[i]], ]
+          test <- data[folds[[i]], ]
+          fit <- lmer(formula, data=train)
+          pred <- predict(fit, newdata=test, allow.new.levels=TRUE)
+          mse[i] <- mean((test[[varush]] - pred)^2, na.rm=TRUE)
+      }
+      return(mean(mse))
+  }
+  
+  # Calculate BF using BIC differences
+  BF <- function(bic1, bic2) {
+      exp((bic1 - bic2)/2)
+  }
+```
+
+
+```{r}
+# Define the components and variables
+input_dir = "D:\\OExpOut\\adapt_res\\comp_withincond_Bl0Tno500\\THz"
+components <- c("N100","P2", "N350")
+variables <- c("comp_amp") # , "latency"
+output_prefix <- "res_lmm_Bl0_"
+
+
+for (component in components) {
+  data_table <- read.csv(paste0(input_dir, "\\Bl0_", component, "_dataToR.csv"))  
+  data_table <- data_table[!is.na(data_table$is_peak), ]
+  # Convert variables to factors:
+  data_table$sov <- factor(data_table$sov, levels = c('wn','N1', 'N2', 'N3', 'REM'), ordered = FALSE)
+  data_table$sub <- factor(data_table$sub, ordered = FALSE)
+  data_table$hz <- factor(sub("T(\\d+)_.*", "\\1", data_table$cond))
+  data_table$trial_pos <- factor(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
+  data_table$is_peak <- factor(data_table$is_peak, levels = c(0, 1), ordered = FALSE) 
+  data_table$comp_amp <- as.numeric(data_table$comp_amp) 
+  data_table$latency <- as.numeric(data_table$latency) 
+  
+  data_table_filtered <- data_table[data_table$hz != "500", ]
+  # data_table_filtered <- data_table_filtered[data_table_filtered$trial_pos != "4", ]
+  
+  for (varush in variables) {
+    output_file_name <- paste0(output_prefix, component, "_", varush, "_specific_results.txt")
+    # Redirect output to the file
+    sink(output_file_name)
+    
+    initial_rows <- nrow(data_table_filtered)
+    initial_subs <- unique(data_table_filtered$sub)
+    
+    # Track outlier removals
+    # std_to_remove_outliers <- 3
+    # outlier_filtered <- data_table_filtered %>%
+    #   group_by(sov) %>%
+    #   mutate(mean_varush = mean(.data[[varush]], na.rm = TRUE),
+    #          sd_varush = sd(.data[[varush]], na.rm = TRUE)) %>%
+    #   filter(abs(.data[[varush]] - mean_varush) <= std_to_remove_outliers * sd_varush) %>%
+    #   ungroup()
+    # outliers_removed <- initial_rows - nrow(outlier_filtered)
+    # outlier_removed_rows <- anti_join(data_table_filtered, outlier_filtered)
+    # outlier_removed_subs <- unique(outlier_removed_rows$sub)
+    # data_table_filtered = outlier_filtered
+    # cat(sprintf("\nRows removed:\n- %d outliers (>%d SD) from %d subjects: %s\n",
+    #     outliers_removed,
+    #     std_to_remove_outliers,
+    #     length(outlier_removed_subs),
+    #     paste(outlier_removed_subs, collapse=", ")))
+  
+    # Track peak removals
+    peak_filtered <- data_table_filtered[data_table_filtered$is_peak == 1, ]
+    peaks_removed <- nrow(data_table_filtered) - nrow(peak_filtered)
+    peak_removed_rows <- anti_join(data_table_filtered, peak_filtered)
+    peak_removed_subs <- unique(peak_removed_rows$sub)
+  
+    cat(sprintf("\nRows removed:\n - %d non-peaks from %d subjects: %s\n",
+        peaks_removed,
+        length(peak_removed_subs),
+        paste(peak_removed_subs, collapse=", ")))
+  
+    data_table_filtered <- peak_filtered
+    
+        
+    cat("\n==============================\n==============================\n")
+    form_0 = as.formula(paste0(varush, " ~ (1|sub)"))
+    form_sov <- as.formula(paste0(varush, " ~ sov + (1|sub)"))
+    form_trial <- as.formula(paste0(varush, " ~ trial_pos + (1|sub)"))
+    form_int <- as.formula(paste0(varush, " ~ sov * trial_pos + (1|sub)"))
+    form_inthz <- as.formula(paste0(varush, " ~ sov * trial_pos * hz + (1|sub)"))
+    form_int_plusHz <- as.formula(paste0(varush, " ~ sov * trial_pos + hz + (1|sub)"))
+    m0 <- lmer(form_0, data=data_table_filtered)
+    m_trial <- lmer(form_trial, data=data_table_filtered)
+    m_sov  <- lmer(form_sov, data=data_table_filtered)
+    m_int <- lmer(form_int, data=data_table_filtered)
+    m_inthz <- lmer(form_inthz, data=data_table_filtered)
+    m_plusHz <- lmer(form_int_plusHz, data=data_table_filtered)
+    plot_lmer_interaction(m_int, "trial_pos", "sov", varush, paste0("Bl0_", component,"_",varush, "_trial_pos_sov_interaction_plot.png"))
+    
+    
+    # Compare models
+    cat("\n_______Anova Comparisons:_______\n")
+    print(anova(m0, m_trial, m_int, m_inthz))
+    print(anova(m0, m_sov, m_int, m_inthz))
+    print(anova(m0, m_sov, m_int, m_plusHz))
+    
+    cat("\n_______bayesfactor Comparisons:_______\n")
+    print(bayesfactor_models(list(m0,m_sov)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m0,m_trial)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_sov,m_trial)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_sov,m_int)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_trial,m_int)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_int,m_inthz)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_int,m_plusHz)))
+    
+    cat("\n==============================\n==============================\n")
+  
+    
+    cat("\n\n_______Model Selection Analysis:_______\n")
+    cat("\nBayes Factors (how much Favors simpler model ):\n")
+    # BF comparison
+    cat(sprintf("BF(BIC(m_int), BIC(m_trial)): %.2e\n", BF(BIC(m_int), BIC(m_trial))))
+    cat(sprintf("BF(BIC(m_int), BIC(m_sov)): %.2e\n", BF(BIC(m_int), BIC(m_sov))))
+    cat(sprintf("BF(BIC(m_inthz), BIC(m_int)): %.2e\n", BF(BIC(m_inthz), BIC(m_int))))
+    
+    # Cross-validation
+    cat("\n\n_______Cross-validation Analysis:_______\n")
+    cv_m1 <- cv_lmer(form_trial, data_table_filtered)
+    cv_m2 <- cv_lmer(form_sov, data_table_filtered)
+    cv_m3 <- cv_lmer(form_int, data_table_filtered)
+    cv_m4 <- cv_lmer(form_inthz, data_table_filtered)
+    cat(sprintf("CV MSE - trial model: %.2f\n", cv_m1))
+    cat(sprintf("CV MSE - sov model: %.2f\n", cv_m2))
+    cat(sprintf("CV MSE - interaction model: %.2f\n", cv_m3))
+    cat(sprintf("CV MSE - Hz-specific: %.2f\n", cv_m4))
+    
+    cat("\n============================================================\n")
+    
+    
+    # Add diagnostic information
+    cat("\nData summary before analysis:\n")
+    print(table(data_table_filtered$sov))
+    
+    cat("\n\nAnalyzing Hz and trial_pos interaction within each sleep stage:\n")
+    for(sov_level in levels(data_table_filtered$sov)) {
+      sov_data <- subset(data_table_filtered, sov == sov_level)
+      
+      # Print diagnostics for each sleep stage
+      cat(sprintf("\nSleep stage: %s, Number of observations: %d\n", 
+          sov_level, nrow(sov_data)))
+      
+      if(nrow(sov_data) == 0) {
+        cat("Skipping analysis - no data for this sleep stage\n")
+        next
+      }
+      
+      # Models with logical progression
+      m0_hz <- lmer(form_0, data=sov_data)
+      m1_hz <- lmer(form_trial, data=sov_data)
+      m2_hz <- lmer(as.formula(paste0(varush, " ~ hz * trial_pos + (1|sub)")), data=sov_data)
+      
+      cat("ANOVA comparison:\n")
+      print(anova(m0_hz, m1_hz, m2_hz))
+
+      # Calculate BFs using BIC approximation
+      bf10 <- BF(BIC(m1_hz), BIC(m0_hz))  # m1 vs m0
+      bf21 <- BF(BIC(m2_hz), BIC(m1_hz))  # m2 vs m1
+      cat("\nBayes Factors (how much Favors simpler model ):\n")
+      cat(sprintf("BF10 (trial_pos effect): %.2e\n", bf10))
+      cat(sprintf("BF21 (hz interaction effect): %.2e\n", bf21))
+      
+      # # If interaction is significant, analyze each Hz separately
+      # if(anova(m1_hz, m2_hz)$"Pr(>Chisq)"[2] < 0.05) {
+      #   cat("\nSignificant interaction found. Analyzing each Hz separately:\n")
+      #   for(hz_level in levels(sov_data$hz)) {
+      #     if(hz_level == "500") next
+      #     
+      #     hz_specific_data <- subset(sov_data, hz == hz_level)
+      #     
+      #     # Model for trial_pos effect within this Hz
+      #     m_trial <- lmer(as.formula(paste0(varush, " ~ trial_pos + (1|sub)")), data=hz_specific_data)
+      #     m_null <- lmer(as.formula(paste0(varush, " ~ (1|sub)")), data=hz_specific_data)
+      #     
+      #     cat(sprintf("\nHz level: %s\n", hz_level))
+      #     print(anova(m_null, m_trial))
+      #   }
+      # }
+    }
+    cat("\n============================================================\n")
+    cat("\nAnalyzing Hz scaling effects within each sleep stage:\n")
+  
+    for(sov_level in levels(data_table_filtered$sov)) {
+      sov_data <- subset(data_table_filtered, sov == sov_level)
+      hz_values <- as.numeric(as.character(sov_data$hz))
+      harmonic_order <- c(4079, 2413, 5302, 3137, 1428, 1856, 1098, 845, 650)
+      hz_harmonic <- factor(sov_data$hz)
+      hz_harmonic <- factor(hz_harmonic,  levels = as.character(harmonic_order), ordered = TRUE)
+      sov_data$hz_harmonic <- hz_harmonic
+      sov_data$hz_Diff500 <- abs(hz_values - 500)
+      hz_harmonyDiff <- match(hz_values, harmonic_order)
+      sov_data$hz_harmonyDiff <- hz_harmonyDiff
+
+      # Fit models
+      m0 <- lmer(form_trial, data=sov_data)
+      m_linear <- lmer(as.formula(paste0(varush, " ~ hz_values * trial_pos + (1|sub)")), data=sov_data)
+      m_quad <- lmer(as.formula(paste0(varush, " ~ poly(hz_values, 2) * trial_pos + (1|sub)")), data=sov_data)
+      # m_cubic <- lmer(as.formula(paste0(varush, " ~ poly(hz_values, 3) * trial_pos + (1|sub)")), data=sov_data)
+      m_harmonicDiff <- lmer(as.formula(paste0(varush, " ~ hz_harmonyDiff * trial_pos + (1|sub)")), data=sov_data)
+      m_nominal <- lmer(as.formula(paste0(varush, " ~ hz * trial_pos + (1|sub)")), data=sov_data)
+      m_interaction <- lmer(as.formula(paste0(varush, " ~  trial_pos +   (hz_Diff500 * hz_harmonyDiff) + (1|sub)")), data=sov_data)
+
+      models <- list(
+      "Null Model (m0)" = m0,
+      "Linear Model" = m_linear,
+      "Quadratic Model" = m_quad,
+      # "Cubic Model" = m_cubic,
+      "Harmonic Difference Model" = m_harmonicDiff,
+      "Nominal Model" = m_nominal,
+      "Interaction Model" = m_interaction
+    )
+      cat(sprintf("\n\nSleep stage: %s\n", sov_level))
+      print_model_comparison(models)
+
+      # Create a model comparison dataframe
+      model_comparison <- data.frame(
+        Model = names(models),
+        AIC = sapply(models, AIC),
+        BIC = sapply(models, BIC)
+      )
+      
+      # Print the full comparison table with AIC and BIC values using cat
+      cat("\nModel Comparison - AIC and BIC values:\n")
+      cat("Model                       AIC       BIC\n")
+      cat("----------------------------------------\n")
+      for(i in 1:nrow(model_comparison)) {
+        cat(sprintf("%-25s %-9.2f %-9.2f\n", 
+                   model_comparison$Model[i], 
+                   model_comparison$AIC[i], 
+                   model_comparison$BIC[i]))
+      }
+
+      # Sort by AIC and BIC
+      model_comparison_aic <- model_comparison[order(model_comparison$AIC), ]
+      model_comparison_bic <- model_comparison[order(model_comparison$BIC), ]
+
+      # # Print model comparison tables
+      # cat("\nModel Comparison by AIC & BIC:\n")
+      # print(xtable(model_comparison_aic), include.rownames = FALSE)
+
+      # Identify best models
+      best_aic <- model_comparison_aic$Model[1]
+      best_bic <- model_comparison_bic$Model[1]
+      cat(sprintf("\nBest Model by AIC: %s\n", best_aic))
+      cat(sprintf("Best Model by BIC: %s\n", best_bic))
+      
+      # Identify second best models
+      sec_best_aic <- model_comparison_aic$Model[2]
+      sec_best_bic <- model_comparison_bic$Model[2]
+      cat(sprintf("\n2nd Best Model by AIC: %s\n", sec_best_aic))
+      cat(sprintf("2nd Best Model by BIC: %s\n", sec_best_bic))
+
+    }
+    
+            
+    # Stop redirecting output to the file
+    sink()
+  }
+}
+```
+
+```{r}
+
+### all on all analysis
+
+# Define the components and variables
+input_dir = "D:\\OExpOut\\adapt_res\\comp_withincond_THz"
+components <- c("N100","P2", "N350")
+variables <- c("comp_amp", "latency")
+output_prefix <- "res_lmm_Bl0_"
+
+
+for (component in components) {
+  data_table <- read.csv(paste0(input_dir, "\\Bl0_", component, "_dataToR.csv"))  
+  # Convert variables to factors:
+  data_table$sov <- factor(data_table$sov, levels = c('wn','N1', 'N2', 'N3', 'REM'), ordered = FALSE)
+  data_table$sub <- factor(data_table$sub, ordered = FALSE)
+  data_table$hz <- factor(sub("T(\\d+)_.*", "\\1", data_table$cond))
+  data_table$trial_pos <- factor(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
+  data_table$is_peak <- factor(data_table$is_peak, levels = c(0, 1), ordered = FALSE) 
+  data_table$comp_amp <- as.numeric(data_table$comp_amp) 
+  data_table$latency <- as.numeric(data_table$latency) 
+  
+  for (varush in variables) {
+    output_file_name <- paste0(output_prefix, component, "_", varush, "_results.txt")
+    # Redirect output to the file
+    sink(output_file_name)
+    
+    initial_rows <- nrow(data_table)
+    initial_subs <- unique(data_table$sub)
+  
+    # Track outlier removals
+    std_to_remove_outliers <- 3
+    outlier_filtered <- data_table %>%
+      group_by(sov) %>%
+      mutate(mean_varush = mean(.data[[varush]], na.rm = TRUE),
+             sd_varush = sd(.data[[varush]], na.rm = TRUE)) %>%
+      filter(abs(.data[[varush]] - mean_varush) <= std_to_remove_outliers * sd_varush) %>%
+      ungroup()
+  
+    outliers_removed <- initial_rows - nrow(outlier_filtered)
+    outlier_removed_rows <- anti_join(data_table, outlier_filtered)
+    outlier_removed_subs <- unique(outlier_removed_rows$sub)
+  
+    # Track peak removals
+    peak_filtered <- outlier_filtered[outlier_filtered$is_peak == 1, ]
+    peaks_removed <- nrow(outlier_filtered) - nrow(peak_filtered)
+    peak_removed_rows <- anti_join(outlier_filtered, peak_filtered)
+    peak_removed_subs <- unique(peak_removed_rows$sub)
+  
+    cat(sprintf("\nRows removed:\n- %d outliers (>%d SD) from %d subjects: %s\n- %d non-peaks from %d subjects: %s\n",
+        outliers_removed,
+        std_to_remove_outliers,
+        length(outlier_removed_subs),
+        paste(outlier_removed_subs, collapse=", "),
+        peaks_removed,
+        length(peak_removed_subs),
+        paste(peak_removed_subs, collapse=", ")))
+  
+    data_table <- peak_filtered
+        
+   generate_model_formula <- function(formula) {
+      as.formula(paste(varush, formula))
+    }
+
+    
+    # Fit the linear mixed-effects models
+    models <- list(
+      lmer(generate_model_formula("~ -1 + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + hz + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + hz + trial_pos  + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov * trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + hz * trial_pos  + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + hz + trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov * hz * trial_pos * (1 | sub)"), data = data_table)
+    )
+    
+    bayes_results <- bayesfactor_models(models)
+    
+    # Print baseline comparison results
+    print("Model Comparison Results against baseline:")
+    baseline_comparisons <- lapply(2:length(models), function(i) {
+        comp <- anova(models[[1]], models[[i]])
+        p_val <- comp$`Pr(>Chisq)`[2]  # Get p-value for comparison
+        return(p_val)
+    })
+    cat("\nData: data_table")
+    cat("\nBaseline Model: comp_amp ~ -1 + (1 | sub)\n\n")
+    cat(sprintf("%-45s %8s %12s %12s %12s %12s %12s %s\n",
+       "Model", "Df diff", "Chisq", "P-value", "AIC", "BIC", "BF", ""))
+    cat(paste(rep("-", 135), collapse=""), "\n")
+    # Print each comparison
+    for(i in 2:length(models)) {
+       comp <- anova(models[[1]], models[[i]])
+       stars <- ifelse(comp$`Pr(>Chisq)`[2] < 0.001, "***",
+               ifelse(comp$`Pr(>Chisq)`[2] < 0.01, "**",
+                   ifelse(comp$`Pr(>Chisq)`[2] < 0.05, "*", "")))
+       
+       cat(sprintf("%-45s %8d %12.3f %12s %12.1f %12.1f %12.2e %s\n",
+           bayes_results$Model[i],
+           comp$Df[2],
+           comp$Chisq[2],
+           format.pval(comp$`Pr(>Chisq)`[2], digits = 3),
+           AIC(models[[i]]),
+           BIC(models[[i]]),
+           exp(bayes_results$log_BF[i]),
+           stars))
+    }
+    
+    cat("\n---")
+    cat("\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
+    cat("\nBF: Bayes Factor against baseline model")
+    
+    # Create summary dataframe
+    model_info <- data.frame(
+        Model = bayes_results$Model,
+        P_value = c(NA, unlist(baseline_comparisons)),  # NA for baseline, p-values for others
+        BF = exp(bayes_results$log_BF),
+        AIC = sapply(models, AIC),
+        BIC = sapply(models, BIC)
+    )
+
+    # Create significant_models with added criteria
+    significant_models <- subset(model_info, P_value < 0.05 & BF > 3)
+    significant_models$Highest_BF <- significant_models$BF == max(significant_models$BF)
+    significant_models$Lowest_AIC <- significant_models$AIC == min(significant_models$AIC)
+    significant_models$Lowest_BIC <- significant_models$BIC == min(significant_models$BIC)
+    
+    # Format for printing
+    significant_models$P_value <- format.pval(significant_models$P_value, digits = 3)
+    significant_models$BF <- format(significant_models$BF, scientific = TRUE, digits = 3)
+    significant_models$AIC <- round(significant_models$AIC, 1)
+    significant_models$BIC <- round(significant_models$BIC, 1)
+  
+    # Print summary
+    cat("\nSignificant Models (p < 0.05 vs baseline and BF > 3):\n")
+    cat("\nModel                                   P-value    BF        AIC     BIC     Best_BF  Best_AIC  Best_BIC\n")
+    cat("------------------------------------------------------------------------------------------------\n")
+    for(i in 1:nrow(significant_models)) {
+        cat(sprintf("%-40s %-10s %-10s %-8.1f %-8.1f %-9s %-9s %-9s\n",
+            significant_models$Model[i],
+            significant_models$P_value[i],
+            significant_models$BF[i],
+            significant_models$AIC[i],
+            significant_models$BIC[i],
+            ifelse(significant_models$Highest_BF[i], "*", ""),
+            ifelse(significant_models$Lowest_AIC[i], "*", ""),
+            ifelse(significant_models$Lowest_BIC[i], "*", "")))
+    }
+        
+    # Get the winning model and its summary
+    # Use the BF values directly from bayes_results
+    bf_values <- exp(bayes_results$log_BF)
+    best_model_idx <- which.max(bf_values)
+    best_model <- models[[best_model_idx]]
+    model_summary <- summary(best_model)
+    
+    cat("\nBest Model Analysis:\n")
+    cat("-------------------\n")
+    print(summary(best_model))
+    cat("\nFixed Effects:\n")
+    print(fixef(best_model))
+    cat("\nConfidence Intervals:\n")
+    print(confint(best_model))
+    ci <- confint(best_model)
+    
+    
+    fixed_effects <- data.frame(
+      coef(summary(best_model)),
+      ci = ci[rownames(coef(summary(best_model))),]
+    )
+    names(fixed_effects) <- c("Estimate", "Std.Error", "t.value", "CI_lower", "CI_upper")
+    important_effects <- fixed_effects[abs(fixed_effects$t.value) > 2, ]
+    
+    cat("\nImportant Effects in Best Model:\n")
+    cat("------------------------------\n")
+    for(row in rownames(important_effects)) {
+      cat(sprintf("%-15s: Effect = %.3f (CI: %.3f to %.3f), t = %.2f\n",
+              row,
+              important_effects[row, "Estimate"],
+              important_effects[row, "CI_lower"],
+              important_effects[row, "CI_upper"],
+              important_effects[row, "t.value"]))
+    }
+
+    # Stop redirecting output to the file
+    sink()
+  }
+}
+```
+
+```{r}
+
+    # 
+    # # Loop through the models and fit using Tweedie and Gaussian distributions with glmmTMB
+    # for (i in seq_along(models)) {
+    #   cat("\nFitting Tweedie and Gaussian for", model_names[i], "\n")
+    #   model_formula <- as.formula(paste(varush, "~ sov * cond + (1 | sub)"))
+    #   model_tweedie <- glmmTMB(model_formula, data = data_table, family = tweedie(link = "log"))
+    #   model_gaussian <- glmmTMB(model_formula, data = data_table, family = gaussian)
+    #   
+    #   # Print model summaries
+    #   cat("Tweedie model summary:")
+    #   summary(model_tweedie)
+    #   
+    #   cat("Gaussian model summary:")
+    #   summary(model_gaussian)
+    #   
+    #   # Bayes Factor or AIC/BIC comparison
+    #   bayes_out_tweedie <- tryCatch({
+    #     bayesfactor_tweedie <- bayesfactor_models(model_tweedie, denominator = 1)
+    #     cat(paste("Bayes Factor for Tweedie model (inverse):", 1 / as.numeric(bayesfactor_tweedie)))
+    #     bayesfactor_tweedie
+    #   }, error = function(e) {
+    #     cat("Bayes Factor calculation failed for Tweedie model. Calculating AIC and BIC instead.")
+    #     list(AIC = AIC(model_tweedie, model_gaussian), BIC = BIC(model_tweedie, model_gaussian))
+    #   })
+    #   
+    #   # Extract and print AIC/BIC results
+    #   if (is.list(bayes_out_tweedie) && "AIC" %in% names(bayes_out_tweedie)) {
+    #     cat(t(list(AIC_Tweedie = bayes_out_tweedie$AIC[1], AIC_Gaussian = bayes_out_tweedie$AIC[2])))
+    #     cat(t(list(BIC_Tweedie = bayes_out_tweedie$BIC[1], BIC_Gaussian = bayes_out_tweedie$BIC[2])))
+    #   }
+    # 
+    #   # Normality and residual plots
+    #   qqnorm(residuals(models[[i]]))
+    #   qqline(residuals(models[[i]]))
+    #   plot(models[[i]], resid(., type = "pearson") ~ fitted(.), abline = 0)
+    #   cat(shapiro.test(residuals(models[[i]])))
+    # }
+    #   
+    # # If the Q-Q plot shows points roughly along the reference line, the residuals are approximately normally distributed.
+    # # If the plot of residuals versus fitted values shows no clear pattern (random scatter), homoscedasticity is assumed.
+    # 
+    # # For the Shapiro-Wilk test:
+    # # If p-value > 0.05, the residuals are normally distributed (normality assumption is met).
+    # # If p-value <= 0.05, the residuals deviate significantly from normality (consider data transformation or different model).
+    # 
+    # # The normality of residuals is model-specific; different models might have different residual distributions.
+    # 
+    # ############### If not normal, understaמd the shape #############
+    #   # Density plots for the variable and residuals
+    # plot(density(data_table[[varush]]), main = paste("Density of", varush), xlab = varush)
+    # plot(density(residuals(models[[length(models)]])), main = "Density of the model residuals")
+    
+
+```
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(emmeans)
+
+# Choose the variable to plot (amplitude or latency)
+varush <- "comp_amp"  # Replace with "comp_amp" to plot amplitude instead
+
+# Fit the final model with interaction
+final_model <- lmer(as.formula(paste(varush, "~ sov * cond + (1 | sub)")), data = data_table)
+
+# Get estimated marginal means for the interaction of sov and cond
+emm <- emmeans(final_model, ~ sov * cond)
+
+# Convert emmeans results to a data frame for plotting
+emm_df <- as.data.frame(emm)
+
+# Plotting interaction plot for sov and cond with estimated marginal means
+ggplot(emm_df, aes(x = cond, y = emmean, fill = sov)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), 
+                position = position_dodge(width = 0.8), width = 0.2) +
+  labs(
+    title = paste("Interaction of Sleep Stage (sov) and Tone Repetition (cond) on", varush),
+    x = "Tone Repetition (cond)",
+    y = paste("Estimated Marginal Mean of", varush),
+    fill = "Sleep Stage (sov)"
+  ) +
+  theme_minimal()
+
+# Save the plot as an image file if needed
+ggsave(filename = paste("interaction_plot_", varush, ".png", sep = ""), width = 8, height = 6)
+
+
+```
+
+```{r}
+# # Yoels Example:::::
+# Compare the models using AIC
+anova(row_glmmTMB, num_glmmTMB, row_num_glmmTMB,baseline_sbj_glmmTMB)
+
+
+# Calculate Bayes factors for the models
+library(bayestestR)
+bayes_out_glmmTMB <- bayesfactor_models(row_glmmTMB, num_glmmTMB, row_num_glmmTMB,baseline_sbj_glmmTMB, denominator = 4)
+
+# Print the inverse Bayes factor values for easier interpretation
+print(1 / as.numeric(bayes_out_glmmTMB))
+
+# Model Fitting Using glmmTMB with Gaussian Distribution------------
+
+# Model 1: Random effect of SBJ_idx only
+baseline_sbj_glmmTMB_nor <- glmmTMB(var_convex_hull ~ 1 + (1 | SBJ_idx), 
+                                    data = filtered_df, 
+                                    family = gaussian)
+
+# Model 2: Fixed effect of Row_Number (bin) and random effect of SBJ_idx
+row_glmmTMB_nor <- glmmTMB(var_convex_hull ~ Row_Number + (1 | SBJ_idx), 
+                           data = filtered_df, 
+                           family = gaussian)
+
+# Model 3: Fixed effect of Row_Number (bin) and Number of items and random effect of SBJ_idx
+row_num_glmmTMB_nor <- glmmTMB(var_convex_hull ~ Row_Number + num_presses + (1 | SBJ_idx), 
+                               data = filtered_df, 
+                               family = gaussian)
+
+# Model 4: Fixed effect of Number of items and random effect of SBJ_idx
+num_glmmTMB_nor <- glmmTMB(var_convex_hull ~ num_presses + (1 | SBJ_idx), 
+                           data = filtered_df, 
+                           family = gaussian)
+
+# Extract the Gauusain power parameter - sanity check should be zero for gaussian
+power_param <- family_params(num_glmmTMB_nor)
+print(power_param)
+
+# Compare the models using AIC
+anova(row_glmmTMB_nor, num_glmmTMB_nor, row_num_glmmTMB_nor,baseline_sbj_glmmTMB_nor)
+```

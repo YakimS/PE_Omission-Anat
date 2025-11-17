@@ -1,0 +1,169 @@
+=== LINEAR MIXED-EFFECTS MODEL ANALYSIS RESULTS ===
+Date: 2025-11-06 14:32:34 
+
+=== MODEL COMPARISONS ===
+
+1. NULL vs HZ MODEL:
+Data: curr_data
+Models:
+model_null: proportion ~ (1 | sub)
+model_hz: proportion ~ hz + (1 | sub)
+           npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)    
+model_null    3 -3655.7 -3640.7 1830.9  -3661.7                         
+model_hz      4 -3691.4 -3671.4 1849.7  -3699.4 37.682  1  8.328e-10 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+BF = 9.974231 
+
+2. NULL vs TORDER MODEL:
+Data: curr_data
+Models:
+model_null: proportion ~ (1 | sub)
+model_torder: proportion ~ torder + (1 | sub)
+             npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)
+model_null      3 -3655.7 -3640.7 1830.9  -3661.7                     
+model_torder    4 -3654.7 -3634.6 1831.3  -3662.7 0.9337  1     0.3339
+BF = 0.0001421858 
+
+3. HZ vs ADDITIVE MODEL:
+Data: curr_data
+Models:
+model_hz: proportion ~ hz + (1 | sub)
+model_addative: proportion ~ torder + hz + (1 | sub)
+               npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)
+model_hz          4 -3691.4 -3671.4 1849.7  -3699.4                     
+model_addative    5 -3690.4 -3665.3 1850.2  -3700.4 0.9667  1     0.3255
+BF = 0.0001420637 
+
+4. TORDER vs ADDITIVE MODEL:
+Data: curr_data
+Models:
+model_torder: proportion ~ torder + (1 | sub)
+model_addative: proportion ~ torder + hz + (1 | sub)
+               npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)    
+model_torder      4 -3654.7 -3634.6 1831.3  -3662.7                         
+model_addative    5 -3690.4 -3665.3 1850.2  -3700.4 37.715  1  8.189e-10 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+BF = 9.965664 
+
+5. ADDITIVE vs INTERACTION MODEL:
+Data: curr_data
+Models:
+model_addative: proportion ~ torder + hz + (1 | sub)
+model_interaction: proportion ~ torder * hz + (1 | sub)
+                  npar     AIC     BIC logLik deviance  Chisq Df Pr(>Chisq)
+model_addative       5 -3690.4 -3665.3 1850.2  -3700.4                     
+model_interaction    6 -3688.9 -3658.8 1850.4  -3700.9 0.4726  1     0.4918
+BF = 7.421466e-08 
+
+=== FINAL INTERACTION MODEL SUMMARY ===
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: proportion ~ torder * hz + (1 | sub)
+   Data: curr_data
+
+REML criterion at convergence: -3629.4
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.5267 -0.6259 -0.0820  0.6444  3.0692 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ sub      (Intercept) 0.002991 0.05469 
+ Residual             0.001905 0.04365 
+Number of obs: 1116, groups:  sub, 31
+
+Fixed effects:
+              Estimate Std. Error         df t value Pr(>|t|)    
+(Intercept)  1.060e-01  1.145e-02  5.340e+01   9.251 1.11e-12 ***
+torder       2.388e-03  2.152e-03  1.082e+03   1.110   0.2673    
+hz          -4.065e-06  2.140e-06  1.082e+03  -1.899   0.0578 .  
+torder:hz   -5.365e-07  7.815e-07  1.082e+03  -0.687   0.4925    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+          (Intr) torder hz    
+torder    -0.470              
+hz        -0.432  0.766       
+torder:hz  0.394 -0.840 -0.913
+fit warnings:
+Some predictor variables are on very different scales: consider rescaling
+
+=== TYPE III ANOVA TABLE ===
+Type III Analysis of Variance Table with Satterthwaite's method
+             Sum Sq   Mean Sq NumDF DenDF F value  Pr(>F)  
+torder    0.0023476 0.0023476     1  1082  1.2320 0.26726  
+hz        0.0068745 0.0068745     1  1082  3.6078 0.05778 .
+torder:hz 0.0008982 0.0008982     1  1082  0.4714 0.49251  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Individual BIC values:
+Null model: -3633.286 
+Hz model: -3637.886 
+Torder model: -3615.569 
+Additive model: -3620.168 
+Interaction model: -3587.335 
+
+Best model (lowest BIC): Hz only with BIC = -3637.886 
+
+=== BAYES FACTOR ANALYSIS ===
+
+BAYES FACTORS vs NULL MODEL:
+Null           : BF =     1.00 (Barely worth mentioning evidence for)
+Hz only        : BF =     9.97 (Positive evidence for)
+Torder only    : BF =     0.00 (Evidence against)
+Additive       : BF =     0.00 (Evidence against)
+Interaction    : BF =     0.00 (Evidence against)
+
+BAYES FACTORS vs BEST MODEL:
+Best model: Hz only 
+Null           : BF =     0.10 (Evidence against best model)
+Torder only    : BF =     0.00 (Evidence against best model)
+Additive       : BF =     0.00 (Evidence against best model)
+Interaction    : BF =     0.00 (Evidence against best model)
+
+=== KEY MODEL COMPARISONS ===
+Hz vs Null:        BF =     9.97
+Torder vs Null:    BF =     0.00
+Additive vs Hz:    BF =     0.00
+Additive vs Torder: BF =     9.97
+Interaction vs Add: BF =     0.00
+
+=== POST-HOC ANALYSIS ===
+
+ESTIMATED MARGINAL MEANS BY TORDER:
+ torder_factor emmean     SE   df lower.CL upper.CL
+ 1             0.1029 0.0102 33.2   0.0822    0.124
+ 2             0.0942 0.0102 33.2   0.0735    0.115
+ 3             0.0939 0.0102 33.2   0.0732    0.115
+ 4             0.1068 0.0102 33.2   0.0861    0.127
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+=== CONSECUTIVE COMPARISONS TABLE ===
+
+=== MANUSCRIPT-READY TABLE ===
+
+=== KEY STATISTICS FOR MANUSCRIPT ===
+MAIN EFFECTS:
+- Torder: F( 1 , 1082 ) =  1.23 , p =  0.267 
+  Beta =  2.388e-03 , t =  1.11 , p =  2.67e-01 
+- Hz: F( 1 , 1082 ) =  3.61 , p =  0.058 
+  Beta =  -4.065e-06 , t =  -1.9 , p =  5.78e-02 
+INTERACTION:
+- Torder x Hz: F( 1 , 1082 ) =  0.47 , p =  0.493 
+  Beta =  -5.365e-07 , t =  -0.69 , p =  4.93e-01 
+
+=== BAYES FACTOR SUMMARY FOR MANUSCRIPT ===
+Model selection based on BIC and Bayes Factors:
+- Best model: Hz only (lowest BIC)
+- Evidence for best model vs null: BF = 9.974231 
+- Evidence against interaction model: BF = 1.054321e-11 
+
+=== ANALYSIS COMPLETE ===
+Results saved to: lme_analysis_results_Ss_data.txt 

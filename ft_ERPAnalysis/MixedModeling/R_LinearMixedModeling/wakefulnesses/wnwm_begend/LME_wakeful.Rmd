@@ -1,0 +1,417 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# run twice 
+library(Matrix)
+library(lme4)
+library(lmtest)
+library(dplyr)
+library(parallel)
+library(bayestestR)
+library(glmmTMB)
+library(gridExtra)
+library(emmeans)
+library(ggplot2)
+library(ggsignif)
+
+```
+
+```{r}
+data <- read.csv("wakefulness_to_R.csv") %>%
+ filter(is_peak %in% c(1),
+        sov %in% c("wnbeg", "wnend","wmbeg", "wmend"),
+        cond %in% c("Bl0T1", "Bl0T2"))
+
+# Create the nested structure
+# First extract the main sov factor (wn vs wm)
+data$sov_main <- substr(data$sov, 1, 2)
+# Then extract the bedOrEnd factor (beg vs end)
+data$bedOrEnd <- substr(data$sov, 3, 5)
+
+data$sov <- as.factor(data$sov)
+data$sov_main <- as.factor(data$sov_main)
+data$bedOrEnd <- as.factor(data$bedOrEnd)
+data$component <- as.factor(data$component)
+data$is_peak <- as.factor(data$is_peak)
+data$cond <- factor(data$cond, 
+                    levels = c("Bl0T1", "Bl0T2"), 
+                    ordered = TRUE)
+
+N100_data <- subset(data, component == "N100")
+P2_data <- subset(data, component == "P2")
+N350_data <- subset(data, component == "N350")
+```
+
+```{r}
+analyze_component <- function(comp_data, comp_name) {
+  # Fit models with nested structure
+  null_model <- lmer(amplitude ~ 1 + (1|subject), data = comp_data)
+  
+  # Main effects model with nested factors
+  main_effects_model <- lmer(amplitude ~ sov_main + bedOrEnd + cond + (1|subject), data = comp_data)
+  
+  # Model with interactions between main factors
+  interaction_model <- lmer(amplitude ~ sov_main * bedOrEnd * cond + (1|subject), data = comp_data)
+  
+  # Test for main effects
+  sov_main_model <- lmer(amplitude ~ sov_main + (1|subject), data = comp_data)
+  sov_main_comparison <- anova(null_model, sov_main_model)
+  
+  bedOrEnd_model <- lmer(amplitude ~ bedOrEnd + (1|subject), data = comp_data)
+  bedOrEnd_comparison <- anova(null_model, bedOrEnd_model)
+  
+  cond_model <- lmer(amplitude ~ cond + (1|subject), data = comp_data)
+  cond_comparison <- anova(null_model, cond_model)
+  
+  # Test for two-way interactions
+  sov_bedOrEnd_model <- lmer(amplitude ~ sov_main * bedOrEnd + (1|subject), data = comp_data)
+  sov_bedOrEnd_comparison <- anova(main_effects_model, sov_bedOrEnd_model)
+  
+  sov_cond_model <- lmer(amplitude ~ sov_main * cond + (1|subject), data = comp_data)
+  sov_cond_comparison <- anova(main_effects_model, sov_cond_model)
+  
+  bedOrEnd_cond_model <- lmer(amplitude ~ bedOrEnd * cond + (1|subject), data = comp_data)
+  bedOrEnd_cond_comparison <- anova(main_effects_model, bedOrEnd_cond_model)
+  
+  # Perform nested model comparisons
+  null_vs_main <- anova(null_model, main_effects_model)
+  main_vs_interaction <- anova(main_effects_model, interaction_model)
+  null_vs_interaction <- anova(null_model, interaction_model)
+  
+  # Get estimated marginal means
+  emm_sov_main <- emmeans(interaction_model, ~ sov_main)
+  emm_bedOrEnd <- emmeans(interaction_model, ~ bedOrEnd)
+  emm_cond <- emmeans(interaction_model, ~ cond)
+  emm_sov_bedOrEnd <- emmeans(interaction_model, ~ sov_main * bedOrEnd)
+  emm_sov_cond <- emmeans(interaction_model, ~ sov_main * cond)
+  emm_bedOrEnd_cond <- emmeans(interaction_model, ~ bedOrEnd * cond)
+  emm_three_way <- emmeans(interaction_model, ~ sov_main * bedOrEnd * cond)
+  
+  # Convert to data frames for plotting
+  emm_sov_main_df <- as.data.frame(emm_sov_main)
+  emm_bedOrEnd_df <- as.data.frame(emm_bedOrEnd)
+  emm_cond_df <- as.data.frame(emm_cond)
+  emm_sov_bedOrEnd_df <- as.data.frame(emm_sov_bedOrEnd)
+  emm_sov_cond_df <- as.data.frame(emm_sov_cond)
+  emm_bedOrEnd_cond_df <- as.data.frame(emm_bedOrEnd_cond)
+  
+  # Plots for main effects
+  p1 <- ggplot(emm_sov_main_df, aes(x = sov_main, y = emmean)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "SOV (wn vs wm)", y = "Amplitude", title = "Main Effect of SOV") +
+    theme(text = element_text(size = 12))
+  
+  p2 <- ggplot(emm_bedOrEnd_df, aes(x = bedOrEnd, y = emmean)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Position (beg vs end)", y = "Amplitude", title = "Main Effect of Position") +
+    theme(text = element_text(size = 12))
+  
+  p3 <- ggplot(emm_cond_df, aes(x = cond, y = emmean)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Condition", y = "Amplitude", title = "Main Effect of Condition") +
+    theme(text = element_text(size = 12))
+  
+  # Plots for two-way interactions
+  p4 <- ggplot(emm_sov_bedOrEnd_df, aes(x = bedOrEnd, y = emmean, color = sov_main, group = sov_main)) +
+    geom_point(size = 3) +
+    geom_line() +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Position", y = "Amplitude", title = "SOV × Position Interaction") +
+    theme(text = element_text(size = 12))
+  
+  p5 <- ggplot(emm_sov_cond_df, aes(x = cond, y = emmean, color = sov_main, group = sov_main)) +
+    geom_point(size = 3) +
+    geom_line() +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Condition", y = "Amplitude", title = "SOV × Condition Interaction") +
+    theme(text = element_text(size = 12))
+  
+  p6 <- ggplot(emm_bedOrEnd_cond_df, aes(x = cond, y = emmean, color = bedOrEnd, group = bedOrEnd)) +
+    geom_point(size = 3) +
+    geom_line() +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Condition", y = "Amplitude", title = "Position × Condition Interaction") +
+    theme(text = element_text(size = 12))
+  
+  # Three-way interaction plot
+  # Convert the three-way EMM to data frame
+  emm_three_way_df <- as.data.frame(emm_three_way)
+  
+  # Method 1: Faceted plot by sov_main and bedOrEnd
+  p7 <- ggplot(emm_three_way_df, aes(x = cond, y = emmean, color = bedOrEnd, group = bedOrEnd)) +
+    geom_point(size = 3) +
+    geom_line() +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    facet_grid(~ sov_main) +
+    theme_bw() +
+    labs(x = "Condition", y = "Amplitude", 
+         title = "Three-way Interaction: SOV × Position × Condition",
+         subtitle = "Faceted by SOV (wn vs wm)") +
+    theme(text = element_text(size = 12))
+  
+  # Method 2: Alternative view - faceted by condition
+  p8 <- ggplot(emm_three_way_df, aes(x = bedOrEnd, y = emmean, color = sov_main, group = sov_main)) +
+    geom_point(size = 3) +
+    geom_line() +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    facet_grid(~ cond) +
+    theme_bw() +
+    labs(x = "Position (beg vs end)", y = "Amplitude", 
+         title = "Three-way Interaction: SOV × Position × Condition",
+         subtitle = "Faceted by Condition (Bl0T1 vs Bl0T2)") +
+    theme(text = element_text(size = 12))
+  
+  # Display plots
+  plots <- grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, ncol = 2)
+  
+  # Return results
+  if(null_vs_interaction$`Pr(>Chisq)`[2] < 0.05) {
+    return(list(
+      component = comp_name,
+      null_vs_main = null_vs_main,
+      main_vs_interaction = main_vs_interaction,
+      null_vs_interaction = null_vs_interaction,
+      sov_main_effect = sov_main_comparison,
+      bedOrEnd_effect = bedOrEnd_comparison,
+      cond_effect = cond_comparison,
+      sov_bedOrEnd_interaction = sov_bedOrEnd_comparison,
+      sov_cond_interaction = sov_cond_comparison,
+      bedOrEnd_cond_interaction = bedOrEnd_cond_comparison,
+      interaction_model_summary = summary(interaction_model),
+      interaction_model = interaction_model,
+      plots = plots
+    ))
+  } else {
+    return(list(
+      component = comp_name,
+      null_vs_main = null_vs_main,
+      main_vs_interaction = main_vs_interaction,
+      null_vs_interaction = null_vs_interaction,
+      message = "Null model is not significantly different from interaction model",
+      plots = plots
+    ))
+  }
+}
+
+# Print results function
+print_results <- function(results) {
+  cat("\n__Results for", results$component, ":__\n")
+  cat("____________________________________\n")
+  
+  cat("\n__Model Comparisons:__\n")
+  cat("\nNull vs Main Effects Model:\n")
+  print(results$null_vs_main)
+  
+  cat("\nMain Effects vs Interaction Model:\n")
+  print(results$main_vs_interaction)
+  
+  cat("\nNull vs Interaction Model:\n")
+  print(results$null_vs_interaction)
+  
+  if(!is.null(results$message)) {
+    cat("\n", results$message, "\n")
+  } else {
+    cat("\n__Main Effects:__\n")
+    cat("\nMain effect of SOV (wn vs wm):\n")
+    print(results$sov_main_effect)
+    
+    cat("\nMain effect of Position (beg vs end):\n")
+    print(results$bedOrEnd_effect)
+    
+    cat("\nMain effect of Condition:\n")
+    print(results$cond_effect)
+    
+    cat("\n__Two-way Interactions:__\n")
+    cat("\nSOV × Position Interaction:\n")
+    print(results$sov_bedOrEnd_interaction)
+    
+    cat("\nSOV × Condition Interaction:\n")
+    print(results$sov_cond_interaction)
+    
+    cat("\nPosition × Condition Interaction:\n")
+    print(results$bedOrEnd_cond_interaction)
+    
+    cat("\n__Full model summary:__\n")
+    print(results$interaction_model_summary)
+    
+    # Add emmeans analyses
+    cat("\n__Estimated Marginal Means:__\n")
+    
+    cat("\nSOV (wn vs wm):\n")
+    print(emmeans(results$interaction_model, ~ sov_main))
+    
+    cat("\nPosition (beg vs end):\n")
+    print(emmeans(results$interaction_model, ~ bedOrEnd))
+    
+    cat("\nCondition:\n")
+    print(emmeans(results$interaction_model, ~ cond))
+    
+    cat("\nSOV × Position:\n")
+    print(emmeans(results$interaction_model, ~ sov_main * bedOrEnd))
+    
+    cat("\nSOV × Condition:\n")
+    print(emmeans(results$interaction_model, ~ sov_main * cond))
+    
+    cat("\nPosition × Condition:\n")
+    print(emmeans(results$interaction_model, ~ bedOrEnd * cond))
+    
+    cat("\nThree-way interaction (SOV × Position × Condition):\n")
+    print(emmeans(results$interaction_model, ~ sov_main * bedOrEnd * cond))
+    
+    # Add pairwise comparisons
+    cat("\n__Pairwise Comparisons:__\n")
+    
+    cat("\nSOV (wn vs wm):\n")
+    print(pairs(emmeans(results$interaction_model, ~ sov_main)))
+    
+    cat("\nPosition (beg vs end):\n")
+    print(pairs(emmeans(results$interaction_model, ~ bedOrEnd)))
+    
+    cat("\nCondition:\n")
+    print(pairs(emmeans(results$interaction_model, ~ cond)))
+  }
+}
+
+# Function to save results
+save_results <- function(results, component_name) {
+  # Save plots to PDF
+  pdf(paste0(component_name, "_plots.pdf"), width = 12, height = 12)
+  grid.arrange(results$plots)
+  dev.off()
+  
+  # Save three-way interaction plot separately for better visibility
+  pdf(paste0(component_name, "_three_way_interaction.pdf"), width = 10, height = 8)
+  # Extract the emmeans for three-way interaction
+  emm_three_way <- emmeans(results$interaction_model, ~ sov_main * bedOrEnd * cond)
+  emm_three_way_df <- as.data.frame(emm_three_way)
+  
+  # Create a comprehensive three-way interaction plot
+  p_combined <- ggplot(emm_three_way_df, aes(x = cond, y = emmean, color = interaction(sov_main, bedOrEnd), group = interaction(sov_main, bedOrEnd))) +
+    geom_point(size = 4, position = position_dodge(width = 0.1)) +
+    geom_line(position = position_dodge(width = 0.1)) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2, position = position_dodge(width = 0.1)) +
+    scale_color_brewer(palette = "Set1", name = "SOV-Position combination") +
+    theme_bw() +
+    labs(x = "Condition", y = "Amplitude", 
+         title = paste(component_name, ": SOV × Position × Condition Interaction"),
+         subtitle = "All combinations in one comprehensive view") +
+    theme(text = element_text(size = 14),
+          legend.position = "bottom",
+          plot.title = element_text(face = "bold"),
+          axis.title = element_text(face = "bold"))
+  
+  print(p_combined)
+  dev.off()
+  
+  # Save text results to file
+  sink(paste0(component_name, "_results.txt"))
+  
+  cat("\nResults for", component_name, ":\n")
+  
+  cat("\n__Model Comparisons:__\n")
+  cat("\nNull vs Main Effects Model:\n")
+  print(results$null_vs_main)
+  
+  cat("\nMain Effects vs Interaction Model:\n")
+  print(results$main_vs_interaction)
+  
+  cat("\nNull vs Interaction Model:\n")
+  print(results$null_vs_interaction)
+  
+  if(!is.null(results$message)) {
+    cat("\n", results$message, "\n")
+  } else {
+    cat("\n__Main Effects:__\n")
+    cat("\nMain effect of SOV (wn vs wm):\n")
+    print(results$sov_main_effect)
+    
+    cat("\nMain effect of Position (beg vs end):\n")
+    print(results$bedOrEnd_effect)
+    
+    cat("\nMain effect of Condition:\n")
+    print(results$cond_effect)
+    
+    cat("\n__Two-way Interactions:__\n")
+    cat("\nSOV × Position Interaction:\n")
+    print(results$sov_bedOrEnd_interaction)
+    
+    cat("\nSOV × Condition Interaction:\n")
+    print(results$sov_cond_interaction)
+    
+    cat("\nPosition × Condition Interaction:\n")
+    print(results$bedOrEnd_cond_interaction)
+    
+    cat("\n__Full model summary:__\n")
+    print(results$interaction_model_summary)
+    
+    # Add emmeans analyses
+    cat("\n__Estimated Marginal Means:__\n")
+    
+    cat("\nSOV (wn vs wm):\n")
+    print(emmeans(results$interaction_model, ~ sov_main))
+    
+    cat("\nPosition (beg vs end):\n")
+    print(emmeans(results$interaction_model, ~ bedOrEnd))
+    
+    cat("\nCondition:\n")
+    print(emmeans(results$interaction_model, ~ cond))
+    
+    cat("\nSOV × Position:\n")
+    print(emmeans(results$interaction_model, ~ sov_main * bedOrEnd))
+    
+    cat("\nSOV × Condition:\n")
+    print(emmeans(results$interaction_model, ~ sov_main * cond))
+    
+    cat("\nPosition × Condition:\n")
+    print(emmeans(results$interaction_model, ~ bedOrEnd * cond))
+    
+    cat("\nThree-way interaction (SOV × Position × Condition):\n")
+    print(emmeans(results$interaction_model, ~ sov_main * bedOrEnd * cond))
+    
+    # Add pairwise comparisons
+    cat("\n__Pairwise Comparisons:__\n")
+    
+    cat("\nSOV (wn vs wm):\n")
+    print(pairs(emmeans(results$interaction_model, ~ sov_main)))
+    
+    cat("\nPosition (beg vs end):\n")
+    print(pairs(emmeans(results$interaction_model, ~ bedOrEnd)))
+    
+    cat("\nCondition:\n")
+    print(pairs(emmeans(results$interaction_model, ~ cond)))
+  }
+  
+  sink()
+}
+```
+
+```{r}
+N100_results <- analyze_component(N100_data, "N100")
+P2_results <- analyze_component(P2_data, "P2")
+N350_results <- analyze_component(N350_data, "N350")
+
+
+print_results(N100_results)
+print_results(P2_results)
+print_results(N350_results)
+
+
+# Save results for each component
+save_results(N100_results, "N100")
+save_results(P2_results, "P2")
+save_results(N350_results, "N350")
+```

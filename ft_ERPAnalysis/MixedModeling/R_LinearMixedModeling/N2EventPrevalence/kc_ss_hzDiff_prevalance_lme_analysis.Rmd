@@ -1,0 +1,446 @@
+  
+  
+
+```{r}
+
+library(dplyr)
+library(lme4)
+library(stringr)  #  for str_extract
+library(lmerTest)  # For p-values
+
+
+library(ggplot2)
+library(emmeans)
+library(viridis)
+
+```
+
+
+
+```{r}
+##############################################
+# Adjust curr_data and run the following sections.
+# Take figs with a grain of salt, as it is very heavily chat induced
+##############################################
+
+T <- read.csv("out_to_prevHz_lme_anal.csv")
+
+T$hzDiff <- str_extract(T$cond, "(?<=prev)(low|mid|high)")
+T$torder <- as.numeric(str_extract(T$cond, "\\d+$"))
+
+N2_data <- aggregate(trial_amount ~ sub + hzDiff + torder, T[T$sov == "N2",], sum)
+Kc_raw <- aggregate(trial_amount ~ sub + hzDiff + torder, T[T$sov == "N2EliwJKc",], sum)
+Ss_raw <- aggregate(trial_amount ~ sub + hzDiff + torder, T[T$sov == "N2EliwJSs",], sum)
+
+Kc_data <- merge(Kc_raw, N2_data, by = c("sub", "hzDiff", "torder"), suffixes = c("_Kc", "_N2"))
+Kc_data$proportion <- Kc_data$trial_amount_Kc / Kc_data$trial_amount_N2
+
+Ss_data <- merge(Ss_raw, N2_data, by = c("sub", "hzDiff", "torder"), suffixes = c("_Ss", "_N2"))
+Ss_data$proportion <- Ss_data$trial_amount_Ss / Ss_data$trial_amount_N2
+
+curr_data = Ss_data ## Kc_data, Ss_data 
+
+```
+
+```{r}
+###### MLE analysis
+
+dataset_name <- if(identical(curr_data, Ss_data)) "Ss_data" else "Kc_data"
+output_file <- paste0("lme_prevHz_analysis_results_", dataset_name, ".txt")
+sink(output_file)  # Redirect output to file
+
+
+curr_data$torder_ord <- ordered(curr_data$torder)
+curr_data$hzDiff_ord <- ordered(curr_data$hzDiff)
+
+# Calculate BF using BIC differences
+BF <- function(bic1, bic2) {
+    exp((bic1 - bic2)/2)
+}
+
+cat("=== LINEAR MIXED-EFFECTS MODEL ANALYSIS RESULTS ===\n")
+cat("Date:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
+cat("=== MODEL COMPARISONS ===\n\n")
+
+# Compare models to test interaction significance
+model_null            <- lmer(proportion ~ (1|sub), data = curr_data)
+model_hzDiff              <- lmer(proportion ~ hzDiff + (1|sub), data = curr_data)
+model_torder          <- lmer(proportion ~ torder + (1|sub), data = curr_data)
+model_addative        <- lmer(proportion ~ torder + hzDiff + (1|sub), data = curr_data)
+model_interaction     <- lmer(proportion ~ torder * hzDiff + (1|sub), data = curr_data)
+
+
+cat("1. NULL vs hzDiff MODEL:\n")
+print(anova(model_null, model_hzDiff))
+cat("BF =", BF(BIC(model_null), BIC(model_hzDiff)), "\n")
+cat("\n")
+
+cat("2. NULL vs TORDER MODEL:\n")
+print(anova(model_null, model_torder))
+cat("BF =", BF(BIC(model_null), BIC(model_torder)), "\n")
+cat("\n")
+
+cat("3. hzDiff vs ADDITIVE MODEL:\n")
+print(anova(model_hzDiff, model_addative))
+cat("BF =", BF(BIC(model_hzDiff), BIC(model_addative)), "\n")
+cat("\n")
+
+cat("4. TORDER vs ADDITIVE MODEL:\n")
+print(anova(model_torder, model_addative))
+cat("BF =", BF(BIC(model_torder), BIC(model_addative)), "\n")
+cat("\n")
+
+cat("5. ADDITIVE vs INTERACTION MODEL:\n")
+print(anova(model_addative, model_interaction))
+cat("BF =", BF(BIC(model_addative), BIC(model_interaction)), "\n")
+cat("\n")
+
+# Test interaction
+cat("=== FINAL INTERACTION MODEL SUMMARY ===\n")
+print(summary(model_interaction))
+cat("\n")
+
+cat("=== TYPE III ANOVA TABLE ===\n")
+print(anova(model_interaction))
+cat("\n")
+
+# Get BIC for all models
+all_models_BIC <- data.frame(
+  Model = c("Null", "hzDiff only", "Torder only", "Additive", "Interaction"),
+  AIC = c(AIC(model_null), AIC(model_hzDiff), AIC(model_torder), AIC(model_addative), AIC(model_interaction)),
+  BIC = c(BIC(model_null), BIC(model_hzDiff), BIC(model_torder), BIC(model_addative), BIC(model_interaction)),
+  LogLik = c(logLik(model_null), logLik(model_hzDiff), logLik(model_torder), logLik(model_addative), logLik(model_interaction)),
+  df = c(attr(logLik(model_null), "df"), 
+         attr(logLik(model_hzDiff), "df"), 
+         attr(logLik(model_torder), "df"), 
+         attr(logLik(model_addative), "df"), 
+         attr(logLik(model_interaction), "df"))
+)
+
+print(all_models_BIC)
+
+# Calculate BIC differences relative to null model
+all_models_BIC$Delta_BIC_from_null <- all_models_BIC$BIC - BIC(model_null)
+
+# Calculate BIC differences relative to best model
+best_BIC <- min(all_models_BIC$BIC)
+all_models_BIC$Delta_BIC_from_best <- all_models_BIC$BIC - best_BIC
+
+# Calculate Bayes Factors
+null_bic <- BIC(model_null)
+
+# BF relative to null model (BF > 1 means evidence against null)
+all_models_BIC$BF_vs_null <- sapply(all_models_BIC$BIC, function(x) BF(null_bic, x))
+
+# BF relative to best model (BF > 1 means evidence against the model compared to best)
+all_models_BIC$BF_vs_best <- sapply(all_models_BIC$BIC, function(x) BF(best_BIC, x))
+
+print(all_models_BIC)
+
+# Individual BIC values for quick reference
+cat("\nIndividual BIC values:\n")
+cat("Null model:", BIC(model_null), "\n")
+cat("hzDiff model:", BIC(model_hzDiff), "\n") 
+cat("Torder model:", BIC(model_torder), "\n")
+cat("Additive model:", BIC(model_addative), "\n")
+cat("Interaction model:", BIC(model_interaction), "\n")
+
+# Best model
+best_model_index <- which.min(all_models_BIC$BIC)
+cat("\nBest model (lowest BIC):", all_models_BIC$Model[best_model_index], 
+    "with BIC =", all_models_BIC$BIC[best_model_index], "\n")
+
+# Bayes Factor interpretations
+cat("\n=== BAYES FACTOR ANALYSIS ===\n\n")
+
+cat("BAYES FACTORS vs NULL MODEL:\n")
+for(i in 1:nrow(all_models_BIC)) {
+  bf_val <- all_models_BIC$BF_vs_null[i]
+  model_name <- all_models_BIC$Model[i]
+  
+  # Interpretation based on Kass & Raftery (1995) criteria
+  if(bf_val < 1) {
+    evidence <- "Evidence against"
+  } else if(bf_val >= 1 & bf_val < 3) {
+    evidence <- "Barely worth mentioning evidence for"
+  } else if(bf_val >= 3 & bf_val < 10) {
+    evidence <- "Positive evidence for"
+  } else if(bf_val >= 10 & bf_val < 30) {
+    evidence <- "Strong evidence for"
+  } else if(bf_val >= 30 & bf_val < 100) {
+    evidence <- "Very strong evidence for"
+  } else {
+    evidence <- "Decisive evidence for"
+  }
+  
+  cat(sprintf("%-15s: BF = %8.2f (%s)\n", model_name, bf_val, evidence))
+}
+
+cat("\nBAYES FACTORS vs BEST MODEL:\n")
+best_model_name <- all_models_BIC$Model[best_model_index]
+cat("Best model:", best_model_name, "\n")
+
+for(i in 1:nrow(all_models_BIC)) {
+  if(i != best_model_index) {
+    bf_val <- all_models_BIC$BF_vs_best[i]
+    model_name <- all_models_BIC$Model[i]
+    
+    # Interpretation
+    if(bf_val < 1) {
+      evidence <- "Evidence against best model"
+    } else if(bf_val >= 1 & bf_val < 3) {
+      evidence <- "Barely worth mentioning evidence against"
+    } else if(bf_val >= 3 & bf_val < 10) {
+      evidence <- "Positive evidence against"
+    } else if(bf_val >= 10 & bf_val < 30) {
+      evidence <- "Strong evidence against"
+    } else if(bf_val >= 30 & bf_val < 100) {
+      evidence <- "Very strong evidence against"
+    } else {
+      evidence <- "Decisive evidence against"
+    }
+    
+    cat(sprintf("%-15s: BF = %8.2f (%s)\n", model_name, bf_val, evidence))
+  }
+}
+
+# Key pairwise comparisons
+cat("\n=== KEY MODEL COMPARISONS ===\n")
+
+# hzDiff vs Null
+bf_hzDiff_null <- BF(BIC(model_null), BIC(model_hzDiff))
+cat(sprintf("hzDiff vs Null:        BF = %8.2f\n", bf_hzDiff_null))
+
+# Torder vs Null  
+bf_torder_null <- BF(BIC(model_null), BIC(model_torder))
+cat(sprintf("Torder vs Null:    BF = %8.2f\n", bf_torder_null))
+
+# Additive vs hzDiff only
+bf_add_hzDiff <- BF(BIC(model_hzDiff), BIC(model_addative))
+cat(sprintf("Additive vs hzDiff:    BF = %8.2f\n", bf_add_hzDiff))
+
+# Additive vs Torder only
+bf_add_torder <- BF(BIC(model_torder), BIC(model_addative))
+cat(sprintf("Additive vs Torder: BF = %8.2f\n", bf_add_torder))
+
+# Interaction vs Additive
+bf_int_add <- BF(BIC(model_addative), BIC(model_interaction))
+cat(sprintf("Interaction vs Add: BF = %8.2f\n", bf_int_add))
+
+# Post-hoc analysis
+cat("\n=== POST-HOC ANALYSIS ===\n\n")
+
+curr_data$torder_factor <- factor(curr_data$torder, levels = c(1, 2, 3, 4))
+model_posthoc <- lmer(proportion ~ torder_factor * hzDiff + (1|sub), data = curr_data)
+
+# Get marginal means
+emm_torder <- emmeans(model_posthoc, ~ torder_factor)
+cat("ESTIMATED MARGINAL MEANS BY TORDER:\n")
+print(emm_torder)
+cat("\n")
+
+# Get all pairwise comparisons WITHOUT FDR correction first
+all_pairs_raw <- pairs(emm_torder, adjust = "none")
+pairs_summary_raw <- summary(all_pairs_raw, infer = TRUE)
+
+# Extract only the 3 consecutive comparisons
+consecutive_indices <- c(1, 4, 6)  # T1-T2, T2-T3, T3-T4 from the pairs output
+consecutive_only <- pairs_summary_raw[consecutive_indices, ]
+consecutive_only$p.value.fdr <- p.adjust(consecutive_only$p.value, method = "fdr")
+
+# Get marginal means for hzDiff
+emm_hzDiff <- emmeans(model_posthoc, ~ hzDiff)
+cat("ESTIMATED MARGINAL MEANS BY hzDiff:\n")
+print(emm_hzDiff)
+
+# Get pairwise comparisons for hzDiff
+pairs_hzDiff <- pairs(emm_hzDiff, adjust = "fdr")
+cat("PAIRWISE COMPARISONS FOR hzDiff:\n")
+print(summary(pairs_hzDiff, infer = TRUE))
+
+
+# Create table with consecutive comparison results
+comparison_names <- c("T1_vs_T2", "T2_vs_T3", "T3_vs_T4")
+
+consecutive_table <- data.frame(
+  Comparison = comparison_names,
+  Difference = round(consecutive_only$estimate, 4),
+  SE = round(consecutive_only$SE, 4),
+  t_ratio = round(consecutive_only$t.ratio, 2),
+  df = consecutive_only$df,
+  p_raw = sprintf("%.2e", consecutive_only$p.value),
+  p_FDR_corrected = sprintf("%.2e", consecutive_only$p.value.fdr),
+  stringsAsFactors = FALSE
+)
+
+cat("=== CONSECUTIVE COMPARISONS TABLE ===\n")
+print(consecutive_table, row.names = FALSE)
+cat("\n")
+
+# Clean table for manuscript
+manuscript_table <- data.frame(
+  Comparison = comparison_names,
+  `Mean Difference` = sprintf("%.4f", consecutive_only$estimate),
+  `95% CI` = paste0("[", sprintf("%.4f", consecutive_only$lower.CL), ", ", 
+                    sprintf("%.4f", consecutive_only$upper.CL), "]"),
+  `t` = sprintf("%.2f", consecutive_only$t.ratio),
+  `p (FDR-corrected)` = sprintf("%.2e", consecutive_only$p.value.fdr),
+  check.names = FALSE
+)
+
+cat("=== MANUSCRIPT-READY TABLE ===\n")
+print(manuscript_table, row.names = FALSE)
+cat("\n")
+
+# Extract key statistics for manuscript
+cat("=== KEY STATISTICS FOR MANUSCRIPT ===\n")
+model_summary <- summary(model_interaction)
+anova_summary <- anova(model_interaction)
+
+cat("MAIN EFFECTS:\n")
+cat("- Torder: F(", anova_summary$NumDF[1], ",", round(anova_summary$DenDF[1]), ") = ", 
+    round(anova_summary$`F value`[1], 2), ", p = ", 
+    ifelse(anova_summary$`Pr(>F)`[1] < 0.001, 
+           sprintf("%.2e", anova_summary$`Pr(>F)`[1]), 
+           round(anova_summary$`Pr(>F)`[1], 3)), "\n")
+
+cat("  Beta = ", sprintf("%.3e", model_summary$coefficients[2, 1]), 
+    ", t = ", round(model_summary$coefficients[2, 4], 2),
+    ", p = ", sprintf("%.2e", model_summary$coefficients[2, 5]), "\n")
+
+cat("- hzDiff: F(", anova_summary$NumDF[2], ",", round(anova_summary$DenDF[2]), ") = ", 
+    round(anova_summary$`F value`[2], 2), ", p = ", 
+    ifelse(anova_summary$`Pr(>F)`[2] < 0.001, 
+           sprintf("%.2e", anova_summary$`Pr(>F)`[2]), 
+           round(anova_summary$`Pr(>F)`[2], 3)), "\n")
+
+cat("  Beta = ", sprintf("%.3e", model_summary$coefficients[3, 1]), 
+    ", t = ", round(model_summary$coefficients[3, 4], 2),
+    ", p = ", sprintf("%.2e", model_summary$coefficients[3, 5]), "\n")
+
+cat("INTERACTION:\n")
+cat("- Torder x hzDiff: F(", anova_summary$NumDF[3], ",", round(anova_summary$DenDF[3]), ") = ", 
+    round(anova_summary$`F value`[3], 2), ", p = ", 
+    ifelse(anova_summary$`Pr(>F)`[3] < 0.001, 
+           sprintf("%.2e", anova_summary$`Pr(>F)`[3]), 
+           round(anova_summary$`Pr(>F)`[3], 3)), "\n")
+
+cat("  Beta = ", sprintf("%.3e", model_summary$coefficients[4, 1]), 
+    ", t = ", round(model_summary$coefficients[4, 4], 2),
+    ", p = ", sprintf("%.2e", model_summary$coefficients[4, 5]), "\n")
+
+cat("\n=== BAYES FACTOR SUMMARY FOR MANUSCRIPT ===\n")
+cat("Model selection based on BIC and Bayes Factors:\n")
+cat("- Best model:", best_model_name, "(lowest BIC)\n")
+cat("- Evidence for best model vs null: BF =", all_models_BIC$BF_vs_null[best_model_index], "\n")
+
+if(best_model_name != "Interaction") {
+  int_index <- which(all_models_BIC$Model == "Interaction")
+  cat("- Evidence against interaction model: BF =", all_models_BIC$BF_vs_best[int_index], "\n")
+}
+
+cat("\n=== ANALYSIS COMPLETE ===\n")
+cat("Results saved to:", output_file, "\n")
+
+# Close the sink to return output to console
+sink()
+
+# Print confirmation message to console
+cat("Analysis complete! Results saved to:", output_file, "\n")
+cat("File location:", file.path(getwd(), output_file), "\n")
+```
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+
+# Create plots for main effects
+# Assuming curr_data and model_interaction are already available
+
+# 1. Main effect of torder (tone repetition)
+# Calculate marginal means for torder
+curr_data$torder_factor <- factor(curr_data$torder, levels = c(1, 2, 3, 4))
+model_for_plots <- lmer(proportion ~ torder_factor * hzDiff + (1|sub), data = curr_data)
+
+# Get marginal means
+emm_torder <- emmeans(model_for_plots, ~ torder_factor)
+torder_means <- summary(emm_torder)
+
+# Plot 1: Main effect of tone repetition
+p1 <- ggplot(torder_means, aes(x = torder_factor, y = emmean)) +
+  geom_point(size = 3, color = "blue") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.1, color = "blue") +
+  geom_line(aes(group = 1), color = "blue", size = 1) +
+  labs(title = paste("Main Effect of Tone Repetition -", dataset_name),
+       x = "Tone Repetition (T1-T4)",
+       y = "Proportion of Events") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12))
+
+print(p1)
+
+# 2. Main effect of hzDiff (frequency difference)
+# Get marginal means for hzDiff
+emm_hzDiff <- emmeans(model_for_plots, ~ hzDiff)
+hzDiff_means <- summary(emm_hzDiff)
+
+# Reorder factor levels for logical ordering
+hzDiff_means$hzDiff <- factor(hzDiff_means$hzDiff, levels = c("low", "mid", "high"))
+
+# Plot 2: Main effect of frequency difference
+p2 <- ggplot(hzDiff_means, aes(x = hzDiff, y = emmean)) +
+  geom_point(size = 3, color = "red") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.1, color = "red") +
+  geom_line(aes(group = 1), color = "red", size = 1) +
+  labs(title = paste("Main Effect of Frequency Difference -", dataset_name),
+       x = "Previous Tone Frequency",
+       y = "Proportion of Events") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12))
+
+print(p2)
+
+# 3. Interaction plot (optional)
+# Get marginal means for the interaction
+emm_interaction <- emmeans(model_for_plots, ~ torder_factor | hzDiff)
+interaction_means <- summary(emm_interaction)
+interaction_means$hzDiff <- factor(interaction_means$hzDiff, levels = c("low", "mid", "high"))
+
+# Plot 3: Interaction plot
+p3 <- ggplot(interaction_means, aes(x = torder_factor, y = emmean, color = hzDiff)) +
+  geom_point(size = 3, position = position_dodge(0.2)) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.1, position = position_dodge(0.2)) +
+  geom_line(aes(group = hzDiff), size = 1, position = position_dodge(0.2)) +
+  labs(title = paste("Interaction: Tone Repetition × Frequency Difference -", dataset_name),
+       x = "Tone Repetition (T1-T4)",
+       y = "Proportion of Events",
+       color = "Frequency") +
+  scale_color_viridis_d() +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+
+print(p3)
+
+# Save plots
+ggsave(paste0("main_effect_torder_", dataset_name, ".png"), plot = p1, 
+       width = 8, height = 6, dpi = 300)
+ggsave(paste0("main_effect_hzDiff_", dataset_name, ".png"), plot = p2, 
+       width = 8, height = 6, dpi = 300)
+ggsave(paste0("interaction_plot_", dataset_name, ".png"), plot = p3, 
+       width = 10, height = 6, dpi = 300)
+
+cat("Plots saved successfully!\n")
+```

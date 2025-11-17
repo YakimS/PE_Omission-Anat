@@ -1,0 +1,258 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# run twice 
+library(Matrix)
+library(lme4)
+library(lmtest)
+library(dplyr)
+library(parallel)
+library(bayestestR)
+library(glmmTMB)
+library(gridExtra)
+library(emmeans)
+library(ggplot2)
+library(ggsignif)
+
+```
+
+```{r}
+data <- read.csv("rems_to_R.csv") %>%
+ filter(is_peak %in% c(1),
+        sov %in% c("tREM", "pREM"),
+        cond %in% c("Bl0T1", "Bl0T2", "Bl0T3", "Bl0T4"))
+
+data$sov <- as.factor(data$sov)
+data$component <- as.factor(data$component)
+data$is_peak <- as.factor(data$is_peak)
+data$cond <- factor(data$cond,     levels = c("Bl0T1", "Bl0T2", "Bl0T3", "Bl0T4"),      ordered = TRUE)
+data$sov <- factor(data$sov,  levels = c("tREM", "pREM"), ordered = FALSE)
+
+N100_data <- subset(data, component == "N100")
+P2_data <- subset(data, component == "P2")
+N350_data <- subset(data, component == "N350")
+```
+
+```{r}
+# Function to analyze each component
+analyze_component <- function(comp_data, comp_name) {
+  # Fit all three models
+  null_model <- lmer(amplitude ~ 1 + (1|subject), data = comp_data)
+  main_effects_model <- lmer(amplitude ~ sov + cond + (1|subject), data = comp_data)
+  interaction_model <- lmer(amplitude ~ sov * cond + (1|subject), data = comp_data)
+  
+  # Test for main effects
+  sov_model <- lmer(amplitude ~ sov + (1|subject), data = comp_data)
+  sov_comparison <- anova(null_model, sov_model)
+  
+  cond_model <- lmer(amplitude ~ cond + (1|subject), data = comp_data)
+  cond_comparison <- anova(null_model, cond_model)
+  
+  # Perform nested model comparisons
+  null_vs_main <- anova(null_model, main_effects_model)
+  main_vs_interaction <- anova(main_effects_model, interaction_model)
+  null_vs_interaction <- anova(null_model, interaction_model)
+  
+  # Get estimated marginal means
+  emm_sov <- emmeans(interaction_model, ~ sov)
+  emm_cond <- emmeans(interaction_model, ~ cond)
+  emm_interaction <- emmeans(interaction_model, ~ sov * cond)
+  emm_sov_df <- as.data.frame(emm_sov)
+  emm_cond_df <- as.data.frame(emm_cond)
+  emm_interaction_df <- as.data.frame(emm_interaction)
+
+  # Plot for main effect of SOV
+  p1 <- ggplot(emm_sov_df, aes(x = sov, y = emmean)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "SOV", y = "Amplitude", title = "Main Effect of SOV") +
+    theme(text = element_text(size = 12))
+  
+  # Plot for main effect of Cond
+  p2 <- ggplot(emm_cond_df, aes(x = cond, y = emmean)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Cond", y = "Amplitude", title = "Main Effect of Cond") +
+    theme(text = element_text(size = 12))
+  
+  # Plot for interaction
+  p3 <- ggplot(emm_interaction_df, aes(x = cond, y = emmean, color = sov, group = sov)) +
+    geom_point(size = 3) +
+    geom_line() +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.2) +
+    theme_bw() +
+    labs(x = "Condition", y = "Amplitude", title = "SOV x Condition Interaction") +
+    theme(text = element_text(size = 12))
+  
+  # Display plots
+  plots <- grid.arrange(p1, p2, p3, ncol = 2)
+  
+  if(null_vs_interaction$`Pr(>Chisq)`[2] < 0.05) {
+    return(list(
+      component = comp_name,
+      null_vs_main = null_vs_main,
+      main_vs_interaction = main_vs_interaction,
+      null_vs_interaction = null_vs_interaction,
+      sov_effect = sov_comparison,
+      cond_effect = cond_comparison,
+      interaction_model_summary = summary(interaction_model),
+      interaction_model = interaction_model,
+      plots = plots
+    ))
+  } else {
+    return(list(
+      component = comp_name,
+      null_vs_main = null_vs_main,
+      main_vs_interaction = main_vs_interaction,
+      null_vs_interaction = null_vs_interaction,
+      message = "Null model is not significantly different from interaction model",
+      plots = plots
+    ))
+  }
+}
+
+# Print results for each component
+print_results <- function(results) {
+  cat("\n__Results for", results$component, ":__\n")
+  cat("____________________________________\n")
+  cat("\n__Model Comparison (Null vs Full):__\n")
+  cat("____________________________________\n")
+  print(results$model_comparison)
+  cat("\nNull vs Main Effects Model:\n")
+  cat("____________________________________\n")
+  print(results$null_vs_main)
+  cat("\nMain Effects vs Interaction Model:\n")
+  cat("____________________________________\n")
+  print(results$main_vs_interaction)
+  cat("\nNull vs Interaction Model:\n")
+  cat("____________________________________\n")
+  print(results$null_vs_interaction)
+  
+  if(!is.null(results$message)) {
+    cat("\n", results$message, "\n")
+  } else {
+    cat("\n__Main effect of SOV:__\n")
+    cat("____________________________________\n")
+    print(results$sov_effect)
+    cat("\n__Main effect of Condition:__\n")
+    cat("____________________________________\n")
+    print(results$cond_effect)
+    cat("\n__Full model summary:__\n")
+    cat("____________________________________\n")
+    print(results$interaction_model_summary)
+    
+    # Add emmeans analyses
+    cat("\n__Estimated Marginal Means for SOV:__\n")
+    cat("____________________________________\n")
+    print(emmeans(results$interaction_model, ~ sov))
+    
+    cat("\n__Estimated Marginal Means for Cond:__\n")
+    cat("____________________________________\n")
+    print(emmeans(results$interaction_model, ~ cond))
+    
+    cat("\n__Estimated Marginal Means for SOV x Condition interaction:__\n")
+    cat("____________________________________\n")
+    print(emmeans(results$interaction_model, ~ sov * cond))
+    
+    # Add pairwise comparisons
+    cat("\n__Pairwise comparisons for SOV:__\n")
+    cat("____________________________________\n")
+    print(pairs(emmeans(results$interaction_model, ~ sov)))
+    
+    cat("\n__Pairwise comparisons for Cond:__\n")
+    cat("____________________________________\n")
+    print(pairs(emmeans(results$interaction_model, ~ cond)))
+  }
+}
+
+# Function to save results
+save_results <- function(results, component_name) {
+  # Save plots to PDF
+  pdf(paste0(component_name, "_plots.pdf"), width = 12, height = 6)
+  grid.arrange(results$plots)
+  dev.off()
+  
+  # Save text results to file
+  sink(paste0(component_name, "_results.txt"))
+  
+  cat("\nResults for", component_name, ":\n")
+  
+  cat("\n__Model Comparisons:__\n")
+  cat("\nNull vs Main Effects Model:\n")
+  cat("\n____________________________________\n")
+  print(results$null_vs_main)
+  
+  cat("\nMain Effects vs Interaction Model:\n")
+  cat("\n____________________________________\n")
+  print(results$main_vs_interaction)
+  
+  cat("\nNull vs Interaction Model:\n")
+  cat("\n____________________________________\n")
+  print(results$null_vs_interaction)
+  
+  if(!is.null(results$message)) {
+    cat("\n", results$message, "\n")
+  } else {
+    cat("\nMain effect of SOV:\n")
+    cat("\n____________________________________\n")
+    print(results$sov_effect)
+    
+    cat("\nMain effect of Condition:\n")
+    cat("\n____________________________________\n")
+    print(results$cond_effect)
+    
+    cat("\nInteraction model summary:\n")
+    cat("\n____________________________________\n")
+    print(results$interaction_model_summary)
+    
+    # Add emmeans results
+    cat("\nEstimated Marginal Means for SOV:\n")
+    cat("\n____________________________________\n")
+    print(emmeans(results$interaction_model, ~ sov))
+    
+    cat("\nEstimated Marginal Means for Cond:\n")
+    cat("\n____________________________________\n")
+    print(emmeans(results$interaction_model, ~ cond))
+    
+    cat("\nEstimated Marginal Means for SOV x Condition interaction:\n")
+    cat("\n____________________________________\n")
+    print(emmeans(results$interaction_model, ~ sov * cond))
+    
+    cat("\nPairwise comparisons for SOV:\n")
+    cat("\n____________________________________\n")
+    print(pairs(emmeans(results$interaction_model, ~ sov)))
+    
+    cat("\nPairwise comparisons for Cond:\n")
+    cat("\n____________________________________\n")
+    print(pairs(emmeans(results$interaction_model, ~ cond)))
+  }
+  
+  sink()
+}
+
+
+```
+
+```{r}
+N100_results <- analyze_component(N100_data, "N100")
+P2_results <- analyze_component(P2_data, "P2")
+N350_results <- analyze_component(N350_data, "N350")
+
+
+print_results(N100_results)
+print_results(P2_results)
+print_results(N350_results)
+
+
+# Save results for each component
+save_results(N100_results, "N100")
+save_results(P2_results, "P2")
+save_results(N350_results, "N350")
+```

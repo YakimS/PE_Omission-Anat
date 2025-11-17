@@ -1,0 +1,101 @@
+[1] "Tweedie model summary:"
+ Family: tweedie  ( log )
+Formula:          comp_amp ~ sov * cond + (1 | sub)
+Data: data_table
+
+     AIC      BIC   logLik deviance df.resid 
+   193.5    254.5    -81.8    163.5      417 
+
+Random effects:
+
+Conditional model:
+ Groups Name        Variance Std.Dev.
+ sub    (Intercept) 11.99    3.462   
+Number of obs: 432, groups:  sub, 36
+
+Dispersion parameter for tweedie family ():  4.1 
+
+Conditional model:
+                   Estimate Std. Error z value Pr(>|z|)
+(Intercept)         -39.570  12364.012  -0.003    0.997
+sovN2                34.009  12364.011   0.003    0.998
+sovN3                33.867  12364.011   0.003    0.998
+sovREM              -13.297 489342.059   0.000    1.000
+condNblT2            32.956  12364.011   0.003    0.998
+condNblT3            -7.354  95335.118   0.000    1.000
+sovN2:condNblT2     -32.588  12364.011  -0.003    0.998
+sovN3:condNblT2     -32.427  12364.011  -0.003    0.998
+sovREM:condNblT2    -23.366 490554.801   0.000    1.000
+sovN2:condNblT3       5.893  95335.118   0.000    1.000
+sovN3:condNblT3       6.982  95335.118   0.000    1.000
+sovREM:condNblT3     52.108 498423.643   0.000    1.000
+[1] "Gaussian model summary:"
+ Family: gaussian  ( identity )
+Formula:          comp_amp ~ sov * cond + (1 | sub)
+Data: data_table
+
+     AIC      BIC   logLik deviance df.resid 
+  2059.5   2116.4  -1015.7   2031.5      418 
+
+Random effects:
+
+Conditional model:
+ Groups   Name        Variance Std.Dev.
+ sub      (Intercept) 1.047    1.023   
+ Residual             5.866    2.422   
+Number of obs: 432, groups:  sub, 36
+
+Dispersion estimate for gaussian family (sigma^2): 5.87 
+
+Conditional model:
+                  Estimate Std. Error z value Pr(>|z|)    
+(Intercept)      -2.288251   0.438209  -5.222 1.77e-07 ***
+sovN2            -1.397384   0.570861  -2.448  0.01437 *  
+sovN3            -5.433701   0.570861  -9.518  < 2e-16 ***
+sovREM            0.325227   0.570861   0.570  0.56887    
+condNblT2         1.555638   0.570861   2.725  0.00643 ** 
+condNblT3         1.262241   0.570861   2.211  0.02703 *  
+sovN2:condNblT2  -0.002648   0.807319  -0.003  0.99738    
+sovN3:condNblT2   0.644750   0.807319   0.799  0.42450    
+sovREM:condNblT2 -1.196076   0.807319  -1.482  0.13846    
+sovN2:condNblT3   1.182741   0.807319   1.465  0.14291    
+sovN3:condNblT3   2.457864   0.807319   3.044  0.00233 ** 
+sovREM:condNblT3 -0.920083   0.807319  -1.140  0.25442    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+[1] 1
+     AIC_Tweedie AIC_Gaussian
+[1,] 193.5117    2059.45     
+     BIC_Tweedie BIC_Gaussian
+[1,] 254.5381    2116.408    
+
+	Shapiro-Wilk normality test
+
+data:  residuals(model)
+W = 0.76, p-value < 2.2e-16
+
+Data: data_table
+Models:
+models[[1]]: comp_amp ~ -1 + (1 | sub)
+models[[2]]: comp_amp ~ -1 + cond + (1 | sub)
+models[[3]]: comp_amp ~ -1 + sov + (1 | sub)
+models[[4]]: comp_amp ~ -1 + sov + cond + (1 | sub)
+models[[5]]: comp_amp ~ -1 + sov * cond + (1 | sub)
+            npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+models[[1]]    2 2320.5 2328.6 -1158.2   2316.5                          
+models[[2]]    5 2232.0 2252.3 -1111.0   2222.0  94.522  3  < 2.2e-16 ***
+models[[3]]    6 2108.4 2132.8 -1048.2   2096.4 125.533  1  < 2.2e-16 ***
+models[[4]]    8 2068.0 2100.5 -1026.0   2052.0  44.468  2  2.207e-10 ***
+models[[5]]   14 2059.4 2116.4 -1015.7   2031.5  20.518  6   0.002239 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Bayes Factors for Model Comparison
+
+    Model                             BF
+[2] -1 + cond + (1 | sub)       3.72e+16
+[3] -1 + sov + (1 | sub)        3.25e+42
+[4] -1 + sov + cond + (1 | sub) 3.41e+49
+[5] -1 + sov * cond + (1 | sub) 1.21e+46
+
+* Against Denominator: [1] -1 + (1 | sub)
+*   Bayes Factor Type: BIC approximation

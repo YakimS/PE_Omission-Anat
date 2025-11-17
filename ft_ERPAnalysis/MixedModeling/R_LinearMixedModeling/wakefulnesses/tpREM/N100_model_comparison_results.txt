@@ -1,0 +1,1750 @@
+
+Model Comparison Results for N100 Component:
+
+------------------------------------------------------------
+
+Model Comparison by AIC and BIC:
+
+__Results for N100 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model            3 376.15 384.68 -185.07   370.15                     
+main_effects_model    5 376.38 390.61 -183.19   366.38 3.7642  2     0.1523
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    5 376.38 390.61 -183.19   366.38                     
+interaction_model     6 377.75 394.82 -182.88   365.75 0.6307  1     0.4271
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)
+null_model           3 376.15 384.68 -185.07   370.15                    
+interaction_model    6 377.75 394.82 -182.88   365.75 4.395  3     0.2219
+
+ Null model is not significantly different from interaction model 
+
+__Results for P2 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 479.94 488.42 -236.97   473.94                         
+main_effects_model    5 457.69 471.83 -223.84   447.69 26.248  2  1.997e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)
+main_effects_model    5 457.69 471.83 -223.84   447.69                    
+interaction_model     6 459.63 476.60 -223.82   447.63 0.056  1      0.813
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 479.94 488.42 -236.97   473.94                         
+interaction_model    6 459.63 476.60 -223.82   447.63 26.304  3  8.237e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 479.94 488.42 -236.97   473.94                         
+sov_model     4 463.83 475.14 -227.91   455.83 18.106  1   2.09e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+null_model    3 479.94 488.42 -236.97   473.94                       
+cond_model    4 475.43 486.74 -233.72   467.43 6.5066  1    0.01075 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML ['lmerMod']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 452.4
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.3763 -0.5372 -0.1140  0.5339  2.6235 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.9758   0.9878  
+ Residual             1.5886   1.2604  
+Number of obs: 125, groups:  subject, 32
+
+Fixed effects:
+               Estimate Std. Error t value
+(Intercept)     2.86048    0.23724  12.057
+sovpREM        -1.04182    0.22608  -4.608
+cond.L         -0.42075    0.22717  -1.852
+sovpREM:cond.L -0.07443    0.31972  -0.233
+
+Correlation of Fixed Effects:
+            (Intr) svpREM cond.L
+sovpREM     -0.481              
+cond.L       0.000  0.000       
+svpREM:cn.L  0.000  0.010 -0.711
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov  emmean    SE   df lower.CL upper.CL
+ tREM   2.86 0.237 50.7     2.38     3.34
+ pREM   1.82 0.236 50.0     1.34     2.29
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1   2.66 0.236 50.0     2.19     3.14
+ Bl0T2   2.02 0.237 50.7     1.54     2.49
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov  cond  emmean    SE   df lower.CL upper.CL
+ tREM Bl0T1   3.16 0.287 87.0    2.588     3.73
+ pREM Bl0T1   2.17 0.283 85.1    1.606     2.73
+ tREM Bl0T2   2.56 0.287 87.0    1.993     3.13
+ pREM Bl0T2   1.47 0.287 87.0    0.899     2.04
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast    estimate    SE   df t.ratio p.value
+ tREM - pREM     1.04 0.226 90.5   4.607  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE   df t.ratio p.value
+ Bl0T1 - Bl0T2    0.648 0.226 90.5   2.864  0.0052
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+
+__Results for N350 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar   AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 465.1 473.66 -229.55    459.1                         
+main_effects_model    5 450.9 465.16 -220.45    440.9 18.197  2  0.0001119 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    5 450.90 465.16 -220.45   440.90                     
+interaction_model     6 451.93 469.04 -219.96   439.93 0.9784  1     0.3226
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 465.10 473.66 -229.55   459.10                         
+interaction_model    6 451.93 469.04 -219.96   439.93 19.175  3  0.0002515 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar   AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 465.1 473.66 -229.55    459.1                         
+sov_model     4 449.7 461.11 -220.85    441.7 17.401  1  3.027e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model    3 465.10 473.66 -229.55   459.10                     
+cond_model    4 466.44 477.85 -229.22   458.44 0.6635  1     0.4153
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML ['lmerMod']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 445.4
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-2.88359 -0.45530 -0.00153  0.51030  2.82216 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.3773   0.6142  
+ Residual             1.5904   1.2611  
+Number of obs: 128, groups:  subject, 32
+
+Fixed effects:
+               Estimate Std. Error t value
+(Intercept)     -2.4696     0.1914 -12.902
+sovpREM          0.9673     0.2229   4.339
+cond.L           0.2933     0.2229   1.316
+sovpREM:cond.L  -0.3077     0.3153  -0.976
+
+Correlation of Fixed Effects:
+            (Intr) svpREM cond.L
+sovpREM     -0.582              
+cond.L       0.000  0.000       
+svpREM:cn.L  0.000  0.000 -0.707
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov  emmean    SE   df lower.CL upper.CL
+ tREM  -2.47 0.191 65.2    -2.85    -2.09
+ pREM  -1.50 0.191 65.2    -1.88    -1.12
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1  -2.08 0.191 65.2    -2.47    -1.70
+ Bl0T2  -1.89 0.191 65.2    -2.27    -1.51
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov  cond  emmean    SE  df lower.CL upper.CL
+ tREM Bl0T1  -2.68 0.248 112    -3.17    -2.19
+ pREM Bl0T1  -1.49 0.248 112    -1.98    -1.00
+ tREM Bl0T2  -2.26 0.248 112    -2.75    -1.77
+ pREM Bl0T2  -1.51 0.248 112    -2.00    -1.02
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast    estimate    SE df t.ratio p.value
+ tREM - pREM   -0.967 0.223 93  -4.339  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE df t.ratio p.value
+ Bl0T1 - Bl0T2   -0.197 0.223 93  -0.884  0.3787
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+
+Likelihood Ratio Tests:
+Null vs. Categorical Model:
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+categorical_model: amplitude ~ as.factor(cond) + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model           3 376.15 384.68 -185.07   370.15                     
+categorical_model    4 375.55 386.93 -183.78   367.55 2.5998  1     0.1069
+
+Null vs. Linear Model:
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+linear_model: amplitude ~ cond_numeric + (1 | subject)
+             npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model      3 376.15 384.68 -185.07   370.15                     
+linear_model    4 375.55 386.93 -183.78   367.55 2.5998  1     0.1069
+
+Null vs. Step Function Model:
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+step_model: amplitude ~ is_first_tone + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model    3 376.15 384.68 -185.07   370.15                     
+step_model    4 375.55 386.93 -183.78   367.55 2.5998  1     0.1069
+package ‘lmerTest’ successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+	C:\Users\User\AppData\Local\Temp\RtmpkVpoHK\downloaded_packages
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Analyzing N100 in stage tREM...
+Analyzing N100 in stage pREM...
+Analyzing N100 in stage N2Eliwo...
+Detailed results for component N100 written to component_N100_tone_repetition_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Analyzing P2 in stage tREM...
+Analyzing P2 in stage pREM...
+Analyzing P2 in stage N2Eliwo...
+Detailed results for component P2 written to component_P2_tone_repetition_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Analyzing N350 in stage tREM...
+Analyzing N350 in stage pREM...
+Analyzing N350 in stage N2Eliwo...
+Detailed results for component N350 written to component_N350_tone_repetition_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to individual component files and all_components_summary.csv
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Analyzing N100 in stage tREM...
+Analyzing N100 in stage pREM...
+Detailed results for component N100 written to component_N100_step_vs_linear_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Analyzing P2 in stage tREM...
+Analyzing P2 in stage pREM...
+Detailed results for component P2 written to component_P2_step_vs_linear_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Analyzing N350 in stage tREM...
+Analyzing N350 in stage pREM...
+Detailed results for component N350 written to component_N350_step_vs_linear_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to files.
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Analyzing N100 in stage tREM...
+Analyzing N100 in stage pREM...
+Detailed results for component N100 written to component_N100_step_vs_linear_analysis.txt
+Interactive HTML summary for component N100 written to component_N100_interactive_summary.html
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Analyzing P2 in stage tREM...
+Analyzing P2 in stage pREM...
+Detailed results for component P2 written to component_P2_step_vs_linear_analysis.txt
+Interactive HTML summary for component P2 written to component_P2_interactive_summary.html
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Analyzing N350 in stage tREM...
+Analyzing N350 in stage pREM...
+Detailed results for component N350 written to component_N350_step_vs_linear_analysis.txt
+Interactive HTML summary for component N350 written to component_N350_interactive_summary.html
+
+Analysis complete. Results saved to files.
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Analyzing N100 in stage tREM...
+Analyzing N100 in stage pREM...
+Detailed results for component N100 written to component_N100_step_vs_linear_analysis.txt
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Analyzing P2 in stage tREM...
+Analyzing P2 in stage pREM...
+Detailed results for component P2 written to component_P2_step_vs_linear_analysis.txt
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Analyzing N350 in stage tREM...
+Analyzing N350 in stage pREM...
+Detailed results for component N350 written to component_N350_step_vs_linear_analysis.txt
+
+Analysis complete. Results saved to files.
+
+Analyzing component: N100
+========================================
+Analyzing N100 in stage wn...
+Analyzing N100 in stage N1...
+Analyzing N100 in stage N2...
+Analyzing N100 in stage N3...
+Analyzing N100 in stage REM...
+Analyzing N100 in stage tREM...
+Analyzing N100 in stage pREM...
+Detailed results for component N100 written to component_N100_step_vs_linear_analysis.txt
+
+Analyzing component: P2
+========================================
+Analyzing P2 in stage wn...
+Analyzing P2 in stage N1...
+Analyzing P2 in stage N2...
+Analyzing P2 in stage N3...
+Analyzing P2 in stage REM...
+Analyzing P2 in stage tREM...
+Analyzing P2 in stage pREM...
+Detailed results for component P2 written to component_P2_step_vs_linear_analysis.txt
+
+Analyzing component: N350
+========================================
+Analyzing N350 in stage wn...
+Analyzing N350 in stage N1...
+Analyzing N350 in stage N2...
+Analyzing N350 in stage N3...
+Analyzing N350 in stage REM...
+Analyzing N350 in stage tREM...
+Analyzing N350 in stage pREM...
+Detailed results for component N350 written to component_N350_step_vs_linear_analysis.txt
+
+Analysis complete. Results saved to files.
+
+__Results for N100 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+null_model            3 783.69 794.29 -388.84   777.69                       
+main_effects_model    7 780.15 804.88 -383.07   766.15 11.539  4    0.02113 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    7 780.15 804.88 -383.07   766.15                     
+interaction_model    10 783.15 818.49 -381.58   763.15 2.9967  3     0.3921
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+null_model           3 783.69 794.29 -388.84   777.69                       
+interaction_model   10 783.15 818.49 -381.58   763.15 14.535  7    0.04244 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model    3 783.69 794.29 -388.84   777.69                     
+sov_model     4 785.68 799.81 -388.84   777.68 0.0126  1     0.9106
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)   
+null_model    3 783.69 794.29 -388.84   777.69                        
+cond_model    6 778.18 799.38 -383.09   766.18 11.513  3   0.009252 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 777.3
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-4.6498 -0.4679  0.0469  0.4936  3.4956 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.156    0.395   
+ Residual             1.124    1.060   
+Number of obs: 253, groups:  subject, 32
+
+Fixed effects:
+                Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)     -0.80116    0.11751  65.64563  -6.818 3.49e-09 ***
+sovpREM          0.02085    0.13335 214.12390   0.156    0.876    
+cond.L          -0.30608    0.18905 214.52356  -1.619    0.107    
+cond.Q          -0.02203    0.18905 214.52586  -0.117    0.907    
+cond.C          -0.03312    0.18904 214.48909  -0.175    0.861    
+sovpREM:cond.L  -0.24225    0.26738 214.97969  -0.906    0.366    
+sovpREM:cond.Q   0.32775    0.26670 214.12390   1.229    0.220    
+sovpREM:cond.C   0.20696    0.26634 214.33716   0.777    0.438    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) svpREM cond.L cond.Q cond.C sREM:.L sREM:.Q
+sovpREM     -0.570                                            
+cond.L       0.012 -0.010                                     
+cond.Q       0.000  0.000  0.008                              
+cond.C      -0.006  0.006  0.000  0.015                       
+svpREM:cn.L -0.009  0.002 -0.708 -0.006  0.000                
+svpREM:cn.Q  0.000  0.004 -0.005 -0.708 -0.011 -0.002         
+svpREM:cn.C  0.004 -0.006  0.000 -0.011 -0.710  0.003   0.006 
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov  emmean    SE   df lower.CL upper.CL
+ tREM -0.801 0.118 65.7    -1.04   -0.567
+ pREM -0.780 0.117 65.1    -1.01   -0.546
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE  df lower.CL upper.CL
+ Bl0T1 -0.449 0.151 141   -0.747   -0.151
+ Bl0T2 -0.719 0.150 140   -1.015   -0.423
+ Bl0T3 -1.004 0.151 142   -1.303   -0.706
+ Bl0T4 -0.991 0.151 141   -1.289   -0.692
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov  cond  emmean    SE  df lower.CL upper.CL
+ tREM Bl0T1 -0.599 0.200 222   -0.994   -0.205
+ pREM Bl0T1 -0.298 0.203 224   -0.699    0.102
+ tREM Bl0T2 -0.744 0.200 222   -1.138   -0.350
+ pREM Bl0T2 -0.694 0.200 222   -1.088   -0.300
+ tREM Bl0T3 -0.836 0.203 224   -1.237   -0.436
+ pREM Bl0T3 -1.172 0.200 222   -1.567   -0.778
+ tREM Bl0T4 -1.025 0.203 224   -1.425   -0.625
+ pREM Bl0T4 -0.956 0.200 222   -1.351   -0.562
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast    estimate    SE  df t.ratio p.value
+ tREM - pREM  -0.0208 0.133 214  -0.156  0.8759
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2   0.2700 0.188 214   1.434  0.4795
+ Bl0T1 - Bl0T3   0.5554 0.189 215   2.938  0.0191
+ Bl0T1 - Bl0T4   0.5417 0.189 214   2.867  0.0234
+ Bl0T2 - Bl0T3   0.2854 0.188 214   1.516  0.4295
+ Bl0T2 - Bl0T4   0.2717 0.188 214   1.443  0.4738
+ Bl0T3 - Bl0T4  -0.0137 0.189 215  -0.073  0.9999
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 
+
+__Results for P2 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 910.62 921.18 -452.31   904.62                         
+main_effects_model    7 855.72 880.34 -420.86   841.72 62.906  4  7.102e-13 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    7 855.72 880.34 -420.86   841.72                     
+interaction_model    10 860.17 895.34 -420.08   840.17 1.5511  3     0.6705
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 910.62 921.18 -452.31   904.62                         
+interaction_model   10 860.17 895.34 -420.08   840.17 64.457  7  1.933e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+null_model    3 910.62 921.18 -452.31   904.62                        
+sov_model     4 881.12 895.19 -436.56   873.12  31.5  1  1.994e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 910.62 921.18 -452.31   904.62                         
+cond_model    6 889.64 910.74 -438.82   877.64 26.985  3   5.93e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 851.3
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-4.3895 -0.5301 -0.0495  0.5699  3.1959 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.7459   0.8637  
+ Residual             1.4349   1.1979  
+Number of obs: 249, groups:  subject, 32
+
+Fixed effects:
+                Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)      2.44812    0.18715  44.58668  13.081  < 2e-16 ***
+sovpREM         -0.93598    0.15209 210.32650  -6.154 3.76e-09 ***
+cond.L          -0.98171    0.21733 210.57991  -4.517 1.04e-05 ***
+cond.Q           0.07834    0.21653 210.49465   0.362    0.718    
+cond.C          -0.07942    0.21573 210.40804  -0.368    0.713    
+sovpREM:cond.L   0.27396    0.30476 210.38950   0.899    0.370    
+sovpREM:cond.Q   0.25749    0.30419 210.34214   0.846    0.398    
+sovpREM:cond.C   0.01693    0.30362 210.29503   0.056    0.956    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) svpREM cond.L cond.Q cond.C sREM:.L sREM:.Q
+sovpREM     -0.412                                            
+cond.L       0.007 -0.009                                     
+cond.Q       0.005 -0.007  0.012                              
+cond.C       0.002 -0.003  0.006  0.004                       
+svpREM:cn.L -0.005  0.010 -0.713 -0.009 -0.004                
+svpREM:cn.Q -0.004  0.005 -0.009 -0.712 -0.003  0.014         
+svpREM:cn.C -0.002  0.010 -0.004 -0.003 -0.711  0.003  -0.002 
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov  emmean    SE   df lower.CL upper.CL
+ tREM   2.45 0.187 44.6     2.07     2.83
+ pREM   1.51 0.186 43.9     1.14     1.89
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1   2.67 0.215 74.2     2.24     3.09
+ Bl0T2   2.02 0.216 75.2     1.59     2.45
+ Bl0T3   1.74 0.215 74.2     1.31     2.16
+ Bl0T4   1.50 0.217 76.4     1.07     1.93
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov  cond  emmean    SE  df lower.CL upper.CL
+ tREM Bl0T1   3.16 0.264 138    2.641     3.69
+ pREM Bl0T1   2.17 0.261 134    1.652     2.69
+ tREM Bl0T2   2.58 0.264 138    2.053     3.10
+ pREM Bl0T2   1.46 0.264 138    0.938     1.98
+ tREM Bl0T3   2.24 0.264 138    1.720     2.76
+ pREM Bl0T3   1.23 0.261 134    0.712     1.74
+ tREM Bl0T4   1.81 0.267 142    1.282     2.34
+ pREM Bl0T4   1.19 0.264 138    0.669     1.71
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast    estimate    SE  df t.ratio p.value
+ tREM - pREM    0.936 0.152 210   6.154  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2    0.648 0.215 210   3.021  0.0149
+ Bl0T1 - Bl0T3    0.931 0.214 210   4.357  0.0001
+ Bl0T1 - Bl0T4    1.165 0.216 210   5.404  <.0001
+ Bl0T2 - Bl0T3    0.283 0.215 210   1.317  0.5533
+ Bl0T2 - Bl0T4    0.517 0.217 211   2.386  0.0829
+ Bl0T3 - Bl0T4    0.234 0.216 210   1.086  0.6984
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 
+
+__Results for N350 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 884.89 895.52 -439.45   878.89                         
+main_effects_model    7 866.65 891.44 -426.32   852.65 26.245  4  2.824e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    7 866.65 891.44 -426.32   852.65                     
+interaction_model    10 866.82 902.24 -423.41   846.82 5.8248  3     0.1205
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+null_model           3 884.89 895.52 -439.45   878.89                        
+interaction_model   10 866.82 902.24 -423.41   846.82 32.07  7  3.942e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 884.89 895.52 -439.45   878.89                         
+sov_model     4 863.18 877.34 -427.59   855.18 23.719  1  1.115e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model    3 884.89 895.52 -439.45   878.89                     
+cond_model    6 888.67 909.92 -438.33   876.67 2.2259  3     0.5269
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 858.6
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.9202 -0.4185  0.0720  0.4699  3.2693 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.4769   0.6906  
+ Residual             1.4213   1.1922  
+Number of obs: 255, groups:  subject, 32
+
+Fixed effects:
+               Estimate Std. Error       df t value Pr(>|t|)    
+(Intercept)     -2.2649     0.1613  49.4239 -14.044  < 2e-16 ***
+sovpREM          0.7501     0.1494 216.0367   5.022 1.07e-06 ***
+cond.L           0.3849     0.2108 215.9653   1.826   0.0692 .  
+cond.Q          -0.3730     0.2108 215.9653  -1.770   0.0781 .  
+cond.C          -0.1458     0.2108 215.9653  -0.692   0.4898    
+sovpREM:cond.L  -0.3359     0.2992 216.0933  -1.123   0.2628    
+sovpREM:cond.Q   0.5527     0.2987 216.0367   1.850   0.0656 .  
+sovpREM:cond.C   0.2994     0.2982 215.9796   1.004   0.3165    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) svpREM cond.L cond.Q cond.C sREM:.L sREM:.Q
+sovpREM     -0.461                                            
+cond.L       0.000  0.000                                     
+cond.Q       0.000  0.000  0.000                              
+cond.C       0.000  0.000  0.000  0.000                       
+svpREM:cn.L  0.000  0.006 -0.704  0.000  0.000                
+svpREM:cn.Q  0.000  0.004  0.000 -0.706  0.000  0.006         
+svpREM:cn.C  0.000  0.002  0.000  0.000 -0.707  0.003   0.002 
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov  emmean    SE   df lower.CL upper.CL
+ tREM  -2.26 0.161 49.5    -2.59    -1.94
+ pREM  -1.51 0.162 49.8    -1.84    -1.19
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1  -2.08 0.193 93.0    -2.47    -1.70
+ Bl0T2  -1.89 0.193 93.0    -2.27    -1.50
+ Bl0T3  -1.80 0.193 93.0    -2.18    -1.41
+ Bl0T4  -1.79 0.194 94.5    -2.18    -1.41
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov  cond  emmean    SE  df lower.CL upper.CL
+ tREM Bl0T1  -2.68 0.244 172    -3.16   -2.196
+ pREM Bl0T1  -1.49 0.244 172    -1.97   -1.011
+ tREM Bl0T2  -2.26 0.244 172    -2.74   -1.781
+ pREM Bl0T2  -1.51 0.244 172    -1.99   -1.032
+ tREM Bl0T3  -1.89 0.244 172    -2.38   -1.414
+ pREM Bl0T3  -1.70 0.244 172    -2.18   -1.216
+ tREM Bl0T4  -2.23 0.244 172    -2.71   -1.745
+ pREM Bl0T4  -1.36 0.247 175    -1.84   -0.871
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast    estimate    SE  df t.ratio p.value
+ tREM - pREM    -0.75 0.149 216  -5.022  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2  -0.1972 0.211 216  -0.936  0.7858
+ Bl0T1 - Bl0T3  -0.2890 0.211 216  -1.371  0.5188
+ Bl0T1 - Bl0T4  -0.2928 0.212 216  -1.383  0.5113
+ Bl0T2 - Bl0T3  -0.0918 0.211 216  -0.436  0.9723
+ Bl0T2 - Bl0T4  -0.0956 0.212 216  -0.452  0.9692
+ Bl0T3 - Bl0T4  -0.0038 0.212 216  -0.018  1.0000
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 
+
+__Results for N100 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+null_model            3 660.32 670.90 -327.16   654.32                        
+main_effects_model    7 630.60 655.28 -308.30   616.60 37.72  4   1.28e-07 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    7 630.60 655.28 -308.30   616.60                     
+interaction_model    10 632.89 668.15 -306.45   612.89 3.7062  3      0.295
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 660.32 670.90 -327.16   654.32                         
+interaction_model   10 632.89 668.15 -306.45   612.89 41.427  7  6.704e-07 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 660.32 670.90 -327.16   654.32                         
+sov_model     4 644.11 658.21 -318.06   636.11 18.211  1  1.978e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 660.32 670.90 -327.16   654.32                         
+cond_model    6 648.53 669.68 -318.26   636.53 17.793  3  0.0004853 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 631.6
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-5.1284 -0.5200 -0.0063  0.4975  4.1880 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.5280   0.7266  
+ Residual             0.5266   0.7257  
+Number of obs: 251, groups:  subject, 32
+
+Fixed effects:
+              Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)   -2.09673    0.14357  37.53391 -14.604  < 2e-16 ***
+sovwm          0.41700    0.09223 212.90979   4.521 1.02e-05 ***
+cond.L         0.42671    0.12828 211.68200   3.326  0.00104 ** 
+cond.Q        -0.26517    0.12828 211.68200  -2.067  0.03995 *  
+cond.C         0.27360    0.12828 211.68200   2.133  0.03409 *  
+sovwm:cond.L  -0.21660    0.18366 211.73887  -1.179  0.23958    
+sovwm:cond.Q   0.24045    0.18331 211.71372   1.312  0.19104    
+sovwm:cond.C  -0.12779    0.18297 211.68837  -0.698  0.48567    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sovwm  cond.L cond.Q cond.C svw:.L svw:.Q
+sovwm       -0.311                                          
+cond.L       0.000  0.000                                   
+cond.Q       0.000  0.000  0.000                            
+cond.C       0.000  0.000  0.000  0.000                     
+sovwm:cnd.L  0.000  0.006 -0.698  0.000  0.000              
+sovwm:cnd.Q  0.000  0.005  0.000 -0.700  0.000  0.006       
+sovwm:cnd.C  0.000  0.002  0.000  0.000 -0.701  0.003  0.002
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov emmean    SE   df lower.CL upper.CL
+ wn   -2.10 0.144 37.9    -2.39    -1.81
+ wm   -1.68 0.145 38.8    -1.97    -1.39
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1  -2.22 0.158 54.4    -2.54    -1.90
+ Bl0T2  -1.75 0.158 54.4    -2.06    -1.43
+ Bl0T3  -1.89 0.158 54.4    -2.20    -1.57
+ Bl0T4  -1.70 0.158 55.1    -2.02    -1.38
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov cond  emmean    SE   df lower.CL upper.CL
+ wn  Bl0T1  -2.58 0.182 89.3    -2.94    -2.22
+ wm  Bl0T1  -1.87 0.183 92.0    -2.23    -1.50
+ wn  Bl0T2  -1.88 0.182 89.3    -2.24    -1.52
+ wm  Bl0T2  -1.62 0.183 92.0    -1.98    -1.25
+ wn  Bl0T3  -2.05 0.182 89.3    -2.41    -1.69
+ wm  Bl0T3  -1.72 0.183 92.0    -2.08    -1.35
+ wn  Bl0T4  -1.88 0.182 89.3    -2.24    -1.52
+ wm  Bl0T4  -1.52 0.185 94.7    -1.89    -1.15
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast estimate     SE  df t.ratio p.value
+ wn - wm    -0.417 0.0923 213  -4.520  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2  -0.4749 0.129 212  -3.672  0.0017
+ Bl0T1 - Bl0T3  -0.3359 0.129 212  -2.598  0.0489
+ Bl0T1 - Bl0T4  -0.5210 0.130 212  -4.010  0.0005
+ Bl0T2 - Bl0T3   0.1390 0.129 212   1.075  0.7054
+ Bl0T2 - Bl0T4  -0.0461 0.130 212  -0.355  0.9847
+ Bl0T3 - Bl0T4  -0.1850 0.130 212  -1.424  0.4858
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 
+
+__Results for P2 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 790.76 801.31 -392.38   784.76                         
+main_effects_model    7 712.71 737.33 -349.35   698.71 86.052  4  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    7 712.71 737.33 -349.35   698.71                     
+interaction_model    10 716.73 751.90 -348.36   696.73 1.9785  3     0.5769
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 790.76 801.31 -392.38   784.76                         
+interaction_model   10 716.73 751.90 -348.36   696.73 88.031  7  3.137e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+null_model    3 790.76 801.31 -392.38   784.76                     
+sov_model     4 792.05 806.12 -392.02   784.05 0.7097  1     0.3995
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 790.76 801.31 -392.38   784.76                         
+cond_model    6 711.55 732.65 -349.77   699.55 85.211  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 712.5
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.0268 -0.4621  0.0002  0.5092  4.4775 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.6416   0.8010  
+ Residual             0.7669   0.8757  
+Number of obs: 249, groups:  subject, 32
+
+Fixed effects:
+              Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)    0.60758    0.16177  38.28596   3.756 0.000574 ***
+sovwm         -0.10088    0.11174 210.55945  -0.903 0.367654    
+cond.L        -0.96981    0.15505 209.08930  -6.255 2.21e-09 ***
+cond.Q         0.67780    0.15645 209.57881   4.332 2.29e-05 ***
+cond.C        -0.22918    0.15703 209.08930  -1.459 0.145946    
+sovwm:cond.L   0.28397    0.22183 209.20610   1.280 0.201919    
+sovwm:cond.Q   0.09730    0.22267 209.64420   0.437 0.662591    
+sovwm:cond.C   0.07082    0.22236 209.10222   0.318 0.750424    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sovwm  cond.L cond.Q cond.C svw:.L svw:.Q
+sovwm       -0.338                                          
+cond.L       0.000  0.000                                   
+cond.Q      -0.010  0.013  0.000                            
+cond.C       0.000  0.000 -0.010  0.000                     
+sovwm:cnd.L  0.001  0.005 -0.699 -0.002  0.007              
+sovwm:cnd.Q  0.008 -0.006  0.000 -0.704  0.000  0.008       
+sovwm:cnd.C  0.000  0.002  0.007 -0.001 -0.706 -0.002  0.003
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov emmean    SE   df lower.CL upper.CL
+ wn   0.608 0.162 39.4    0.280    0.935
+ wm   0.507 0.163 40.1    0.178    0.835
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean   SE   df lower.CL upper.CL
+ Bl0T1  1.519 0.18 58.7    1.160    1.878
+ Bl0T2  0.249 0.18 59.4   -0.112    0.610
+ Bl0T3  0.139 0.18 59.4   -0.222    0.499
+ Bl0T4  0.322 0.18 59.4   -0.039    0.682
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov cond  emmean    SE    df lower.CL upper.CL
+ wn  Bl0T1  1.648 0.210  99.9   1.2321    2.065
+ wm  Bl0T1  1.390 0.212 102.8   0.9693    1.810
+ wn  Bl0T2  0.332 0.212 102.8  -0.0885    0.752
+ wm  Bl0T2  0.166 0.212 102.8  -0.2542    0.587
+ wn  Bl0T3  0.206 0.212 102.8  -0.2148    0.626
+ wm  Bl0T3  0.072 0.212 102.8  -0.3484    0.492
+ wn  Bl0T4  0.245 0.210  99.9  -0.1716    0.661
+ wm  Bl0T4  0.399 0.214 106.0  -0.0260    0.824
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast estimate    SE  df t.ratio p.value
+ wn - wm     0.101 0.112 211   0.903  0.3678
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2   1.2700 0.157 210   8.101  <.0001
+ Bl0T1 - Bl0T3   1.3802 0.157 210   8.804  <.0001
+ Bl0T1 - Bl0T4   1.1973 0.157 210   7.635  <.0001
+ Bl0T2 - Bl0T3   0.1102 0.157 210   0.701  0.8966
+ Bl0T2 - Bl0T4  -0.0727 0.157 210  -0.462  0.9672
+ Bl0T3 - Bl0T4  -0.1829 0.157 210  -1.163  0.6510
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 
+
+__Results for N350 :__
+____________________________________
+
+__Model Comparison (Null vs Full):__
+____________________________________
+NULL
+
+Null vs Main Effects Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 761.97 772.56 -377.99   755.97                         
+main_effects_model    7 633.98 658.69 -309.99   619.98 135.99  4  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+main_effects_model    7 633.98 658.69 -309.99   619.98                        
+interaction_model    10 623.03 658.33 -301.52   603.03 16.95  3  0.0007235 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Null vs Interaction Model:
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 761.97 772.56 -377.99   755.97                         
+interaction_model   10 623.03 658.33 -301.52   603.03 152.94  7  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of SOV:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)   
+null_model    3 761.97 772.56 -377.99   755.97                        
+sov_model     4 753.86 767.97 -372.93   745.86 10.115  1    0.00147 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Main effect of Condition:__
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 761.97 772.56 -377.99   755.97                         
+cond_model    6 649.34 670.52 -318.67   637.34 118.63  3  < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+__Full model summary:__
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 622.1
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-6.2582 -0.5435  0.0436  0.5359  2.4143 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.2900   0.5386  
+ Residual             0.5364   0.7324  
+Number of obs: 252, groups:  subject, 32
+
+Fixed effects:
+              Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)   -1.67808    0.11513  43.33131 -14.576  < 2e-16 ***
+sovwm          0.40257    0.09278 214.95499   4.339 2.20e-05 ***
+cond.L         1.13896    0.12946 213.18966   8.798 4.80e-16 ***
+cond.Q        -0.90752    0.12946 213.18966  -7.010 3.10e-11 ***
+cond.C         0.61068    0.12946 213.18966   4.717 4.33e-06 ***
+sovwm:cond.L  -0.37736    0.18456 213.18966  -2.045   0.0421 *  
+sovwm:cond.Q   0.46864    0.18456 213.18966   2.539   0.0118 *  
+sovwm:cond.C  -0.46805    0.18456 213.18966  -2.536   0.0119 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) sovwm  cond.L cond.Q cond.C svw:.L svw:.Q
+sovwm       -0.392                                          
+cond.L       0.000  0.000                                   
+cond.Q       0.000  0.000  0.000                            
+cond.C       0.000  0.000  0.000  0.000                     
+sovwm:cnd.L  0.000  0.000 -0.701  0.000  0.000              
+sovwm:cnd.Q  0.000  0.000  0.000 -0.701  0.000  0.000       
+sovwm:cnd.C  0.000  0.000  0.000  0.000 -0.701  0.000  0.000
+
+__Estimated Marginal Means for SOV:__
+____________________________________
+ sov emmean    SE   df lower.CL upper.CL
+ wn   -1.68 0.115 43.1    -1.91    -1.45
+ wm   -1.28 0.116 44.3    -1.51    -1.04
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for Cond:__
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1  -2.54 0.133 72.9    -2.80   -2.271
+ Bl0T2  -1.10 0.133 72.9    -1.36   -0.836
+ Bl0T3  -1.18 0.133 72.9    -1.44   -0.916
+ Bl0T4  -1.09 0.133 72.9    -1.36   -0.827
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Estimated Marginal Means for SOV x Condition interaction:__
+____________________________________
+ sov cond  emmean    SE  df lower.CL upper.CL
+ wn  Bl0T1 -3.032 0.161 132    -3.35   -2.715
+ wm  Bl0T1 -2.038 0.163 135    -2.36   -1.716
+ wn  Bl0T2 -1.069 0.161 132    -1.39   -0.751
+ wm  Bl0T2 -1.131 0.163 135    -1.45   -0.809
+ wn  Bl0T3 -1.379 0.161 132    -1.70   -1.061
+ wm  Bl0T3 -0.981 0.163 135    -1.30   -0.660
+ wn  Bl0T4 -1.231 0.161 132    -1.55   -0.913
+ wm  Bl0T4 -0.952 0.163 135    -1.27   -0.630
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+__Pairwise comparisons for SOV:__
+____________________________________
+ contrast estimate     SE  df t.ratio p.value
+ wn - wm    -0.403 0.0928 215  -4.338  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+__Pairwise comparisons for Cond:__
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2 -1.43507 0.131 213 -10.996  <.0001
+ Bl0T1 - Bl0T3 -1.35470 0.131 213 -10.381  <.0001
+ Bl0T1 - Bl0T4 -1.44339 0.131 213 -11.060  <.0001
+ Bl0T2 - Bl0T3  0.08036 0.131 213   0.616  0.9270
+ Bl0T2 - Bl0T4 -0.00832 0.131 213  -0.064  0.9999
+ Bl0T3 - Bl0T4 -0.08868 0.131 213  -0.680  0.9048
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 

@@ -1,0 +1,173 @@
+
+Results for P2 :
+
+__Model Comparisons:__
+
+Null vs Main Effects Model:
+
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model            3 910.62 921.18 -452.31   904.62                         
+main_effects_model    7 855.72 880.34 -420.86   841.72 62.906  4  7.102e-13 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main Effects vs Interaction Model:
+
+____________________________________
+Data: comp_data
+Models:
+main_effects_model: amplitude ~ sov + cond + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+main_effects_model    7 855.72 880.34 -420.86   841.72                     
+interaction_model    10 860.17 895.34 -420.08   840.17 1.5511  3     0.6705
+
+Null vs Interaction Model:
+
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+interaction_model: amplitude ~ sov * cond + (1 | subject)
+                  npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model           3 910.62 921.18 -452.31   904.62                         
+interaction_model   10 860.17 895.34 -420.08   840.17 64.457  7  1.933e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main effect of SOV:
+
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+sov_model: amplitude ~ sov + (1 | subject)
+           npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)    
+null_model    3 910.62 921.18 -452.31   904.62                        
+sov_model     4 881.12 895.19 -436.56   873.12  31.5  1  1.994e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Main effect of Condition:
+
+____________________________________
+Data: comp_data
+Models:
+null_model: amplitude ~ 1 + (1 | subject)
+cond_model: amplitude ~ cond + (1 | subject)
+           npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+null_model    3 910.62 921.18 -452.31   904.62                         
+cond_model    6 889.64 910.74 -438.82   877.64 26.985  3   5.93e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Interaction model summary:
+
+____________________________________
+Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: amplitude ~ sov * cond + (1 | subject)
+   Data: comp_data
+
+REML criterion at convergence: 851.3
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-4.3895 -0.5301 -0.0495  0.5699  3.1959 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept) 0.7459   0.8637  
+ Residual             1.4349   1.1979  
+Number of obs: 249, groups:  subject, 32
+
+Fixed effects:
+                Estimate Std. Error        df t value Pr(>|t|)    
+(Intercept)      2.44812    0.18715  44.58668  13.081  < 2e-16 ***
+sovpREM         -0.93598    0.15209 210.32650  -6.154 3.76e-09 ***
+cond.L          -0.98171    0.21733 210.57991  -4.517 1.04e-05 ***
+cond.Q           0.07834    0.21653 210.49465   0.362    0.718    
+cond.C          -0.07942    0.21573 210.40804  -0.368    0.713    
+sovpREM:cond.L   0.27396    0.30476 210.38950   0.899    0.370    
+sovpREM:cond.Q   0.25749    0.30419 210.34214   0.846    0.398    
+sovpREM:cond.C   0.01693    0.30362 210.29503   0.056    0.956    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) svpREM cond.L cond.Q cond.C sREM:.L sREM:.Q
+sovpREM     -0.412                                            
+cond.L       0.007 -0.009                                     
+cond.Q       0.005 -0.007  0.012                              
+cond.C       0.002 -0.003  0.006  0.004                       
+svpREM:cn.L -0.005  0.010 -0.713 -0.009 -0.004                
+svpREM:cn.Q -0.004  0.005 -0.009 -0.712 -0.003  0.014         
+svpREM:cn.C -0.002  0.010 -0.004 -0.003 -0.711  0.003  -0.002 
+
+Estimated Marginal Means for SOV:
+
+____________________________________
+ sov  emmean    SE   df lower.CL upper.CL
+ tREM   2.45 0.187 44.6     2.07     2.83
+ pREM   1.51 0.186 43.9     1.14     1.89
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Estimated Marginal Means for Cond:
+
+____________________________________
+ cond  emmean    SE   df lower.CL upper.CL
+ Bl0T1   2.67 0.215 74.2     2.24     3.09
+ Bl0T2   2.02 0.216 75.2     1.59     2.45
+ Bl0T3   1.74 0.215 74.2     1.31     2.16
+ Bl0T4   1.50 0.217 76.4     1.07     1.93
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Estimated Marginal Means for SOV x Condition interaction:
+
+____________________________________
+ sov  cond  emmean    SE  df lower.CL upper.CL
+ tREM Bl0T1   3.16 0.264 138    2.641     3.69
+ pREM Bl0T1   2.17 0.261 134    1.652     2.69
+ tREM Bl0T2   2.58 0.264 138    2.053     3.10
+ pREM Bl0T2   1.46 0.264 138    0.938     1.98
+ tREM Bl0T3   2.24 0.264 138    1.720     2.76
+ pREM Bl0T3   1.23 0.261 134    0.712     1.74
+ tREM Bl0T4   1.81 0.267 142    1.282     2.34
+ pREM Bl0T4   1.19 0.264 138    0.669     1.71
+
+Degrees-of-freedom method: kenward-roger 
+Confidence level used: 0.95 
+
+Pairwise comparisons for SOV:
+
+____________________________________
+ contrast    estimate    SE  df t.ratio p.value
+ tREM - pREM    0.936 0.152 210   6.154  <.0001
+
+Results are averaged over the levels of: cond 
+Degrees-of-freedom method: kenward-roger 
+
+Pairwise comparisons for Cond:
+
+____________________________________
+ contrast      estimate    SE  df t.ratio p.value
+ Bl0T1 - Bl0T2    0.648 0.215 210   3.021  0.0149
+ Bl0T1 - Bl0T3    0.931 0.214 210   4.357  0.0001
+ Bl0T1 - Bl0T4    1.165 0.216 210   5.404  <.0001
+ Bl0T2 - Bl0T3    0.283 0.215 210   1.317  0.5533
+ Bl0T2 - Bl0T4    0.517 0.217 211   2.386  0.0829
+ Bl0T3 - Bl0T4    0.234 0.216 210   1.086  0.6984
+
+Results are averaged over the levels of: sov 
+Degrees-of-freedom method: kenward-roger 
+P value adjustment: tukey method for comparing a family of 4 estimates 

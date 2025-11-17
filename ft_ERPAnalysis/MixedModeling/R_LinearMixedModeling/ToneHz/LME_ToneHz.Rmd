@@ -1,0 +1,243 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# run twice 
+library(Matrix)
+library(lme4)
+library(lmtest)
+library(dplyr)
+library(parallel)
+library(bayestestR)
+library(glmmTMB)
+library(gridExtra)
+
+```
+
+```{r}
+
+# Define the components and variables
+input_dir = "D:\\OExpOut\\adapt_res\\comp_withincond_THz"
+components <- c( "N350", "P2","N100")
+variables <- c("comp_amp", "latency")
+
+
+for (component in components) {
+  data_table <- read.csv(paste0(input_dir, "\\", component, "_dataToR.csv"))  
+  # Convert variables to factors:
+  data_table$sov <- factor(data_table$sov, levels = c('wn', 'N2', 'N3', 'REM'), ordered = FALSE)
+  data_table$sub <- factor(data_table$sub, ordered = FALSE)
+  data_table$hz <- factor(sub("T(\\d+)_.*", "\\1", data_table$cond))
+  data_table$trial_pos <- as.integer(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
+  data_table$is_peak <- factor(data_table$is_peak, levels = c(0, 1), ordered = FALSE) 
+  data_table$comp_amp <- as.numeric(data_table$comp_amp) 
+  data_table$latency <- as.numeric(data_table$latency) 
+  
+  for (varush in variables) {
+    output_file_name <- paste0("res_lmm_", component, "_", varush, "_results.txt")
+    # Redirect output to the file
+    sink(output_file_name)
+    
+    #### Remove outliers:
+    std_to_remove_outliers <- 3
+    data_table <- data_table %>%
+      group_by(sov) %>%
+      mutate(mean_varush = mean(.data[[varush]], na.rm = TRUE),
+             sd_varush = sd(.data[[varush]], na.rm = TRUE)) %>%
+      filter(abs(.data[[varush]] - mean_varush) <= std_to_remove_outliers * sd_varush) %>%
+      ungroup()
+    
+    # filter
+    data_table <- data_table[data_table$is_peak == 1, ]
+
+    
+     generate_model_formula <- function(formula) {
+        as.formula(paste(varush, formula))
+      }
+
+    
+    # Fit the linear mixed-effects models
+    models <- list(
+      lmer(generate_model_formula("~ -1 + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + hz + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + hz  + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + hz + trial_pos  + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov * trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov * hz  + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + hz * trial_pos  + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov + hz + trial_pos + (1 | sub)"), data = data_table),
+      lmer(generate_model_formula("~ -1 + sov * hz * trial_pos * (1 | sub)"), data = data_table)
+    )
+    
+    
+    # Print ANOVA results for models
+    print("ANOVA results:")
+    anova_results <- do.call(anova, models)
+    #anova_results <- anova(models[[1]], models[[2]], models[[3]], models[[4]], models[[5]], models[[6]], models[[7]], models[[8]], models[[9]], models[[10]], models[[11]], models[[12]])
+    print(anova_results[order(seq_len(nrow(anova_results))), ])
+    
+    # Print Bayes Factor results
+    print("Bayes Factor results:")
+    bayes_results <- bayesfactor_models(models)
+    print(bayes_results)
+    
+    # Summarize res
+    pvals <- anova_results$`Pr(>Chisq)`
+    bf_values <- exp(bayes_results$log_BF)
+    significant_models <- data.frame(
+     Model = bayes_results$Model,
+     P_value = pvals,
+     BF = bf_values
+    ) |> 
+     subset(P_value < 0.05 & BF > 3)
+    significant_models$Highest_BF <- significant_models$BF == max(significant_models$BF)
+    significant_models$P_value <- format.pval(significant_models$P_value, digits = 3)
+    significant_models$BF <- format(significant_models$BF, scientific = TRUE, digits = 3)
+    print(significant_models)
+
+    # 
+    # # Loop through the models and fit using Tweedie and Gaussian distributions with glmmTMB
+    # for (i in seq_along(models)) {
+    #   cat("\nFitting Tweedie and Gaussian for", model_names[i], "\n")
+    #   model_formula <- as.formula(paste(varush, "~ sov * cond + (1 | sub)"))
+    #   model_tweedie <- glmmTMB(model_formula, data = data_table, family = tweedie(link = "log"))
+    #   model_gaussian <- glmmTMB(model_formula, data = data_table, family = gaussian)
+    #   
+    #   # Print model summaries
+    #   cat("Tweedie model summary:")
+    #   summary(model_tweedie)
+    #   
+    #   cat("Gaussian model summary:")
+    #   summary(model_gaussian)
+    #   
+    #   # Bayes Factor or AIC/BIC comparison
+    #   bayes_out_tweedie <- tryCatch({
+    #     bayesfactor_tweedie <- bayesfactor_models(model_tweedie, denominator = 1)
+    #     cat(paste("Bayes Factor for Tweedie model (inverse):", 1 / as.numeric(bayesfactor_tweedie)))
+    #     bayesfactor_tweedie
+    #   }, error = function(e) {
+    #     cat("Bayes Factor calculation failed for Tweedie model. Calculating AIC and BIC instead.")
+    #     list(AIC = AIC(model_tweedie, model_gaussian), BIC = BIC(model_tweedie, model_gaussian))
+    #   })
+    #   
+    #   # Extract and print AIC/BIC results
+    #   if (is.list(bayes_out_tweedie) && "AIC" %in% names(bayes_out_tweedie)) {
+    #     cat(t(list(AIC_Tweedie = bayes_out_tweedie$AIC[1], AIC_Gaussian = bayes_out_tweedie$AIC[2])))
+    #     cat(t(list(BIC_Tweedie = bayes_out_tweedie$BIC[1], BIC_Gaussian = bayes_out_tweedie$BIC[2])))
+    #   }
+    # 
+    #   # Normality and residual plots
+    #   qqnorm(residuals(models[[i]]))
+    #   qqline(residuals(models[[i]]))
+    #   plot(models[[i]], resid(., type = "pearson") ~ fitted(.), abline = 0)
+    #   cat(shapiro.test(residuals(models[[i]])))
+    # }
+    #   
+    # # If the Q-Q plot shows points roughly along the reference line, the residuals are approximately normally distributed.
+    # # If the plot of residuals versus fitted values shows no clear pattern (random scatter), homoscedasticity is assumed.
+    # 
+    # # For the Shapiro-Wilk test:
+    # # If p-value > 0.05, the residuals are normally distributed (normality assumption is met).
+    # # If p-value <= 0.05, the residuals deviate significantly from normality (consider data transformation or different model).
+    # 
+    # # The normality of residuals is model-specific; different models might have different residual distributions.
+    # 
+    # ############### If not normal, understaמd the shape #############
+    #   # Density plots for the variable and residuals
+    # plot(density(data_table[[varush]]), main = paste("Density of", varush), xlab = varush)
+    # plot(density(residuals(models[[length(models)]])), main = "Density of the model residuals")
+    
+
+
+    # Stop redirecting output to the file
+    sink()
+  }
+}
+
+```
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(emmeans)
+
+# Choose the variable to plot (amplitude or latency)
+varush <- "comp_amp"  # Replace with "comp_amp" to plot amplitude instead
+
+# Fit the final model with interaction
+final_model <- lmer(as.formula(paste(varush, "~ sov * cond + (1 | sub)")), data = data_table)
+
+# Get estimated marginal means for the interaction of sov and cond
+emm <- emmeans(final_model, ~ sov * cond)
+
+# Convert emmeans results to a data frame for plotting
+emm_df <- as.data.frame(emm)
+
+# Plotting interaction plot for sov and cond with estimated marginal means
+ggplot(emm_df, aes(x = cond, y = emmean, fill = sov)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), 
+                position = position_dodge(width = 0.8), width = 0.2) +
+  labs(
+    title = paste("Interaction of Sleep Stage (sov) and Tone Repetition (cond) on", varush),
+    x = "Tone Repetition (cond)",
+    y = paste("Estimated Marginal Mean of", varush),
+    fill = "Sleep Stage (sov)"
+  ) +
+  theme_minimal()
+
+# Save the plot as an image file if needed
+ggsave(filename = paste("interaction_plot_", varush, ".png", sep = ""), width = 8, height = 6)
+
+
+```
+
+```{r}
+# # Yoels Example:::::
+# Compare the models using AIC
+anova(row_glmmTMB, num_glmmTMB, row_num_glmmTMB,baseline_sbj_glmmTMB)
+
+
+# Calculate Bayes factors for the models
+library(bayestestR)
+bayes_out_glmmTMB <- bayesfactor_models(row_glmmTMB, num_glmmTMB, row_num_glmmTMB,baseline_sbj_glmmTMB, denominator = 4)
+
+# Print the inverse Bayes factor values for easier interpretation
+print(1 / as.numeric(bayes_out_glmmTMB))
+
+# Model Fitting Using glmmTMB with Gaussian Distribution------------
+
+# Model 1: Random effect of SBJ_idx only
+baseline_sbj_glmmTMB_nor <- glmmTMB(var_convex_hull ~ 1 + (1 | SBJ_idx), 
+                                    data = filtered_df, 
+                                    family = gaussian)
+
+# Model 2: Fixed effect of Row_Number (bin) and random effect of SBJ_idx
+row_glmmTMB_nor <- glmmTMB(var_convex_hull ~ Row_Number + (1 | SBJ_idx), 
+                           data = filtered_df, 
+                           family = gaussian)
+
+# Model 3: Fixed effect of Row_Number (bin) and Number of items and random effect of SBJ_idx
+row_num_glmmTMB_nor <- glmmTMB(var_convex_hull ~ Row_Number + num_presses + (1 | SBJ_idx), 
+                               data = filtered_df, 
+                               family = gaussian)
+
+# Model 4: Fixed effect of Number of items and random effect of SBJ_idx
+num_glmmTMB_nor <- glmmTMB(var_convex_hull ~ num_presses + (1 | SBJ_idx), 
+                           data = filtered_df, 
+                           family = gaussian)
+
+# Extract the Gauusain power parameter - sanity check should be zero for gaussian
+power_param <- family_params(num_glmmTMB_nor)
+print(power_param)
+
+# Compare the models using AIC
+anova(row_glmmTMB_nor, num_glmmTMB_nor, row_num_glmmTMB_nor,baseline_sbj_glmmTMB_nor)
+```

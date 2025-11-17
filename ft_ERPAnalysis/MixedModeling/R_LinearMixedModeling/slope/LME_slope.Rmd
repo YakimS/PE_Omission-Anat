@@ -1,0 +1,451 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+# run twice!
+
+# Tone Repetition Amplitude Analysis Across Sleep Stages
+# This script compares linear trends vs. step functions for component amplitudes
+
+# Load required libraries
+library(lme4)
+library(lmerTest)  # For p-values in mixed models
+library(dplyr)
+library(ggplot2)
+library(purrr)
+library(tidyr)
+library(bayestestR)
+library(car)
+library(effects)
+library(effects)
+library(gridExtra)
+```
+
+```{r}
+
+# Function to generate appropriate file paths
+get_file_path <- function(component) {
+  file.path("D:/OExpOut/adapt_res/comp_withincond_Bl0Tno500/THz", 
+            paste0("Bl0_", component, "_dataToR.csv"))
+}
+
+# Function to preprocess data for each component
+preprocess_data <- function(component) {
+  # Read data
+  data_path <- get_file_path(component)
+  data_table <- read.csv(data_path)
+  
+  # Filter out rows with NA values in is_peak
+  data_table <- data_table[!is.na(data_table$is_peak), ]
+  
+  # Convert variables to factors
+  data_table$sov <- factor(data_table$sov, levels = c('wn','N1', 'N2', 'N3', 'REM','tREM','pREM'), ordered = FALSE)
+   data_table$sub <- factor(data_table$sub, ordered = FALSE)
+  data_table$hz <- factor(sub("T(\\d+)_.*", "\\1", data_table$cond))
+  data_table$trial_pos <- factor(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
+  
+  # Make sure trial_pos is numeric for trend analysis
+  data_table$trial_pos_num <- as.numeric(as.character(data_table$trial_pos))
+  
+  # Convert amplitude and latency to numeric
+  data_table$comp_amp <- as.numeric(data_table$comp_amp) 
+  data_table$latency <- as.numeric(data_table$latency) 
+  
+  # Filter out trials with 500Hz (as in your code)
+  data_table_filtered <- data_table[data_table$hz != "500", ]
+  
+  # Keep only trials with peaks
+  data_table_filtered <- data_table_filtered[data_table_filtered$is_peak == 1, ]
+  
+  return(data_table_filtered)
+}
+
+# Function to fit step function models
+fit_step_models <- function(data, component, stage) {
+  # Define all possible step models (between positions 1-2, 2-3, 3-4)
+  data$step_12 <- factor(ifelse(data$trial_pos_num >= 2, "post", "pre"))
+  data$step_23 <- factor(ifelse(data$trial_pos_num >= 3, "post", "pre"))
+  data$step_34 <- factor(ifelse(data$trial_pos_num >= 4, "post", "pre"))
+  
+  # Create step models
+  model_step_12 <- lmer(comp_amp ~ step_12 + (1|sub), data = data)
+  model_step_23 <- lmer(comp_amp ~ step_23 + (1|sub), data = data)
+  model_step_34 <- lmer(comp_amp ~ step_34 + (1|sub), data = data)
+  
+  # Compare models
+  models <- list(step_12 = model_step_12, step_23 = model_step_23, step_34 = model_step_34)
+  
+  # Calculate AIC and BIC
+  aic_values <- sapply(models, AIC)
+  bic_values <- sapply(models, BIC)
+  
+  # Find best model based on AIC
+  best_step_model_name <- names(models)[which.min(aic_values)]
+  best_step_model <- models[[best_step_model_name]]
+  
+  # Calculate mean values by group to determine step direction
+  if (best_step_model_name == "step_12") {
+    pre_values <- data$comp_amp[data$step_12 == "pre"]
+    post_values <- data$comp_amp[data$step_12 == "post"]
+    pre_mean <- mean(pre_values, na.rm = TRUE)
+    post_mean <- mean(post_values, na.rm = TRUE)
+    step_size <- post_mean - pre_mean
+    step_p <- summary(best_step_model)$coefficients[2, 5]
+    step_location <- "12"
+  } else if (best_step_model_name == "step_23") {
+    pre_values <- data$comp_amp[data$step_23 == "pre"]
+    post_values <- data$comp_amp[data$step_23 == "post"]
+    pre_mean <- mean(pre_values, na.rm = TRUE)
+    post_mean <- mean(post_values, na.rm = TRUE)
+    step_size <- post_mean - pre_mean
+    step_p <- summary(best_step_model)$coefficients[2, 5]
+    step_location <- "23"
+  } else if (best_step_model_name == "step_34") {
+    pre_values <- data$comp_amp[data$step_34 == "pre"]
+    post_values <- data$comp_amp[data$step_34 == "post"]
+    pre_mean <- mean(pre_values, na.rm = TRUE)
+    post_mean <- mean(post_values, na.rm = TRUE)
+    step_size <- post_mean - pre_mean
+    step_p <- summary(best_step_model)$coefficients[2, 5]
+    step_location <- "34"
+  }
+  
+  return(list(
+    best_model = best_step_model,
+    best_model_name = best_step_model_name,
+    step_location = step_location,
+    step_size = step_size,
+    step_p = step_p,
+    aic_values = aic_values,
+    bic_values = bic_values,
+    pre_mean = pre_mean,
+    post_mean = post_mean
+  ))
+}
+
+# Function to compare linear trend vs. step function models
+compare_models <- function(data, component, stage) {
+  # Fit linear trend model
+  model_linear <- lmer(comp_amp ~ trial_pos_num + (1|sub), data = data)
+  
+  # Fit step function models
+  step_results <- fit_step_models(data, component, stage)
+  
+  # Calculate metrics for linear model
+  linear_aic <- AIC(model_linear)
+  linear_bic <- BIC(model_linear)
+  linear_slope <- fixef(model_linear)["trial_pos_num"]
+  linear_p <- summary(model_linear)$coefficients["trial_pos_num", "Pr(>|t|)"]
+  
+  # Compare best step model with linear model
+  anova_result <- anova(model_linear, step_results$best_model)
+  p_value <- anova_result$`Pr(>Chisq)`[2]
+  
+  # Calculate BIC-based Bayes Factor (approximation)
+  bf_step_vs_linear <- exp((BIC(model_linear) - BIC(step_results$best_model))/2)
+  
+  # Determine better model
+  if (linear_aic < min(step_results$aic_values)) {
+    better_model <- "linear"
+  } else {
+    better_model <- "step"
+  }
+  
+  # Return comprehensive results
+  return(list(
+    component = component,
+    stage = stage,
+    n_subjects = length(unique(data$sub)),
+    n_observations = nrow(data),
+    linear_model = list(
+      model = model_linear,
+      aic = linear_aic,
+      bic = linear_bic,
+      slope = linear_slope,
+      p_value = linear_p
+    ),
+    step_model = list(
+      model = step_results$best_model,
+      model_name = step_results$best_model_name,
+      aic = min(step_results$aic_values),
+      bic = step_results$bic_values[which.min(step_results$aic_values)],
+      step_location = step_results$step_location,
+      step_size = step_results$step_size,
+      p_value = step_results$step_p,
+      pre_mean = step_results$pre_mean,
+      post_mean = step_results$post_mean
+    ),
+    model_comparison = list(
+      better_model = better_model,
+      p_value = p_value,
+      bf_step_vs_linear = bf_step_vs_linear
+    )
+  ))
+}
+
+# Function for creating summary table
+create_summary_table <- function(results_list) {
+  summary_df <- data.frame(
+    Component = character(),
+    Stage = character(),
+    N_Subjects = integer(),
+    N_Observations = integer(),
+    Better_Model = character(),
+    Linear_Slope = numeric(),
+    Linear_P = numeric(),
+    Step_Location = character(),
+    Step_Size = numeric(),
+    Step_P = numeric(),
+    Linear_AIC = numeric(),
+    Step_AIC = numeric(),
+    Comparison_P = numeric(),
+    BF_Step_vs_Linear = numeric(),
+    stringsAsFactors = FALSE
+  )
+  
+  for (result in results_list) {
+    new_row <- data.frame(
+      Component = result$component,
+      Stage = result$stage,
+      N_Subjects = result$n_subjects,
+      N_Observations = result$n_observations,
+      Better_Model = result$model_comparison$better_model,
+      Linear_Slope = result$linear_model$slope,
+      Linear_P = result$linear_model$p_value,
+      Step_Location = result$step_model$step_location,
+      Step_Size = result$step_model$step_size,
+      Step_P = result$step_model$p_value,
+      Linear_AIC = result$linear_model$aic,
+      Step_AIC = result$step_model$aic,
+      Comparison_P = result$model_comparison$p_value,
+      BF_Step_vs_Linear = result$model_comparison$bf_step_vs_linear,
+      stringsAsFactors = FALSE
+    )
+    
+    summary_df <- rbind(summary_df, new_row)
+  }
+  
+  return(summary_df)
+}
+
+# Function to generate plots with ONLY winning model overlay 
+plot_winning_model <- function(data_list, component, results_list) {
+  plot_list <- list()
+  
+  for (i in seq_along(data_list)) {
+    stage_data <- data_list[[i]]
+    stage_name <- names(data_list)[i]
+    
+    if (nrow(stage_data) > 0) {
+      # Calculate mean and se for plotting
+      plot_data <- stage_data %>%
+        group_by(trial_pos_num) %>%
+        summarise(
+          mean_amp = mean(comp_amp, na.rm = TRUE),
+          se = sd(comp_amp, na.rm = TRUE) / sqrt(n()),
+          n = n()
+        )
+      
+      # Create base plot with data points only (no model overlay yet)
+      p <- ggplot(plot_data, aes(x = trial_pos_num, y = mean_amp)) +
+        geom_point(size = 3) +
+        geom_errorbar(aes(ymin = mean_amp - se, ymax = mean_amp + se), width = 0.2) +
+        geom_line(linetype = "dashed", color = "gray50") +
+        theme_minimal() +
+        labs(
+          title = paste("Component:", component, "- Stage:", stage_name),
+          x = "Tone Repetition Position",
+          y = "Mean Amplitude (µV)",
+          caption = paste("N =", length(unique(stage_data$sub)), "subjects")
+        )
+      
+      # Add winning model line ONLY if available in results
+      if (stage_name %in% names(results_list)) {
+        result <- results_list[[stage_name]]
+        better_model <- result$model_comparison$better_model
+        
+        if (better_model == "linear") {
+          # Get linear model parameters
+          intercept <- fixef(result$linear_model$model)[1]
+          slope <- fixef(result$linear_model$model)[2]
+          
+          # Create linear trend line data
+          model_data <- data.frame(
+            trial_pos_num = 1:4,
+            predicted = intercept + slope * (1:4)
+          )
+          
+          # Add ONLY linear trend line to plot
+          p <- p + 
+            geom_line(data = model_data, aes(x = trial_pos_num, y = predicted), 
+                      color = "blue", size = 1) +
+            labs(subtitle = paste("Best model: Linear trend, Slope =", 
+                                  round(slope, 3), 
+                                  ", p =", format.pval(result$linear_model$p_value, digits=2),
+                                  ", BF =", format(1/result$model_comparison$bf_step_vs_linear, digits=2, scientific=TRUE)))
+        } 
+        else if (better_model == "step") {
+          # Get step model parameters
+          step_loc <- result$step_model$step_location
+          
+          # Create step function data
+          if (step_loc == "12") {
+            model_data <- data.frame(
+              trial_pos_num = 1:4,
+              predicted = c(result$step_model$pre_mean, 
+                            rep(result$step_model$post_mean, 3))
+            )
+          } else if (step_loc == "23") {
+            model_data <- data.frame(
+              trial_pos_num = 1:4,
+              predicted = c(rep(result$step_model$pre_mean, 2), 
+                            rep(result$step_model$post_mean, 2))
+            )
+          } else if (step_loc == "34") {
+            model_data <- data.frame(
+              trial_pos_num = 1:4,
+              predicted = c(rep(result$step_model$pre_mean, 3), 
+                            result$step_model$post_mean)
+            )
+          }
+          
+          # Add ONLY step function line to plot
+          p <- p + 
+            geom_line(data = model_data, aes(x = trial_pos_num, y = predicted), 
+                      color = "red", size = 1) +
+            labs(subtitle = paste("Best model: Step function between tones", 
+                                  substr(step_loc, 1, 1), "and", substr(step_loc, 2, 2),
+                                  ", Step size =", round(result$step_model$step_size, 3),
+                                  ", p =", format.pval(result$step_model$p_value, digits=2),
+                                  ", BF =", format(result$model_comparison$bf_step_vs_linear, digits=2, scientific=TRUE)))
+        }
+      }
+      
+      plot_list[[stage_name]] <- p
+    }
+  }
+  
+  # Save combined plot
+  if (length(plot_list) > 0) {
+    combined_plot <- do.call(gridExtra::grid.arrange, c(plot_list, ncol = 2))
+    ggsave(paste0("component_", component, "_winning_models.png"), combined_plot, width = 12, height = 10)
+    
+    # Also save individual plots
+    for (stage_name in names(plot_list)) {
+      ggsave(paste0("component_", component, "_stage_", stage_name, "_winning_model.png"), 
+             plot_list[[stage_name]], width = 6, height = 5)
+    }
+  }
+  
+  return(plot_list)
+}
+
+# Function to write detailed results to a file
+write_detailed_results <- function(results, component) {
+  output_file <- paste0("component_", component, "_step_vs_linear_analysis.txt")
+  
+  sink(output_file)
+  
+  cat("==============================================================\n")
+  cat(paste0("COMPONENT: ", component, " - STEP VS LINEAR ANALYSIS\n"))
+  cat("==============================================================\n\n")
+  
+  for (result in results) {
+    cat(paste0("SLEEP STAGE: ", result$stage, "\n"))
+    cat(paste0("Number of subjects: ", result$n_subjects, "\n"))
+    cat(paste0("Number of observations: ", result$n_observations, "\n\n"))
+    
+    cat("MODEL COMPARISON:\n")
+    cat(paste0("Better model: ", toupper(result$model_comparison$better_model), "\n"))
+    cat(paste0("Model comparison p-value: ", format(result$model_comparison$p_value, digits=4), "\n"))
+    cat(paste0("BF (Step vs Linear): ", format(result$model_comparison$bf_step_vs_linear, digits=4), "\n\n"))
+    
+    cat("LINEAR TREND MODEL:\n")
+    cat(paste0("Slope: ", format(result$linear_model$slope, digits=4), "\n"))
+    cat(paste0("P-value: ", format(result$linear_model$p_value, digits=4), "\n"))
+    cat(paste0("AIC: ", format(result$linear_model$aic, digits=4), "\n"))
+    cat(paste0("BIC: ", format(result$linear_model$bic, digits=4), "\n\n"))
+    
+    cat("BEST STEP MODEL:\n")
+    cat(paste0("Model type: ", result$step_model$model_name, "\n"))
+    if (!is.na(result$step_model$step_location)) {
+      cat(paste0("Step location: Between tones ", 
+                substr(result$step_model$step_location, 1, 1), 
+                " and ", 
+                substr(result$step_model$step_location, 2, 2), "\n"))
+      cat(paste0("Step size: ", format(result$step_model$step_size, digits=4), "\n"))
+      cat(paste0("Step p-value: ", format(result$step_model$p_value, digits=4), "\n"))
+    }
+    cat(paste0("AIC: ", format(result$step_model$aic, digits=4), "\n"))
+    cat(paste0("BIC: ", format(result$step_model$bic, digits=4), "\n\n"))
+    
+    cat("-----------------------------------------------------------\n\n")
+  }
+  
+  sink()
+  
+  cat(paste0("Detailed results for component ", component, " written to ", output_file, "\n"))
+}
+
+# Main execution function
+analyze_component <- function(component) {
+  # Load and preprocess data
+  data <- preprocess_data(component)
+  
+  # Split data by sleep stage
+  stage_data <- split(data, data$sov)
+  
+  # Run analysis for each sleep stage
+  results <- list()
+  
+  for (stage_name in names(stage_data)) {
+    stage_subset <- stage_data[[stage_name]]
+    
+    if (nrow(stage_subset) > 0 && length(unique(stage_subset$sub)) >= 3) {
+      cat(paste0("Analyzing ", component, " in stage ", stage_name, "...\n"))
+      result <- compare_models(stage_subset, component, stage_name)
+      results[[stage_name]] <- result
+    } else {
+      cat(paste0("Skipping ", component, " in stage ", stage_name, 
+                " (insufficient data: ", nrow(stage_subset), " observations from ", 
+                length(unique(stage_subset$sub)), " subjects)\n"))
+    }
+  }
+  
+  # Create summary table
+  summary_table <- create_summary_table(results)
+  write.csv(summary_table, paste0("component_", component, "_summary.csv"), row.names = FALSE)
+  
+  # Write detailed results
+  write_detailed_results(results, component)
+  
+  # Create and save plots with ONLY the winning model
+  plot_winning_model(stage_data, component, results)
+  
+  # Return results
+  return(list(results = results, summary = summary_table))
+}
+
+# Run the analysis for each component
+components <- c("N100", "P2", "N350")
+all_results <- list()
+
+for (component in components) {
+  cat(paste0("\nAnalyzing component: ", component, "\n"))
+  cat("========================================\n")
+  all_results[[component]] <- analyze_component(component)
+}
+
+# Create overall summary table
+all_summaries <- lapply(all_results, function(x) x$summary)
+overall_summary <- do.call(rbind, all_summaries)
+write.csv(overall_summary, "all_components_summary.csv", row.names = FALSE)
+
+cat("\nAnalysis complete. Results saved to files.\n")
+  
+```
