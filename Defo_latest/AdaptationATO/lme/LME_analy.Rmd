@@ -1,0 +1,179 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# run twice 
+library(caret)
+library(Matrix)
+library(lme4)
+library(lmtest)
+library(dplyr)
+library(parallel)
+library(bayestestR)
+library(glmmTMB)
+library(gridExtra)
+library(effectsize) 
+library(effects)
+library(xtable)
+```
+
+
+```{r}
+plot_lmer_interaction <- function(model, x_var, color_var, y_var, save_path = NULL, width = 8, height = 6) {
+  require(ggplot2)
+  require(effects)
+  
+  pred_data <- as.data.frame(Effect(c(color_var, x_var), model))
+  
+  p <- ggplot(pred_data, aes_string(x = x_var, y = "fit", color = color_var, group = color_var)) +
+    geom_line(size = 1) +
+    geom_ribbon(aes_string(ymin = "lower", ymax = "upper", fill = color_var), alpha = 0.2) +
+    theme_minimal() +
+    labs(x = x_var, y = y_var, color = color_var, fill = color_var) +
+    theme(legend.position = "bottom", panel.grid.minor = element_blank())
+  
+  if (!is.null(save_path)) {
+    ggsave(save_path, p, width = width, height = height, dpi = 300)
+  }
+  
+  return(p)
+}
+
+  # Simpler cross-validation function
+  cv_lmer <- function(formula, data, k=5) {
+      set.seed(123)
+      folds <- createFolds(1:nrow(data), k=k)
+      mse <- numeric(k)
+      
+      for(i in 1:k) {
+          train <- data[-folds[[i]], ]
+          test <- data[folds[[i]], ]
+          fit <- lmer(formula, data=train)
+          pred <- predict(fit, newdata=test, allow.new.levels=TRUE)
+          mse[i] <- mean((test[[varush]] - pred)^2, na.rm=TRUE)
+      }
+      return(mean(mse))
+  }
+```
+
+
+```{r}
+# Define the components and variables
+input_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
+output_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
+
+components <- c("N100","P2", "N350")
+variables <- c("amplitude") # , "latency"
+output_prefix <- "res_lmm_Bl0_"
+
+for (component in components) {
+  data_table <- read.csv(paste0(input_dir, "\\component_amplitudes.csv"))
+  data_table <- data_table[data_table$comp == component, ]
+  data_table <- data_table[!is.na(data_table$is_peak), ]
+  # Convert variables to factors:
+  data_table$sov <- factor(data_table$sov, levels = c('wn','N1', 'N2', 'N3', 'REM'), ordered = FALSE)
+  data_table$sub <- factor(data_table$sub, ordered = FALSE)
+  data_table$trial_pos <- factor(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
+  data_table$is_peak <- factor(data_table$is_peak, levels = c(0, 1), ordered = FALSE) 
+  data_table$amplitude <- as.numeric(data_table$amplitude) 
+  
+  data_table <- data_table[data_table$trial_pos != "4", ]
+  
+  for (varush in variables) {
+    output_file_name <- paste0(output_prefix, component, "_", varush, "_results.txt")
+
+    sink(paste0(output_dir, "\\", output_file_name)) # Redirect output to the file
+    
+    initial_rows <- nrow(data_table)
+    initial_subs <- unique(data_table$sub)
+    
+    # Track outlier removals
+    std_to_remove_outliers <- 3
+    outlier_filtered <- data_table %>%
+      group_by(sov) %>%
+      mutate(mean_varush = mean(.data[[varush]], na.rm = TRUE),
+             sd_varush = sd(.data[[varush]], na.rm = TRUE)) %>%
+      filter(abs(.data[[varush]] - mean_varush) <= std_to_remove_outliers * sd_varush) %>%
+      ungroup()
+    outliers_removed <- initial_rows - nrow(outlier_filtered)
+    outlier_removed_rows <- anti_join(data_table, outlier_filtered)
+    outlier_removed_subs <- unique(outlier_removed_rows$sub)
+    data_table = outlier_filtered
+    cat(sprintf("\nRows removed:\n- %d outliers (>%d SD) from %d subjects: %s\n",
+        outliers_removed,
+        std_to_remove_outliers,
+        length(outlier_removed_subs),
+        paste(outlier_removed_subs, collapse=", ")))
+  
+    # Track peak removals
+    peak_filtered <- data_table[data_table$is_peak == 1, ]
+    peaks_removed <- nrow(data_table) - nrow(peak_filtered)
+    peak_removed_rows <- anti_join(data_table, peak_filtered)
+    peak_removed_subs <- unique(peak_removed_rows$sub)
+  
+    cat(sprintf("\nRows removed:\n - %d non-peaks from %d subjects: %s\n",
+        peaks_removed,
+        length(peak_removed_subs),
+        paste(peak_removed_subs, collapse=", ")))
+  
+    data_table <- peak_filtered
+    
+        
+    cat("\n==============================\n==============================\n")
+    form_0 = as.formula(paste0(varush, " ~ (1|sub)"))
+    form_sov <- as.formula(paste0(varush, " ~ sov + (1|sub)"))
+    form_trial <- as.formula(paste0(varush, " ~ trial_pos + (1|sub)"))
+    form_int <- as.formula(paste0(varush, " ~ sov * trial_pos + (1|sub)"))
+    m0 <- lmer(form_0, data=data_table)
+    m_trial <- lmer(form_trial, data=data_table)
+    m_sov  <- lmer(form_sov, data=data_table)
+    m_int <- lmer(form_int, data=data_table)
+    plot_lmer_interaction(m_int, "trial_pos", "sov", varush, paste0(output_dir, "\\Bl0_", component,"_",varush, "_trial_pos_sov_interaction_plot.png"))
+    
+    
+    # Compare models
+    cat("\n_____________Anova Comparisons:_____________\n")
+    print(anova(m0, m_trial))
+    cat("\n\n")
+    print(anova(m0, m_sov))
+    cat("\n\n")
+    print(anova(m_sov, m_int))
+    cat("\n\n")
+    print(anova(m_trial, m_int))
+    
+    cat("\n_____________bayesfactor Comparisons:_____________\n")
+    cat("Interpertation: 1: no evidance, >0.3 for model H0, +3 for model H1\n\n")
+    print(bayesfactor_models(list(m0,m_sov)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m0,m_trial)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_sov,m_trial)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_sov,m_int)))
+    cat("\n\n")
+    print(bayesfactor_models(list(m_trial,m_int)))
+    
+    
+    
+    cat("\n============================================================\n")
+  
+    # Cross-validation
+    cat("\n\n_____________Cross-validation Analysis:_____________\n")
+    cv_m1 <- cv_lmer(form_trial, data_table)
+    cv_m2 <- cv_lmer(form_sov, data_table)
+    cv_m3 <- cv_lmer(form_int, data_table)
+    cat(sprintf("CV MSE - trial model: %.2f\n", cv_m1))
+    cat(sprintf("CV MSE - sov model: %.2f\n", cv_m2))
+    cat(sprintf("CV MSE - interaction model: %.2f\n", cv_m3))
+
+    
+    # Stop redirecting output to the file
+    sink()
+  }
+}
+```
+

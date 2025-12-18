@@ -4,7 +4,7 @@ close all
 restoredefaultpath
 addpath 'D:\matlab_libs\fieldtrip-20241219' % fieldtrip-20230223
 ft_defaults
-addpath 'D:\matlab_libs\eeglab2024.2' %%eeglab2023.0'
+addpath 'D:\matlab_libs\eeglab2024.2' %%eeglab2023.0'f
 eeglab nogui;
 %% Exteact inter-block baseline from basic-preprocessed set files
 input_set_dir = 'D:\\AnatArzData\Data\preProcessed';

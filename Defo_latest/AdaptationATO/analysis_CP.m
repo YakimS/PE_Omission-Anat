@@ -1,9 +1,9 @@
 clc
 clear
 %%
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\AdaptationATO')
+addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\AdaptationATO')
 [v, subs,dirs,epoch_time, events] = ADAPTATION_configuration();
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\AdaptationATO')
+addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\AdaptationATO')
 
 %%%%  get electrode cluster
 %channels_selection =  {'Cz','E31','E80','E55','E7','E106'};%mid-cent%{'E46','E47','E52','E53','E37'}; % left-posterior %{'Cz'};%{'E46','E47','52','53','37'}, 

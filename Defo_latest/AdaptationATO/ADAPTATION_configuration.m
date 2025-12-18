@@ -9,7 +9,7 @@ function [v, subs, dirs, time, events] = ADAPTATION_configuration()
     dirs.ft_cond_input = "D:\OExpOut\processed_data\ft_subSovCond";
     dirs.ft_cond_output = "D:\OExpOut\processed_data\ft_processed";
     dirs.libs = 'D:\matlab_libs';
-    dirs.curr_project = genpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest');
+    dirs.curr_project = genpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest');
     
     ft_read_sens_string = 'GSN-HydroCel-129.sfp';
 

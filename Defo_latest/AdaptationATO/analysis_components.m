@@ -1,9 +1,9 @@
 clc
 clear
 %%
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\AdaptationATO')
+addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\AdaptationATO')
 [v, subs,dirs,epoch_time, events] = ADAPTATION_configuration();
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\AdaptationATO')
+addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\AdaptationATO')
 %%%%  get electrode cluster
 %channels_selection =  {'Cz','E31','E80','E55','E7','E106'};%mid-cent%{'E46','E47','E52','E53','E37'}; % left-posterior %{'Cz'};%{'E46','E47','52','53','37'}, 
 arbitrary_cond = get_cond_timelocked(subs,v.Bl0T1,v.wn,dirs.ft_cond_input,dirs.ft_cond_output);
@@ -15,10 +15,9 @@ central_cluster.('long_s') = '5 central elect';
 central_cluster.('elect_label') =  {'E6','E13','E112','E7','E106'};
 clusts_struct.('central5') = central_cluster;
 
-
 %%
 comps = {v.N100,v.P2,v.N350};%
-comp_output_dir = sprintf("%s\\new_pipeline_adapt",dirs.output_main);
+comp_output_dir = sprintf("%s\\results",dirs.output_main);
 sovs = { v.wn, v.N2, v.N3, v.REM,v.N1 };
 
 % v.wake_night_beg, v.wake_night_mid1, v.wake_night_mid2, v.wake_night_mid3, ...
@@ -52,8 +51,8 @@ for sov_i=1:numel(sovs)
 end
 
 
-%% Import component data to table
-sovs = { v.wn, v.REM,v.N1 };%  v.N2, v.N3, v.wake_night_beg, v.wake_night_mid1, v.wake_night_mid2, v.wake_night_mid3, ...
+%% Import component data to table (for R lme analysis)
+sovs = { v.wn, v.REM,v.N1, v.N2, v.N3 };%  v.N2, v.N3, v.wake_night_beg, v.wake_night_mid1, v.wake_night_mid2, v.wake_night_mid3, ...
                             %    v.wake_night_end, v.wake_morning_beg, v.wake_morning_end, v.wake_morning, ...
                              %       v.wn, v.N1, v.N2, v.N3, v.REM, v.N2Eliwo, v.N2EliwJSs, v.N2EliwJKc, ...
                               %  v.tREM, v.pREM
@@ -63,22 +62,23 @@ conds = {v.Bl0T1, v.Bl0T2, v.Bl0T3, v.Bl0T4};
 [flat_table, ~, metadata] = create_component_amplitude_table(subs, sovs, comps, conds, central_cluster, dirs, epoch_time);
 
 % Save the outputs
-% save('component_amplitudes.mat', 'flat_table', 'nested_struct', 'metadata');
-% writetable(flat_table, 'component_amplitudes.csv');
+comp_output_dir = sprintf("%s\\results",dirs.output_main);
+% save(sprintf("%s\\component_amplitudes.mat",comp_output_dir), 'flat_table', 'nested_struct', 'metadata');
+writetable(flat_table, sprintf("%s\\component_amplitudes.csv",comp_output_dir));
 
 %%
 excel_filename = 'component_ispeak_subs_counts.xlsx';
 subs_count_per_compCondSov(flat_table,excel_filename);
 
 %% create violing excel summary
-comp_output_dir = sprintf("%s\\new_pipeline_adapt",dirs.output_main);
+comp_output_dir = sprintf("%s\\results",dirs.output_main);
 file_pattern = sprintf('%s/Comp-*_name-T1234*_clust-centElec.mat', comp_output_dir);
 
 % For component-erp analysis with file pattern
 [res_fdrCorrected, res_fdrComponentwiseCorrected] = generate_component_erp_table(file_pattern);
 
 % If you need to exclude certain conditions
-[res_fdrCorrected, res_fdrComponentwiseCorrected] = generate_component_erp_table(file_pattern, {'Bl0T3', 'Bl0T4'});
+% [res_fdrCorrected, res_fdrComponentwiseCorrected] = generate_component_erp_table(file_pattern, {'Bl0T3', 'Bl0T4'});
 
 
 %%
