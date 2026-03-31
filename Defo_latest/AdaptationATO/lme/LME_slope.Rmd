@@ -1,0 +1,104 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+
+    # Tone Repetition Amplitude Analysis Across Sleep Stages
+# This script compares linear trends vs. step functions for component amplitudes
+---
+
+```{r}
+# Load libraries
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+library(tidyr)
+library(bayestestR)
+library(car)
+library(effects)
+library(gridExtra)
+
+# Source helper functions
+source("slope_helper_functions.R")
+```
+
+```{r}
+# Define the components and variables (same as LME_analy.Rmd)
+input_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
+output_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
+
+components <- c("N100", "P2", "N350")
+sov_of_interest <-  c('wn', 'N1', 'N2', 'N3', 'REM','tREM', 'pREM')  #
+output_prefix <- "wnN123REMs_"  #
+
+all_results <- list()
+
+for (component in components) {
+  cat(paste0("\n========================================\n"))
+  cat(paste0("Analyzing component: ", component, "\n"))
+  cat(paste0("========================================\n"))
+
+  # Load data (same format as LME_analy.Rmd)
+  data_table <- read.csv(paste0(input_dir, "\\component_amplitudes.csv"))
+  data_table <- data_table[data_table$comp == component, ]
+  data_table <- data_table[!is.na(data_table$is_peak), ]
+  data_table <- data_table[data_table$sov %in% sov_of_interest, ]
+  data_table <- data_table[!is.na(data_table$amplitude) & !is.nan(data_table$amplitude), ]
+
+  # Convert variables to factors
+  data_table$sov <- factor(data_table$sov, levels = sov_of_interest, ordered = FALSE)
+  data_table$sub <- factor(data_table$sub, ordered = FALSE)
+  data_table$trial_pos <- factor(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
+  data_table$is_peak <- factor(data_table$is_peak, levels = c(0, 1), ordered = FALSE)
+  data_table$amplitude <- as.numeric(data_table$amplitude)
+
+  # Make trial_pos numeric for trend analysis
+  data_table$trial_pos_num <- as.numeric(as.character(data_table$trial_pos))
+
+  # Keep only trials with peaks
+  data_table <- data_table[data_table$is_peak == 1, ]
+
+  # Split data by sleep stage
+  stage_data <- split(data_table, data_table$sov)
+
+  # Run analysis for each sleep stage
+  results <- list()
+
+  for (stage_name in names(stage_data)) {
+    stage_subset <- stage_data[[stage_name]]
+
+    if (nrow(stage_subset) > 0 && length(unique(stage_subset$sub)) >= 3) {
+      cat(paste0("Analyzing ", component, " in stage ", stage_name, "...\n"))
+      result <- compare_models(stage_subset, component, stage_name)
+      results[[stage_name]] <- result
+    } else {
+      cat(paste0("Skipping ", component, " in stage ", stage_name,
+                " (insufficient data: ", nrow(stage_subset), " observations from ",
+                length(unique(stage_subset$sub)), " subjects)\n"))
+    }
+  }
+
+  # Create summary table
+  summary_table <- create_summary_table(results)
+
+  # Write detailed results
+  write_detailed_results(results, component, output_dir)
+
+  # Create and save plots with ONLY the winning model
+  plot_winning_model(stage_data, component, results, output_dir)
+
+  # Store results
+  all_results[[component]] <- list(results = results, summary = summary_table)
+}
+
+# Create overall summary table
+all_summaries <- lapply(all_results, function(x) x$summary)
+overall_summary <- do.call(rbind, all_summaries)
+write.csv(overall_summary, paste0(output_dir, "\\slope_", output_prefix, "summary.csv"), row.names = FALSE)
+
+cat("\nAnalysis complete. Results saved to files.\n")
+```
+

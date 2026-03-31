@@ -1,9 +1,9 @@
 clc
 clear
 %%
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\OmissionGL')
+addpath(genpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest'))
 [v, subs,dirs,epoch_time, events,ft_read_sens_string] = GL_configuration('mvpa');
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\OmissionGL')
+addpath(genpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest'))
 
 %% 
 contrast = {v.UnexOm, v.ExOm};
@@ -65,7 +65,6 @@ disp(results_table);
 % sig_results = results_table(results_table.Is_Significant == 1, :);
 % sorted_results = sortrows(results_table, 'Peak_Accuracy', 'descend');
 
-%%
 %% SINGLE SUB DIAGONAL decoding using random permutation
 
 plot_dir = 'C:\mvpa\GL\plots2\resampNo';
@@ -75,6 +74,8 @@ all_contrasts = {'UnexOm-vs-ExOm'};
 acclim = [.35 .7];
 testlim = [-100 900];
 
+% Store per-subject AUC and pvalues for all subsets and contrasts
+sub_mvpa_data = struct();
 
 for subset_i=1:numel(all_subsets)
     curr_subset = all_subsets{subset_i};
@@ -83,8 +84,8 @@ for subset_i=1:numel(all_subsets)
         contrasts_withsubset = cellfun(@(x) [curr_subset, '_', x], {curr_contrast}, 'UniformOutput', false);
         contrast_dir = sprintf('%s\\%s\\%s_%s',results_dir,curr_subset,curr_subset,curr_contrast);
 
-        cfg = [];                               
-        cfg.wanted_dir = contrast_dir;           % path to first level results 
+        cfg = [];
+        cfg.wanted_dir = contrast_dir;           % path to first level results
         cfg.reduce_dims = 'diag';
         cfg.plotsubjects = false;
         cfg.mpcompcor_method = 'fdr';
@@ -93,18 +94,26 @@ for subset_i=1:numel(all_subsets)
         cfg.tail = 'both';
         mvpa_stats = adam_compute_group_MVPA(cfg);
 
+        % Store AUC and pvalues (sub x timepoints)
+        field_name = sprintf('%s__%s', strrep(curr_subset, '-', '_'), strrep(curr_contrast, '-', '_'));
+        sub_mvpa_data.(field_name).auc = mvpa_stats.indivClassOverTime;      % sub x timepoints
+        sub_mvpa_data.(field_name).pval = mvpa_stats.pvalsOverTime;          % sub x timepoints
+        sub_mvpa_data.(field_name).time = mvpa_stats.settings.times{1};      % 1 x timepoints
+        sub_mvpa_data.(field_name).subset = curr_subset;
+        sub_mvpa_data.(field_name).contrast = curr_contrast;
+
         % save_file_name = sprintf('%s\\%s_%s_PerSubDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
         % save_plot_and_close_fig(save_file_name);
 
 %          plot_timerange_activation_pattern(contrasts_withsubset,mvpa_stats,timelim)
 
         % %%% AvgPerSubDecodeComparePermu
-        % plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
-        % save_file_name = sprintf('%s\\%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
-        % save_plot_and_close_fig(save_file_name)
-        % 
-        % save_file_name = sprintf('%s\\%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',plot_dir,curr_subset,curr_contrast,'both');
-        % plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.8],contrasts_withsubset,save_file_name); 
+        plot_decoding(contrasts_withsubset,mvpa_stats,acclim)
+        save_file_name = sprintf('%s\\%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
+        save_plot_and_close_fig(save_file_name)
+
+        save_file_name = sprintf('%s\\%s_%s_AvgPerSubDecodeComparePermu_diag-1_tail-%s_2',plot_dir,curr_subset,curr_contrast,'both');
+        plot_avgSubPerm_decoding(mvpa_stats,[0.35,0.8],contrasts_withsubset,save_file_name);
 
         %%% allPerSubDecodeComparePermu
         save_file_name = sprintf('%s\\%s_%s_subDecodeComparePermu_diag-1_tail-%s',plot_dir,curr_subset,curr_contrast,'both');
@@ -112,12 +121,16 @@ for subset_i=1:numel(all_subsets)
     end
 end
 
+% Save per-subject MVPA data (AUC + pvalues) to mat file
+save_path = sprintf('%s\\sub_mvpa_auc_pval.mat', plot_dir);
+save(save_path, 'sub_mvpa_data');
+fprintf('Saved per-subject MVPA data to: %s\n', save_path);
 
-
+%%
 
 function save_plot_and_close_fig(file_name)
 %     saveas(gcf, sprintf("%s\\%s.fig", folder, file_name));
-%     saveas(gcf, sprintf("%s\\%s.svg", folder, file_name));
+    saveas(gcf, sprintf("%s.svg", file_name));
     saveas(gcf, sprintf("%s.png", file_name));
     close(gcf);
 end
@@ -199,4 +212,20 @@ function plot_avgSubPerm_decoding(mvpa_stats,acclim,title_,save_file_name)
     ylabel("AUC");
     set(gcf,'Position',[100 100 600 300])
     save_plot_and_close_fig(save_file_name)
+end
+
+
+function max_run = max_consecutive_true(vec)
+    max_run = 0;
+    current_run = 0;
+    for i = 1:numel(vec)
+        if vec(i)
+            current_run = current_run + 1;
+            if current_run > max_run
+                max_run = current_run;
+            end
+        else
+            current_run = 0;
+        end
+    end
 end

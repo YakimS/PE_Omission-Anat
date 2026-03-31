@@ -24,6 +24,7 @@ function subs_raw_sovcond = get_rawFt_cond(subs, cond, sov, input_dir)
                 subs_raw_sovcond{sub_i} = ft_data;
             catch ME
                 sprintf('cant find: %s\n or: %s', file_path_ngt,file_path_mng)
+                throw(ME)
             end                            
         else     % import only one cond 
             file_path = sprintf("%s\\s_%s_%s_%s.mat",input_dir,subs{sub_i},sov.import_s,cond.import_s);
@@ -32,6 +33,7 @@ function subs_raw_sovcond = get_rawFt_cond(subs, cond, sov, input_dir)
                 subs_raw_sovcond{sub_i} = sub_data.ft_data;
             catch ME
                 sprintf('cant find: %s', file_path)
+                throw(ME)
             end
         end
     end

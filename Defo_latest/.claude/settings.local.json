@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(powershell -Command \"$word = New-Object -ComObject Word.Application; $doc = $word.Documents.Open\\(\\(Get-Item ''Adaptation_V16.docx''\\).FullName\\); $doc.Content.Text; $doc.Close\\(\\); $word.Quit\\(\\)\")"
+    ]
+  }
+}

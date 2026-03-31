@@ -1,11 +1,12 @@
 function allsubs_cond_tfr=get_cond_TFR(subs,cond,sov,tfr_algo, dirs)
-    if strcmp(tfr_algo,'multitaper')
-        allsubs_cond_tfr = get_cond_TFR_mt(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
-    elseif strcmp(tfr_algo,'multitaper_zscored')
-        allsubs_cond_tfr = get_cond_TFR_mt_zscored(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
-    elseif strcmp(tfr_algo,'hilbert')
-        allsubs_cond_tfr = get_cond_TFR_hilbert(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
-    elseif strcmp(tfr_algo,'hilbert_zscored')
+    % if strcmp(tfr_algo,'multitaper')
+    %     allsubs_cond_tfr = get_cond_TFR_mt(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
+    % elseif strcmp(tfr_algo,'multitaper_zscored')
+    %     allsubs_cond_tfr = get_cond_TFR_mt_zscored(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
+    % elseif strcmp(tfr_algo,'hilbert')
+    %     allsubs_cond_tfr = get_cond_TFR_hilbert(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
+    % elseif 
+    if strcmp(tfr_algo,'hilbert_zscored')
         allsubs_cond_tfr = get_cond_TFR_hilbert_zscored(subs,cond,sov, dirs.ft_cond_input, dirs.ft_cond_output);
     else
         error('no such tfr algo implemented')
@@ -22,7 +23,7 @@ function allsubs_cond_tfrHilbert_zscored=get_cond_TFR_hilbert_zscored(subs,cond,
             loaded = load(file_path);
             allsubs_cond_tfrHilbert_zscored{sub_i} = loaded.tfrHilbertzscored_subcond;
             error_if_less_than_5_trials(subs{sub_i},cond, sov, allsubs_cond_tfrHilbert_zscored{sub_i}.cfg.('trials_avg'))
-            
+
         catch ME
             fprintf("Running: %s\n",filename);
             cfg = [];
@@ -33,28 +34,28 @@ function allsubs_cond_tfrHilbert_zscored=get_cond_TFR_hilbert_zscored(subs,cond,
             % cfg = [];
             % cfg.channel      = 'all';
             % cfg.method     = 'hilbert';
-            % cfg.polyremoval  = 0;%cfg.detrend = 'yes'; % https://www.fieldtriptoolbox.org/faq/why_does_my_tfr_look_strange_part_ii/   
-            % cfg.foi          = 0.5:0.5:70;   
-            % cfg.toi          = 'all';    
-            % cfg.width      = 0.4; 
+            % cfg.polyremoval  = 0;%cfg.detrend = 'yes'; % https://www.fieldtriptoolbox.org/faq/why_does_my_tfr_look_strange_part_ii/
+            % cfg.foi          = 0.5:0.5:70;
+            % cfg.toi          = 'all';
+            % cfg.width      = 0.4;
             % cfg.bpfilttype = 'fir'; % otherwise, it uses IIR filter, which is suboptimal and create imbalance in the parameter space that cuases errors and warnings https://youtu.be/jy7IxIXUAJk?si=KVfHc-WAHa151SDx&t=1003
-            
+
             cfg = [];
             cfg.channel = 'all';
             cfg.method = 'hilbert';
             cfg.toi = 'all';
             cfg.bpfilttype = 'fir';% otherwise, it uses IIR filter, which is suboptimal and create imbalance in the parameter space that cuases errors and warnings https://youtu.be/jy7IxIXUAJk?si=KVfHc-WAHa151SDx&t=1003
             cfg.polyremoval = 0;
-            cfg.foi          = 0.5:0.5:70; 
+            cfg.foi          = 0.5:0.5:100;
             cycles = 3 + 1.5*log10(cfg.foi);
-            cycles = min(cycles, 5); 
+            cycles = min(cycles, 5);
             cfg.t_ftimwin = cycles ./ cfg.foi;
             cfg.width = min(cfg.foi ./ cycles, cfg.foi * 0.4); % explicitly control bandwidth:
             %optional:
             cfg.pad = max(cfg.t_ftimwin);% Longest window (at lowest frequency)
 
             allsubs_cond_tfrHilbert_zscored{sub_i} = ft_freqanalysis(cfg, conds_ftraw{sub_i});
-            
+
             num_trials = length(conds_ftraw{sub_i}.trial);
             batch_size = 50;
             num_batches = ceil(num_trials / batch_size);
@@ -78,7 +79,7 @@ function allsubs_cond_tfrHilbert_zscored=get_cond_TFR_hilbert_zscored(subs,cond,
                         end
                     end
                 end
-                
+
                 % Sum the current batch's z-scores
                 if isempty(running_sum)
                     running_sum = squeeze(nanmean(temp_zscore_powspct, 1));
@@ -92,7 +93,7 @@ function allsubs_cond_tfrHilbert_zscored=get_cond_TFR_hilbert_zscored(subs,cond,
             allsubs_cond_tfrHilbert_zscored{sub_i}.powspctrm_zscore = sub_zscore_powspct;
             allsubs_cond_tfrHilbert_zscored{sub_i}.cfg.('trials_avg') = num_trials;
             error_if_less_than_5_trials(subs{sub_i},cond, sov, allsubs_cond_tfrHilbert_zscored{sub_i}.cfg.('trials_avg'))
-            
+
             %save
             tfrHilbertzscored_subcond = allsubs_cond_tfrHilbert_zscored{sub_i};
             save(file_path,"tfrHilbertzscored_subcond", '-v7.3')

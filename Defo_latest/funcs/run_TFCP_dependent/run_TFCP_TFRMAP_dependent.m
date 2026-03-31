@@ -20,9 +20,10 @@ function run_TFCP_TFRMAP_dependent(subs, output_dir, tfr_algo,contrast_conds,con
             clust_i.short_s);
         
         curr_output_filename_mat = sprintf("%s.mat",curr_output_filename);
+        curr_output_filename_svg = sprintf("%s.svg",curr_output_filename);
         curr_output_filename_png = sprintf("%s.png",curr_output_filename);
 
-         if isfile(curr_output_filename_png) 
+         if isfile(curr_output_filename_png)  || isfile(curr_output_filename_svg) 
             continue;
          elseif isfile(curr_output_filename_mat)
           data_to_plot = load(curr_output_filename_mat);
@@ -54,6 +55,6 @@ function run_TFCP_TFRMAP_dependent(subs, output_dir, tfr_algo,contrast_conds,con
         end
     
         fig_title = sprintf('conds: %s vs %s, sovs: ',cond1.short_s,cond2.short_s,sov_cond1.short_s,sov_cond2.short_s);
-        plot_TFCP_TFRMAP_dependentT(data_to_plot,curr_output_filename_png,fig_title,contrast_conds,event_lines)
+        plot_TFCP_TFRMAP_dependentT(data_to_plot,curr_output_filename,fig_title,contrast_conds,event_lines)
     end
 end

@@ -1,9 +1,9 @@
 clc
 clear
 %%
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\OmissionGL')
+addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\OmissionGL')
 [v, subs,dirs,epoch_time, events,ft_read_sens_string] = GL_configuration('cp');
-addpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest\OmissionGL')
+addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\OmissionGL')
 
 
 %%%%  get electrode cluster
@@ -152,7 +152,7 @@ sovs = {v.wn, v.N1, v.N2, v.N3, v.REM}; % , v.N1, v.N2, v.N3, v.REM
 adaptor_event1 = struct();
 adaptor_event1.("event_time") = -0.15;
 adaptor_event1.("event_color") = [.2, .2 ,.2];
-adaptor_event1.("event_text") = 'Adaptor';
+adaptor_event1.("event_text") = '  ';
 adaptor_event2 = adaptor_event1;
 adaptor_event2.("event_time") = -0.3;
 adaptor_event3 = adaptor_event2;
@@ -162,11 +162,11 @@ adaptor_event4.("event_time") = -0.6;
 omission_event = struct();
 omission_event.("event_time") = 0;
 omission_event.("event_color") = [.2, .2 ,.2];
-omission_event.("event_text") = 'Omission';
+omission_event.("event_text") = '  ';
 event_lines = {adaptor_event1,adaptor_event2,adaptor_event3,adaptor_event4,omission_event};
 
 tfr_algos = {'hilbert_zscored'}; % 'hilbert','multitaper','multitaper_zscored'
-freqrange_test =  [0.5,40];
+freqrange_test =  [0.5,110];
 timerange_test = [0,0.9];
 timerange_plot = [-0.8,0.9];
 
@@ -180,7 +180,7 @@ for tfr_algo_i=1:numel(tfr_algos)
     end
 end
 
-file_pattern = sprintf('%s\\TFCP-hilbert_zscored_conds-UnexOm+ExOm_condsSovs-*40*clust-sigMosttime.mat',res_output_dir);
+file_pattern = sprintf('%s\\TFCP-hilbert_zscored_conds-UnexOm+ExOm_condsSovs-*45*clust-sigMosttime.mat',res_output_dir);
 TFR_results = generate_tfr_cluster_table(file_pattern);
 
 %% TFR

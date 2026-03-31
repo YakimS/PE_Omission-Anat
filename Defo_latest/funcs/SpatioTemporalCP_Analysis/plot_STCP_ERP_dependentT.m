@@ -52,9 +52,9 @@ function plot_STCP_ERP_dependentT(data_to_plot,curr_output_filename)
         sgtitle(sprintf('Cluster Analysis - T Statistic (Z:%.1f-%.1f)', cfg_topoplot.zlim(1), cfg_topoplot.zlim(2)));
 
         figures = findall(0, 'Type', 'figure');
-        set(figures(1), 'Units', 'pixels', 'Position', [0.05, 0.05, 600, 500], 'PaperPositionMode', 'auto', 'InvertHardcopy', 'off', 'Color', 'white');
-        set(figures(2), 'Units', 'pixels', 'Position', [0.05, 0.05, 600, 500], 'PaperPositionMode', 'auto', 'InvertHardcopy', 'off', 'Color', 'white');
-        set(figures(3), 'Units', 'pixels', 'Position', [0.05, 0.05, 600, 500], 'PaperPositionMode', 'auto', 'InvertHardcopy', 'off', 'Color', 'white');
+        set(figures(1), 'Units', 'pixels', 'Position', [50, 50, 1800, 1500],   'PaperPositionMode', 'auto', 'InvertHardcopy', 'off', 'Color', 'white');
+        set(figures(2), 'Units', 'pixels', 'Position', [50, 50, 1800, 1500],   'PaperPositionMode', 'auto', 'InvertHardcopy', 'off', 'Color', 'white');
+        set(figures(3), 'Units', 'pixels', 'Position', [50, 50, 1800, 1500],   'PaperPositionMode', 'auto', 'InvertHardcopy', 'off', 'Color', 'white');
 
         frame1 = getframe(figures(1)); img1 = frame1.cdata;
         frame2 = getframe(figures(2)); img2 = frame2.cdata;
@@ -95,7 +95,7 @@ function cfg = cluster_plot(stat,cfg)
     if ~isfield(cfg, 'subplotsize')                 cfg.subplotsize =[4,4]; end             % better keep it that way, becuase this is the default grid of ft_topoplot
     if ~isfield(cfg, 'visible')                     cfg.visible = 'on'; end
     if ~isfield(cfg, 'highlightsymbolseries')       cfg.highlightsymbolseries = ['.', '.', '.', '.', '.']; end
-    if ~isfield(cfg, 'highlightsizeseries')         cfg.highlightsizeseries = [4 4 4 4 4]; end
+    if ~isfield(cfg, 'highlightsizeseries')         cfg.highlightsizeseries = [6 6 6 6 6]; end
     if ~isfield(cfg, 'highlightcolorpos')           cfg.highlightcolorpos =[0.5 0 0]; end
     if ~isfield(cfg, 'highlightcolorneg')           cfg.highlightcolorneg = [0 0 0.5]; end
     if ~isfield(cfg, 'style')                       cfg.style = 'straight'; end             %     colormap only. Defualt - colormap and conture lines

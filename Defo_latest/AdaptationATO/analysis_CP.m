@@ -1,6 +1,6 @@
 clc
 clear
-%%
+%% Initialization section
 addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\AdaptationATO')
 [v, subs,dirs,epoch_time, events] = ADAPTATION_configuration();
 addpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest\AdaptationATO')
@@ -17,9 +17,10 @@ central_cluster.('elect_label') =  {'E6','E13','E112','E7','E106'};
 clusts_struct.('central5') = central_cluster;
 
 %% Plot T1,T2,T3,T4 ERP across time 
-comp_output_dir = sprintf("%s\\new_pipeline_adapt",dirs.output_main);
-conds = {v.Bl0T1, v.Bl0T2, v.Bl0T3, v.Bl0T4};
-sovs = {v.wn,v.N1,v.N2,v.N3,v.REM}; 
+comp_output_dir = sprintf("%s\\results",dirs.output_main);
+conds = {v.Bl0T1, v.Bl0T4};
+% sovs = {v.wn,v.N1,v.N2,v.N3,v.REM, v.N2EliwJKc,v.N2Eliwo,v.N2wo}; 
+sovs = {v.REM};
 %sovs = {v.wake_morning,v.wn,v.N1,v.N2,v.N3,v.REM,v.N2wo,v.N2wJSs,v.N2wJKc,v.N2Eliwo,v.N2EliwJSs,v.N2EliwJKc,v.pREM,v.tREM};
 cfg = {};
 cfg.ylim_ = [-28,8];
@@ -37,45 +38,22 @@ for sov_i =1:numel(sovs)
         condSovPairs{end+1} = {conds{cond_i},sovs{sov_i}};
     end
     curr_subs = sub_exclu_per_sov(subs, {sovs{sov_i}},conds);
-    plot_erp_per_condsSovPairs(comp_output_dir,curr_subs, epoch_time, condSovPairs,clusts_struct,sprintf("%s-T1234",sovs{sov_i}.short_s),dirs ,cfg);
-end
-
-
-%% Per sub: plot_erp_per_cond_across_sovs
-comp_output_dir = sprintf("%s\\new_pipeline_adapt",dirs.output_main);
-sovs = {v.N2Eliwo,v.N2EliwJKc,v.N2EliwJSs}; 
-conds = {v.Bl0T1, v.Bl0T2, v.Bl0T3, v.Bl0T4};
-comps = {v.N100,v.P2,v.N350};
-
-cfg=[];
-cfg.is_plot_subs = true;
-cfg.is_plot_ste = false;
-cfg.ylim_ = [-12,6];
-cfg.plot_each_sub_comp_latency = comps;
-cfg.plot_comp_mean_over_conds = conds;
-cfg.color_by_cond_or_sov = 'sov';
-curr_events = {};
-curr_events.tone = events.tone;
-cfg.event_lines = curr_events;
-
-for sov_i=1:numel(sovs)
-    for cond_i=1:numel(conds)
-        curr_subs = sub_exclu_per_sov(subs, {sovs{sov_i}},{conds{cond_i}});
-        plot_erp_per_cond_across_sovs(dirs,comp_output_dir,epoch_time,curr_subs,conds{cond_i},{sovs{sov_i}},clusts_struct,cfg);
-    end
+    plot_erp_per_condsSovPairs(comp_output_dir,curr_subs, epoch_time, condSovPairs,clusts_struct,sprintf("%s-T14",sovs{sov_i}.short_s),dirs ,cfg);
 end
 
 
 %% plot_erp_per_cond_across_sovs
-comp_output_dir = sprintf("%s\\new_pipeline_adapt",dirs.output_main);
+comp_output_dir = sprintf("%s\\results",dirs.output_main);
 conds = {v.Bl0T1,v.Bl0T2,v.Bl0T3,v.Bl0T4};
 comps = {v.N100,v.P2,v.N350};
-sovs_sets = {{v.pREM,v.tREM},{v.wn,v.wake_morning},{v.wn,v.N1,v.N2,v.N3,v.REM},{v.N2Eliwo,v.N2EliwJSs,v.N2EliwJKc}, ...
-    {v.wake_night_beg, v.wake_night_end,v.wake_morning_beg,v.wake_morning_end }};
-sovs_sets_names = {'rems','wakes','wn123rem','N2elis','wakesbegend'};
+sovs_sets = {{v.pREM,v.tREM},{v.wn,v.N1,v.N2,v.N3,v.REM},{v.N2Eliwo,v.N2EliwJSs,v.N2EliwJKc},{v.N2wo,v.N2EliwJSs,v.N2EliwJKc}};
+sovs_sets_names = {'rems','wn123rem','N2elis','N2woEventelis'};
+% sovs_sets = {{v.wn,v.wake_morning}   , {v.wake_night_beg,
+% v.wake_night_end,v.wake_morning_beg,v.wake_morning_end }}
+%sovs_sets_names = {'wakes','wakesbegend'};
 
 cfg=[];
-cfg.ylim_ = [-16,5];
+cfg.ylim_ = [-28,8];
 cfg.ticksY = cfg.ylim_(1):4:cfg.ylim_(2);
 curr_events = struct();
 curr_events.tone = events.tone;
@@ -99,8 +77,42 @@ for sovset_i=1:numel(sovs_sets)
     end
 end
 
+%% create time erps excel summary
+file_pattern = sprintf('%s//ERP_name-*T1234_clust-centElec.mat',comp_output_dir);
+results = generate_tcp_cluster_table(file_pattern);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                   % Exploratory %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% Per sub: plot_erp_per_cond_across_sovs
+comp_output_dir = sprintf("%s\\anatverirification",dirs.output_main);
+sovs = {v.N2Eliwo,v.N2EliwJKc,v.N2EliwJSs}; 
+conds = {v.Bl0T1, v.Bl0T2, v.Bl0T3, v.Bl0T4};
+comps = {v.N100,v.P2,v.N350};
+
+cfg=[];
+cfg.is_plot_subs = true;
+cfg.is_plot_ste = false;
+cfg.ylim_ = [-12,6];
+cfg.plot_each_sub_comp_latency = comps;
+cfg.plot_comp_mean_over_conds = conds;
+cfg.color_by_cond_or_sov = 'sov';
+curr_events = {};
+curr_events.tone = events.tone;
+cfg.event_lines = curr_events;
+
+for sov_i=1:numel(sovs)
+    for cond_i=1:numel(conds)
+        curr_subs = sub_exclu_per_sov(subs, {sovs{sov_i}},{conds{cond_i}});
+        plot_erp_per_cond_across_sovs(dirs,comp_output_dir,epoch_time,curr_subs,conds{cond_i},{sovs{sov_i}},clusts_struct,cfg);
+    end
+end
+
 %% tones_diffs T_prev
-comp_output_dir = sprintf("%s\\new_pipeline_adapt",dirs.output_main);
+comp_output_dir = sprintf("%s\\anatverirification",dirs.output_main);
 sovs = {v.wn,v.N2,v.N3,v.REM}; % ,v.N1
 tones_diffs={"low", "mid", "high"};
 
@@ -127,7 +139,7 @@ for pos = 1:4
 end
 
 %% toneHz analysis
-THz_output_dir = sprintf("%s\\new_pipeline_adapt\\THz",dirs.output_main);
+THz_output_dir = sprintf("%s\\anatverirification\\THz",dirs.output_main);
 sovs = {v.wn,v.N2,v.N3,v.REM}; % ,v.N1
 tone_hz = [650,845,1428,1856,2413,3137,4079,5302];% T1098
 
@@ -216,20 +228,11 @@ conds = {v.T_prevhigh_1, v.T_prevhigh_2,v.T_prevhigh_3,v.T_prevhigh_4,...
         v.T_prevlow_1,v.T_prevlow_2,v.T_prevlow_3,v.T_prevlow_4,};
 T = generate_event_amount_table_for_R(subs, sovs, conds,  dirs.ft_cond_input, dirs.ft_cond_output, epoch_time);
 writetable(T, 'out_to_prev_lme_anal.csv');
-%% create time erps excel summary
-file_pattern = sprintf('%s//ERP_name-*T1234_clust-centElec.mat',comp_output_dir);
-results = generate_tcp_cluster_table(file_pattern);
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%                                                   % Exploratory %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 sovs = {v.wn, v.N2, v.N3, v.REM}; 
 diffconds = {{v.Bl0T1, v.Bl0T4}};
 
-% Plot both normalized and raw differences (default)
+%% Plot both normalized and raw differences (default)
 options.normalizedPlot = true;
 options.rawPlot = true;
 [diffs, norm_diffs, avg_norm, avg_raw] = normalize_and_plot_diff_erps( subs, sovs, diffconds, dirs.ft_cond_input, dirs.ft_cond_output, clusts_struct, time);

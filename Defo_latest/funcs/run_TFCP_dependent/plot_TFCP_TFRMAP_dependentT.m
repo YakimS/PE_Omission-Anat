@@ -17,8 +17,7 @@ function plot_TFCP_TFRMAP_dependentT(data_to_plot,filename,fig_title,contrast_co
     test_latency_index_1 = find(abs(diff_cond12.time - data_to_plot.test_latency(1)) < tolerance);
     test_latency_index_2 = find(abs(diff_cond12.time - data_to_plot.test_latency(2)) < tolerance);
     mask_(:,:,test_latency_index_1:test_latency_index_2) =  repmat(stat.mask,[size(mask_,1),1,1]);
-
-    
+  
     % Add masks to data structures
     diff_cond12.mask = logical(mask_);
     grandavg_cond1.mask = logical(mask_);
@@ -40,7 +39,7 @@ function plot_TFCP_TFRMAP_dependentT(data_to_plot,filename,fig_title,contrast_co
     zlim_data = [-data_max, data_max];
     zlim_stat = [-3, 3];
 
-    fig = figure('Position', [100, 100, 1200, 800]);
+    fig = figure('Position', [100, 100, 1200, 800], 'Color', 'w');
 
     % Common plotting configuration
     cfg_base = [];
@@ -72,6 +71,7 @@ function plot_TFCP_TFRMAP_dependentT(data_to_plot,filename,fig_title,contrast_co
     cfg_plot.title = sprintf('Difference (%s - %s)', contrast_conds{1}.long_s, contrast_conds{2}.long_s);
     ft_singleplotTFR(cfg_plot, diff_cond12);
     add_event_lines(event_lines);
+
     
     % Statistics
     subplot(2, 3, 4);
@@ -113,9 +113,31 @@ function plot_TFCP_TFRMAP_dependentT(data_to_plot,filename,fig_title,contrast_co
     % Overall title
     sgtitle(sprintf('%s | Electrodes: %s', fig_title, clust_struct.short_s));
     
-    saveas(gcf,filename);
+    saveas(gcf,sprintf("%s.svg",filename));
+    saveas(gcf,sprintf("%s.png",filename));
+
 %             saveas(gcf,sprintf("%s.fig",filename));
+
     close;
+
+    % Save difference heatmap separately (bare heatmap, no decorations)
+    fig_diff = figure('Position', [100, 100, 500, 400], 'Color', 'w', 'Visible', 'off');
+    cfg_diff_plot = cfg_base;
+    cfg_diff_plot.zlim = zlim_data;
+    cfg_diff_plot.title = '';
+    cfg_diff_plot.maskparameter = [];
+    cfg_diff_plot.maskstyle = [];
+    ft_singleplotTFR(cfg_diff_plot, diff_cond12);
+    ax = gca;
+    ax.XTick = [];
+    ax.YTick = [];
+    ax.XLabel.String = '';
+    ax.YLabel.String = '';
+    ax.Title.String = '';
+    colorbar off;
+    ax.Position = [0 0 1 1];
+    exportgraphics(ax, sprintf("%s_difference_heatmap.png", filename), 'Resolution', 300);
+    close(fig_diff);
 end
 
 function add_event_lines(event_lines)

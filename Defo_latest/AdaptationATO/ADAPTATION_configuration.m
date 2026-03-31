@@ -2,8 +2,6 @@ function [v, subs, dirs, time, events] = ADAPTATION_configuration()
     % '05','06','07','12'
     subs = {'01','02','03','04','08','09','10','11','13','14','15','16','17','19','20','21','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38'};
    
-    time = -0.1:0.004:0.576;
-
     dirs = struct();
     dirs.output_main = "D:\OExpOut\adapt_res";
     dirs.ft_cond_input = "D:\OExpOut\processed_data\ft_subSovCond";
@@ -15,14 +13,15 @@ function [v, subs, dirs, time, events] = ADAPTATION_configuration()
 
     % https://www.fieldtriptoolbox.org/tutorial/cluster_permutation_timelock/
     restoredefaultpath 
-    addpath(sprintf('%s\\fieldtrip-20241219', dirs.libs)) % fieldtrip-20230223
+    addpath(sprintf('%s\\fieldtrip-20241219', dirs.libs)) 
     ft_defaults;
-    addpath(sprintf('%s\\eeglab2024.2', dirs.libs)) %%eeglab2023.0'
+    addpath(sprintf('%s\\eeglab2024.2', dirs.libs))
     close;
     addpath(dirs.libs)
     addpath(sprintf('%s\\klabhub-bayesFactor-04b80fd', dirs.libs))
     addpath(dirs.curr_project)
 
+    time = -0.1:0.004:0.576;
 
     % Create main structure
     v = struct();

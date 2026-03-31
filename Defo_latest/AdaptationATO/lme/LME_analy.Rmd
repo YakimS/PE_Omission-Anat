@@ -68,20 +68,22 @@ output_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
 
 components <- c("N100","P2", "N350")
 variables <- c("amplitude") # , "latency"
-output_prefix <- "res_lmm_Bl0_"
-
+sov_of_interest <- c('wn', 'N1', 'N2', 'N3', 'REM')  # c('wn', 'N1', 'N2', 'N3', 'REM')       c('tREM', 'pREM')
+output_prefix <- "res_wnN123REM_Bl0_"  #  "res_wnN123REM_Bl0_"   "res_rems_Bl0_" 
+ 
 for (component in components) {
   data_table <- read.csv(paste0(input_dir, "\\component_amplitudes.csv"))
   data_table <- data_table[data_table$comp == component, ]
   data_table <- data_table[!is.na(data_table$is_peak), ]
+  data_table <- data_table[data_table$sov %in% sov_of_interest, ]
   # Convert variables to factors:
-  data_table$sov <- factor(data_table$sov, levels = c('wn','N1', 'N2', 'N3', 'REM'), ordered = FALSE)
+  data_table$sov <- factor(data_table$sov, levels = sov_of_interest, ordered = FALSE)
   data_table$sub <- factor(data_table$sub, ordered = FALSE)
   data_table$trial_pos <- factor(substr(data_table$cond, nchar(data_table$cond), nchar(data_table$cond)))
   data_table$is_peak <- factor(data_table$is_peak, levels = c(0, 1), ordered = FALSE) 
   data_table$amplitude <- as.numeric(data_table$amplitude) 
   
-  data_table <- data_table[data_table$trial_pos != "4", ]
+  # data_table <- data_table[data_table$trial_pos != "4", ]
   
   for (varush in variables) {
     output_file_name <- paste0(output_prefix, component, "_", varush, "_results.txt")
@@ -91,23 +93,23 @@ for (component in components) {
     initial_rows <- nrow(data_table)
     initial_subs <- unique(data_table$sub)
     
-    # Track outlier removals
-    std_to_remove_outliers <- 3
-    outlier_filtered <- data_table %>%
-      group_by(sov) %>%
-      mutate(mean_varush = mean(.data[[varush]], na.rm = TRUE),
-             sd_varush = sd(.data[[varush]], na.rm = TRUE)) %>%
-      filter(abs(.data[[varush]] - mean_varush) <= std_to_remove_outliers * sd_varush) %>%
-      ungroup()
-    outliers_removed <- initial_rows - nrow(outlier_filtered)
-    outlier_removed_rows <- anti_join(data_table, outlier_filtered)
-    outlier_removed_subs <- unique(outlier_removed_rows$sub)
-    data_table = outlier_filtered
-    cat(sprintf("\nRows removed:\n- %d outliers (>%d SD) from %d subjects: %s\n",
-        outliers_removed,
-        std_to_remove_outliers,
-        length(outlier_removed_subs),
-        paste(outlier_removed_subs, collapse=", ")))
+    # # Track outlier removals
+    # std_to_remove_outliers <- 3
+    # outlier_filtered <- data_table %>%
+    #   group_by(sov) %>%
+    #   mutate(mean_varush = mean(.data[[varush]], na.rm = TRUE),
+    #          sd_varush = sd(.data[[varush]], na.rm = TRUE)) %>%
+    #   filter(abs(.data[[varush]] - mean_varush) <= std_to_remove_outliers * sd_varush) %>%
+    #   ungroup()
+    # outliers_removed <- initial_rows - nrow(outlier_filtered)
+    # outlier_removed_rows <- anti_join(data_table, outlier_filtered)
+    # outlier_removed_subs <- unique(outlier_removed_rows$sub)
+    # data_table = outlier_filtered
+    # cat(sprintf("\nRows removed:\n- %d outliers (>%d SD) from %d subjects: %s\n",
+    #     outliers_removed,
+    #     std_to_remove_outliers,
+    #     length(outlier_removed_subs),
+    #     paste(outlier_removed_subs, collapse=", ")))
   
     # Track peak removals
     peak_filtered <- data_table[data_table$is_peak == 1, ]
@@ -127,10 +129,12 @@ for (component in components) {
     form_0 = as.formula(paste0(varush, " ~ (1|sub)"))
     form_sov <- as.formula(paste0(varush, " ~ sov + (1|sub)"))
     form_trial <- as.formula(paste0(varush, " ~ trial_pos + (1|sub)"))
+    form_add <- as.formula(paste0(varush, " ~ sov + trial_pos + (1|sub)"))
     form_int <- as.formula(paste0(varush, " ~ sov * trial_pos + (1|sub)"))
     m0 <- lmer(form_0, data=data_table)
     m_trial <- lmer(form_trial, data=data_table)
     m_sov  <- lmer(form_sov, data=data_table)
+    m_add <- lmer(form_add, data=data_table)
     m_int <- lmer(form_int, data=data_table)
     plot_lmer_interaction(m_int, "trial_pos", "sov", varush, paste0(output_dir, "\\Bl0_", component,"_",varush, "_trial_pos_sov_interaction_plot.png"))
     
@@ -141,10 +145,14 @@ for (component in components) {
     cat("\n\n")
     print(anova(m0, m_sov))
     cat("\n\n")
+    print(anova(m_sov, m_trial))
+    cat("\n\n")
     print(anova(m_sov, m_int))
     cat("\n\n")
     print(anova(m_trial, m_int))
-    
+    cat("\n\n")
+    print(anova(m_add, m_int))
+
     cat("\n_____________bayesfactor Comparisons:_____________\n")
     cat("Interpertation: 1: no evidance, >0.3 for model H0, +3 for model H1\n\n")
     print(bayesfactor_models(list(m0,m_sov)))
@@ -156,9 +164,11 @@ for (component in components) {
     print(bayesfactor_models(list(m_sov,m_int)))
     cat("\n\n")
     print(bayesfactor_models(list(m_trial,m_int)))
-    
-    
-    
+    cat("\n\n")
+    print(bayesfactor_models(list(m_add,m_int)))
+
+
+
     cat("\n============================================================\n")
   
     # Cross-validation

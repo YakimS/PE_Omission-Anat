@@ -1,12 +1,11 @@
 function [v, subs, dirs, time, events,ft_read_sens_string] = GL_configuration(analysis_type)
-
     dirs = struct();
     dirs.ft_cond_input = "D:\GlobalLocal\ft_subSovCond_blPreO";
     dirs.ft_cond_output ="D:\GlobalLocal\ft_processed_blPreO";
-    dirs.curr_project = genpath('C:\Users\User\OneDrive\Documents\githubProjects\Defo_latest');
+    dirs.curr_project = addpath(genpath('C:\Users\User\Documents\GitHub\PE_Omission-Anat\Defo_latest'));
     dirs.libs = 'D:\matlab_libs';
     addpath(dirs.curr_project)
-    addpath(dirs.libs )
+    addpath(dirs.libs)
     dirs.output_main = "D:\GlobalLocal\analysis_res";
     dirs.output_adamformat = 'C:\mvpa\GL\preprocessed2';
     dirs.output_adam_firstlvl = 'C:\mvpa\GL\FirstLevel2';

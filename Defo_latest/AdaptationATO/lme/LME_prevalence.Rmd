@@ -1,0 +1,190 @@
+---
+title: "Prevalence Analysis"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(ggplot2)
+library(emmeans)
+```
+
+```{r}
+# Define input/output
+input_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
+output_dir = "D:\\OExpOut\\adapt_res\\results\\lme"
+
+# Load data
+data_table <- read.csv(paste0(input_dir, "\\component_amplitudes.csv"))
+
+# Get N2 counts for denominator
+N2_data <- data_table[data_table$sov == "N2", ]
+N2_counts <- aggregate(trials_count ~ subject + cond, N2_data, sum)
+names(N2_counts)[3] <- "N2_count"
+
+# Get Kc and Ss counts
+Kc_data <- data_table[data_table$sov == "N2EliwJKc", ]
+Kc_counts <- aggregate(trials_count ~ subject + cond, Kc_data, sum)
+names(Kc_counts)[3] <- "Kc_count"
+
+Ss_data <- data_table[data_table$sov == "N2EliwJSs", ]
+Ss_counts <- aggregate(trials_count ~ subject + cond, Ss_data, sum)
+names(Ss_counts)[3] <- "Ss_count"
+
+# Merge and calculate proportions
+Kc_merged <- merge(Kc_counts, N2_counts, by = c("subject", "cond"))
+Kc_merged$proportion <- Kc_merged$Kc_count / Kc_merged$N2_count
+Kc_merged$torder <- as.numeric(substr(Kc_merged$cond, nchar(Kc_merged$cond), nchar(Kc_merged$cond)))
+
+Ss_merged <- merge(Ss_counts, N2_counts, by = c("subject", "cond"))
+Ss_merged$proportion <- Ss_merged$Ss_count / Ss_merged$N2_count
+Ss_merged$torder <- as.numeric(substr(Ss_merged$cond, nchar(Ss_merged$cond), nchar(Ss_merged$cond)))
+```
+
+```{r}
+########## K-COMPLEX ANALYSIS ##########
+
+Kc_data <- Kc_merged[!is.na(Kc_merged$proportion) & !is.nan(Kc_merged$proportion), ]
+Kc_data$subject <- factor(Kc_data$subject)
+Kc_data$torder_factor <- factor(Kc_data$torder, levels = c(1, 2, 3, 4))
+
+output_file <- paste0(output_dir, "\\preval_Kc_results.txt")
+sink(output_file)
+
+cat("=== PREVALENCE ANALYSIS: K-COMPLEX ===\n")
+cat("Date:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
+
+# Models (torder as numeric for linear trend, 1 df)
+model_null <- lmer(proportion ~ (1|subject), data = Kc_data)
+model_torder <- lmer(proportion ~ torder + (1|subject), data = Kc_data)
+
+BF <- function(bic1, bic2) exp((bic1 - bic2)/2)
+
+cat("=== MODEL COMPARISON ===\n")
+print(anova(model_null, model_torder))
+cat("BF =", BF(BIC(model_null), BIC(model_torder)), "\n\n")
+
+cat("=== MODEL SUMMARY ===\n")
+print(summary(model_torder))
+
+cat("\n=== TYPE III ANOVA ===\n")
+print(anova(model_torder))
+
+# Post-hoc with emmeans (using factor model for pairwise comparisons)
+cat("\n=== POST-HOC (emmeans) ===\n")
+model_factor <- lmer(proportion ~ torder_factor + (1|subject), data = Kc_data)
+emm <- emmeans(model_factor, ~ torder_factor)
+print(emm)
+
+pairs_result <- pairs(emm, adjust = "none")
+pairs_summary <- summary(pairs_result, infer = TRUE)
+
+# Get consecutive comparisons (1-2, 2-3, 3-4)
+consecutive_idx <- c(1, 4, 6)
+consec_pairs <- pairs_summary[consecutive_idx, ]
+
+cat("\nConsecutive comparisons (T1-T2, T2-T3, T3-T4):\n")
+print(consec_pairs)
+
+cat("\n=== ANALYSIS COMPLETE ===\n")
+sink()
+cat("K-complex results saved to:", output_file, "\n")
+```
+
+```{r}
+########## SPINDLE ANALYSIS ##########
+
+Ss_data <- Ss_merged[!is.na(Ss_merged$proportion) & !is.nan(Ss_merged$proportion), ]
+Ss_data$subject <- factor(Ss_data$subject)
+Ss_data$torder_factor <- factor(Ss_data$torder, levels = c(1, 2, 3, 4))
+
+output_file <- paste0(output_dir, "\\preval_Ss_results.txt")
+sink(output_file)
+
+cat("=== PREVALENCE ANALYSIS: SPINDLE ===\n")
+cat("Date:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
+
+# Models (torder as numeric for linear trend, 1 df)
+model_null <- lmer(proportion ~ (1|subject), data = Ss_data)
+model_torder <- lmer(proportion ~ torder + (1|subject), data = Ss_data)
+
+cat("=== MODEL COMPARISON ===\n")
+print(anova(model_null, model_torder))
+cat("BF =", BF(BIC(model_null), BIC(model_torder)), "\n\n")
+
+cat("=== MODEL SUMMARY ===\n")
+print(summary(model_torder))
+
+cat("\n=== TYPE III ANOVA ===\n")
+print(anova(model_torder))
+
+# Post-hoc with emmeans (using factor model for pairwise comparisons)
+cat("\n=== POST-HOC (emmeans) ===\n")
+model_factor <- lmer(proportion ~ torder_factor + (1|subject), data = Ss_data)
+emm <- emmeans(model_factor, ~ torder_factor)
+print(emm)
+
+pairs_result <- pairs(emm, adjust = "none")
+pairs_summary <- summary(pairs_result, infer = TRUE)
+
+# Get consecutive comparisons (1-2, 2-3, 3-4)
+consecutive_idx <- c(1, 4, 6)
+consec_pairs <- pairs_summary[consecutive_idx, ]
+
+cat("\nConsecutive comparisons (T1-T2, T2-T3, T3-T4):\n")
+print(consec_pairs)
+
+cat("\n=== ANALYSIS COMPLETE ===\n")
+sink()
+cat("Spindle results saved to:", output_file, "\n")
+```
+
+```{r}
+########## PLOTS ##########
+
+mustard_colors <- c("#FFF8DC", "#F0E68C", "#DAA520", "#B8860B")
+
+# K-complex plot
+Kc_plot_data <- Kc_merged[!is.na(Kc_merged$proportion), ]
+Kc_plot_data$percentage <- Kc_plot_data$proportion * 100
+Kc_plot_data$torder_factor <- factor(Kc_plot_data$torder, levels = c(1, 2, 3, 4),
+                                      labels = c("T1", "T2", "T3", "T4"))
+
+p_kc <- ggplot(Kc_plot_data, aes(x = torder_factor, y = percentage, fill = torder_factor)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.3, size = 1) +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 3, fill = "white", stroke = 1.5) +
+  labs(title = "K-complex Prevalence Across Tone Repetitions",
+       x = "Tone Repetition", y = "% of N2 Trials") +
+  scale_fill_manual(values = mustard_colors) +
+  theme_bw() +
+  theme(legend.position = "none", plot.title = element_text(hjust = 0.5, face = "bold"))
+
+print(p_kc)
+ggsave(paste0(output_dir, "\\preval_Kc_boxplot.svg"), plot = p_kc, width = 6, height = 5)
+
+# Spindle plot
+Ss_plot_data <- Ss_merged[!is.na(Ss_merged$proportion), ]
+Ss_plot_data$percentage <- Ss_plot_data$proportion * 100
+Ss_plot_data$torder_factor <- factor(Ss_plot_data$torder, levels = c(1, 2, 3, 4),
+                                      labels = c("T1", "T2", "T3", "T4"))
+
+p_ss <- ggplot(Ss_plot_data, aes(x = torder_factor, y = percentage, fill = torder_factor)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.3, size = 1) +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 3, fill = "white", stroke = 1.5) +
+  labs(title = "Spindle Prevalence Across Tone Repetitions",
+       x = "Tone Repetition", y = "% of N2 Trials") +
+  scale_fill_manual(values = mustard_colors) +
+  theme_bw() +
+  theme(legend.position = "none", plot.title = element_text(hjust = 0.5, face = "bold"))
+
+print(p_ss)
+ggsave(paste0(output_dir, "\\preval_Ss_boxplot.svg"), plot = p_ss, width = 6, height = 5)
+
+cat("\nAll prevalence analyses complete!\n")
+```
